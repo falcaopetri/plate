@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "plate",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server.mjs"
+      ],
+      "port": 4173
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "plate",
+  "version": "0.1.0",
+  "description": "What's on my plate: file-backed cockpit (workstreams + items) with a thin localhost view.",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.mjs",
+    "collect:todoist": "node collectors/todoist.mjs",
+    "collect:github": "node collectors/github.mjs",
+    "collect:sessions": "node collectors/sessions.mjs",
+    "collect": "npm run collect:todoist && npm run collect:github && npm run collect:sessions"
+  }
+}
