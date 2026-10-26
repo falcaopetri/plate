@@ -14,16 +14,19 @@ npm run collect                # todoist + github + sessions
 ## Data model
 Schema source of truth: **`README.md` in the data folder** (`$PLATE_DATA_DIR`, default `./data`; set it to your own data folder). Don't duplicate it here; read it before touching data code. Summary:
 - `workstreams/<slug>.md` — YAML frontmatter + body. **Primary entity.** Tree via `parent` (one slug), graph edges via `related` (undirected), `state` active|paused|done, anchors `github: ["repo:owner/name", …]`.
-- `items.jsonl` — one item per line, `source` ∈ `todoist | github | session | teams | link | note`; `workstream` = slug or `null` (Inbox). Moving an item rewrites only that field.
+- `items.jsonl` — one item per line, `source` ∈ `todoist | github | session | teams | link | note | ghref`; `workstream` = slug or `null` (Inbox). Moving an item rewrites only that field.
 - `events.jsonl` — append-only log (`item.new`, `item.gone`, `item.moved`, `item.state`, `item.removed`, `workstream.new`, `workstream.reparented`). Raw material for a future git-graph view (not built).
 - "Needs you" is derived in `lib/store.mjs` (`needsYou`): open Todoist due ≤ today, sessions in state `waiting`. The focus view also puts PRs with a "review" Status there.
 
 ## Layout
-- `server.mjs` — stdlib `http` server, JSON routes (`/api/state`, `/api/move`, `/api/ws/create|update`, `/api/items/add|add-teams|remove`) + static `public/`.
+- `server.mjs` — stdlib `http` server, JSON routes (`/api/state`, `/api/move` (one `id` or `ids[]`), `/api/ws/create|update`, `/api/items/add|add-teams|add-github|remove`) + static `public/`.
 - `lib/store.mjs` — all file IO (items, events, workstreams with a tiny frontmatter parser/patcher), validation (`BadRequest` → HTTP 400), cycle guard for `parent`.
 - `lib/upsert.mjs` — shared collector upsert.
+- `lib/schedule.mjs` — in-server collector scheduler (child processes, one at a time) and `withLock`: **every POST handler and every collector run is serialized**, because collectors rewrite `items.jsonl` whole. Running a collector by hand while the server is up bypasses the lock (small race with a drag). `/api/collect` = Sync now; `/api/state` carries `collect` status.
+- `lib/devinrun.mjs` — `/api/devin/review {url}`: runs `devin -p "/code-review <url>"` (prompt: `devin_review_prompt`, `{url}` placeholder) in `devin_review_dir` from sources.md, in the background; `runs` in `/api/state`; logs in `.cache/devin-runs/`. On exit it collects Devin and anchors the new session to the PR. Needs the CLI logged in (`devin auth login`; the Desktop login doesn't carry over). Binary: `DEVIN_BIN` / `devin_bin`, else the Devin.app bundle, else `devin` on PATH.
+- `lib/ghcontext.mjs` — `/api/gh/context?url=`: one issue/PR with parent chain, sub-issues, siblings, blockedBy/blocking, linked PRs (live GraphQL). Frontend: the drawer (`openCtx`).
 - `collectors/*.mjs` — see below. `.cache/` (gitignored) holds dumps; it is personal data.
-- `public/index.html` — the entire frontend (CSS + JS inline). Views: **Workstreams** (landing: mindmap → click a node → full-area focus view of one workstream), **Board** (Inbox + a column per workstream, drag cards), **Needs you** (flat list). Smart paste (Cmd+V outside a form field) adds an item: Teams link → `teams`, other single URL → `link`, else `note`; target = focused workstream or Inbox; undo toast.
+- `public/index.html` — the entire frontend (CSS + JS inline). Views: **Workstreams** (landing: mindmap → click a node → full-area focus view of one workstream), **Board** (Inbox + a collapsible column per workstream, drag cards), **Triage** (Inbox list, multi-select, type-ahead bulk move), **Needs you** (flat list). Smart paste (Cmd+V outside a form field) adds an item: Teams link → `teams`, other single URL → `link`, else `note`; target = focused workstream or Inbox; undo toast.
 - `design-refs/` — reference images and `after/` screenshots of the shipped views.
 
 ## Build conventions
@@ -35,8 +38,11 @@ Schema source of truth: **`README.md` in the data folder** (`$PLATE_DATA_DIR`, d
 
 ## Gotchas
 - **A standalone script cannot call MCP connectors** (Todoist etc.). Collectors read a JSON dump in `.cache/*.json` (produced inside an agent session via the MCP, or by a CLI) or hit the service REST API with a token env var.
-- **Manual sources (`teams`, `link`, `note`) have no collector.** `upsert(source, …)` only marks items of *its own* source `gone`, which is what keeps manual items safe. Any new manual source must have no collector, be added to `MANUAL_SOURCES` in `lib/store.mjs` (and `MANUAL` in the frontend), and never be fed through `upsert`. After touching `upsert.mjs`, verify a full `npm run collect` leaves manual items intact.
+- **Manual sources (`teams`, `link`, `note`, `ghref`) have no collector.** `upsert(source, …)` only marks items of *its own* source `gone`, which is what keeps manual items safe. Any new manual source must have no collector, be added to `MANUAL_SOURCES` in `lib/store.mjs` (and `MANUAL` in the frontend), and never be fed through `upsert`. After touching `upsert.mjs`, verify a full `npm run collect` leaves manual items intact.
 - **Collectors preserve `workstream`** (drags win); an incoming `workstream` is applied only when the item is first created.
+- **Two collectors share `source: session`** (`devin.mjs` owns `tool: devin`, `sessions.mjs` the rest); `upsert`'s `owns` keeps one from marking the other's items `gone`.
+- **Devin Desktop deep links:** `devin://cascade?prompt=…` only focuses the window on the open session (old editor UI handler); there is no link that starts a new session with a prompt. Triggering a Devin skill on a PR has to go through the CLI (`devin -p "/skill …"`).
+- **Devin store:** `devin list` only lists the current directory and stops at 50, so `collectors/devin.mjs` reads `sessions.db` read-only. Archiving is **not** in `sessions.db` (`hidden` stays 0): Devin Desktop keeps it in its own `User/globalStorage/state.vscdb`, key `devin.desktopShell.localSessionAnnotations.<org>` → `{"devin-acp/devin-cli/<id>": {archived, done, folder, parent}}`; the collector reads both DBs. Deep link: `devin://app/return/<base64url of /sessions/<encodeURIComponent("acp/devin-cli/<id>")>>` (Desktop shell's in-app route; verified 2026-10-26). `devin://acp/session?…` belongs to the old editor UI and answers "This session doesn't exist". Cloud links still use the acp form, untested.
 - **Rewriting `workstreams/<slug>.md`:** edit frontmatter lines in place (`patchFrontmatter`), keep the body and unknown fields (Obsidian adds `created`/`modified`). Never regenerate the whole file. `parent:` is written bare when root. Renaming changes `name` only; the slug/filename is stable.
 - `related` is undirected but stored one-sided; unlinking removes the back-reference too.
 - **GitHub live route** needs `gh auth refresh -s read:project`; without that scope use the dump route.
@@ -46,7 +52,8 @@ Schema source of truth: **`README.md` in the data folder** (`$PLATE_DATA_DIR`, d
 | file | command | status |
 |---|---|---|
 | `collectors/todoist.mjs` | `npm run collect:todoist` | **Dump**: `.cache/todoist.json`, MCP `find-tasks-by-date` shape (`startDate: today, daysCount: 21, overdueOption: include-overdue`). `TODOIST_API_TOKEN` REST path is written but never exercised. |
-| `collectors/github.mjs` | `npm run collect:github` or `node collectors/github.mjs --owner O --project N` | **Dump** (`.cache/github.json`, = `gh project item-list N --owner O --format json -L 200`); live `gh` route written, never run (no `read:project` scope). New items are routed by the workstream anchor `repo:<owner/name>`. Seeded data is example content. |
+| `collectors/github.mjs` | `npm run collect:github` (boards in `<data>/sources.md` `github_projects`) or `--owner O --project N`, optional `--query` | **Live** via `gh api graphql` (item-list has no `parent`; needs `read:project`), user or org boards, paginated. Routing on creation: `issue:` epic anchor matched against the item and its parent chain (4 levels; PRs via `closingIssuesReferences`), then `repo:`, then Inbox. A `--query` filter makes filtered-out items `gone`. Ran live against a personal user board (164 items, no hierarchy there); epic routing tested only by reading. |
+| `collectors/devin.mjs` | `npm run collect:devin` | **Live**, reads Devin's `sessions.db` (`DEVIN_SESSIONS_DB` to override). Archived (Desktop annotation) → `done`, else `idle`; also stores Devin's own `devinFolder`. `DEVIN_DESKTOP_STATE` overrides the state.vscdb path. Verified on real sessions (2026-10-26). |
 | `collectors/sessions.mjs` | `npm run collect:sessions` | **Dump**: `.cache/sessions.json`; shape documented in the file header. On the work machine something must convert the Devin CLI's session store into it. A session with `github: <item url>` inherits that item's workstream. Seeded data is example content. |
 
 Planned, not built: Google Calendar, vault projects/GPS collectors, Teams/Outlook via Graph, JSON Canvas export, git-graph view.

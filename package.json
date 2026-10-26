@@ -10,6 +10,7 @@
     "collect:todoist": "node collectors/todoist.mjs",
     "collect:github": "node collectors/github.mjs",
     "collect:sessions": "node collectors/sessions.mjs",
-    "collect": "npm run collect:todoist && npm run collect:github && npm run collect:sessions"
+    "collect:devin": "node collectors/devin.mjs",
+    "collect": "npm run collect:todoist && npm run collect:github && npm run collect:sessions && npm run collect:devin"
   }
 }

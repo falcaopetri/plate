@@ -125,7 +125,7 @@
   /* session states */
   .state { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
   .state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-  .st-waiting { color: var(--accent); } .st-running { color: var(--live); } .st-done { color: var(--text-3); }
+  .st-waiting { color: var(--accent); } .st-running { color: var(--live); } .st-done { color: var(--text-3); } .st-idle { color: var(--text-2); }
   .st-running::before { animation: pulse 1.8s ease-out infinite; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgb(95 211 162 / .6); } 100% { box-shadow: 0 0 0 8px rgb(95 211 162 / 0); } }
   @media (prefers-reduced-motion: reduce) { .st-running::before { animation: none; } }
@@ -224,6 +224,88 @@
   button.btn.danger { color: var(--late); }
   .toast.ok { display: flex; gap: 14px; align-items: center; background: rgb(14 24 22 / .96); color: var(--text); border: 1px solid var(--line-2); box-shadow: 0 10px 40px rgb(0 0 0 / .5); z-index: 30; }
   .toast.ok button { font: inherit; font-weight: 600; background: none; border: 0; color: var(--accent); cursor: pointer; }
+  /* ---------- board: collapsed columns ---------- */
+  .board { flex-wrap: wrap; }
+  .col h3.tog { cursor: pointer; user-select: none; }
+  .col h3.tog::after { content: "▾"; color: var(--text-3); font-size: var(--fs-sm); }
+  .col.closed { width: 210px; padding-bottom: var(--s1); }
+  .col.closed h3 { font-size: var(--fs-md); } .col.closed h3.tog::after { content: "▸"; }
+  .col.inbox.closed h3::before { content: none; }
+
+  /* ---------- triage ---------- */
+  .tri { max-width: 1040px; padding-bottom: 72px; }
+  .tri-bar { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; margin-bottom: var(--s4); }
+  .tri-bar .page-h { margin: 0 auto 0 0; }
+  .seg { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); }
+  .seg button { font: 500 var(--fs-xs) var(--font); color: var(--text-3); background: none; border: 0; border-radius: 99px; padding: 4px 11px; cursor: pointer; }
+  .seg button.on { background: var(--surface-3); color: var(--text); }
+  .tgrp { margin-bottom: var(--s4); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); overflow: hidden; }
+  .tgrp > h4 { display: flex; align-items: center; gap: var(--s2); margin: 0; padding: 8px 12px; font: 600 var(--fs-xs)/1.4 var(--mono); color: var(--text-2); border-bottom: 1px solid var(--line); background: var(--surface-2); cursor: pointer; }
+  .tgrp > h4 span { margin-left: auto; font-family: var(--font); color: var(--text-3); font-weight: 500; }
+  .trow { --k: var(--text-2); display: grid; grid-template-columns: 22px 16px minmax(0, 1fr) auto; gap: var(--s2); align-items: center; padding: 7px 12px; border-top: 1px solid var(--line); cursor: pointer; }
+  .trow:first-of-type { border-top: 0; }
+  .trow:hover { background: var(--surface-2); }
+  .trow.sel { background: rgb(95 211 162 / .09); }
+  .trow .g { color: var(--k); display: flex; }
+  .trow .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trow .t a { color: var(--text); text-decoration: none; } .trow .t a:hover { text-decoration: underline; text-decoration-color: var(--text-3); }
+  .trow .m { display: flex; gap: 6px; align-items: center; }
+  .trow.k-todoist { --k: var(--todo); } .trow.k-pr { --k: var(--pr); } .trow.k-issue { --k: var(--issue); } .trow.k-session { --k: var(--sess); } .trow.k-teams { --k: #9db4ff; } .trow.k-link { --k: #7fd0e0; } .trow.k-note { --k: #d9c79a; }
+  input[type=checkbox] { accent-color: var(--live); margin: 0; }
+  .tri-act { position: fixed; left: 50%; bottom: calc(var(--dock-h) + var(--s3)); transform: translateX(-50%); z-index: 11; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; padding: 10px 12px 10px 16px;
+    width: min(860px, calc(100vw - 32px)); border: 1px solid var(--line-2); border-radius: var(--r-lg); background: rgb(10 20 18 / .9); backdrop-filter: blur(20px); box-shadow: 0 14px 40px rgb(0 0 0 / .5); font-size: var(--fs-sm); }
+  .tri-act b { font-variant-numeric: tabular-nums; }
+  .tri-act input { width: 200px; }
+  .tri-act .lnk { margin-left: auto; background: none; border: 0; color: var(--text-3); font: inherit; cursor: pointer; } .tri-act .lnk:hover { color: var(--text); }
+  .tri-act .dests { flex: 0 0 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+  .dest { font: 500 var(--fs-sm) var(--font); color: var(--text); background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 99px; padding: 4px 12px; cursor: pointer; }
+  .dest:hover { background: var(--surface-3); } .dest.first { border-color: var(--live); } .dest.new { color: var(--live); border-style: dashed; }
+  .tri-act kbd, .tri-bar kbd { font: 500 10.5px var(--mono); padding: 1px 5px; border: 1px solid var(--line-2); border-radius: 5px; color: var(--text-3); }
+  /* radial mindmap: a center node, one color per top-level branch (--b), boxes centered on their point */
+  .canvas { margin: 0 auto; }
+  .wnode { --b: var(--text-2); transform: translate(-50%, -50%); flex-direction: row; align-items: center; justify-content: center; gap: 7px; max-width: 176px;
+    padding: 7px 12px; border: 1.5px solid color-mix(in srgb, var(--b) 75%, transparent); border-radius: 12px; text-align: center; }
+  .wnode .wn { min-width: 0; font-size: var(--fs-sm); font-weight: 600; color: color-mix(in srgb, var(--b) 55%, var(--text)); white-space: normal; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .wnode.root { padding: 9px 14px; } .wnode.root .wn { font-size: var(--fs-md); }
+  .wnode.need { border-color: var(--b); box-shadow: 0 0 22px -8px rgb(255 165 110 / .5); }
+  .wc { flex: none; font-size: var(--fs-xs); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .wneed { flex: none; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-size: 10.5px; font-weight: 700; line-height: 18px; text-align: center; }
+  .hub { position: absolute; transform: translate(-50%, -50%); padding: 12px 22px; border: 2px solid var(--text); border-radius: 14px; background: rgb(10 20 18 / .96);
+    color: var(--text); font-size: var(--fs-lg); font-weight: 600; letter-spacing: -.01em; text-transform: none; white-space: nowrap; }
+  .hub.over { border-color: var(--live); color: var(--live); }
+  .edge.br { stroke: var(--b); stroke-width: 2.2; opacity: .9; }
+  /* ---------- ticket context drawer ---------- */
+  .ctx-scrim { position: fixed; inset: 0; z-index: 25; background: rgb(0 0 0 / .35); }
+  .ctx { position: fixed; top: 0; right: 0; bottom: 0; z-index: 26; width: min(560px, 100vw); overflow-y: auto; padding: var(--s5); border-left: 1px solid var(--line-2);
+    background: rgb(9 17 16 / .97); backdrop-filter: blur(20px); box-shadow: -20px 0 60px rgb(0 0 0 / .5); animation: ctxin .22s ease both; }
+  @keyframes ctxin { from { transform: translateX(24px); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .ctx { animation: none; } }
+  .ctx-top { display: flex; gap: var(--s2); align-items: center; margin-bottom: var(--s4); color: var(--text-3); font-size: var(--fs-xs); letter-spacing: .08em; text-transform: uppercase; }
+  .ctx-top button { margin-left: auto; } .ctx-top button + button { margin-left: 0; }
+  .ctx-anc { display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--s3); }
+  .ctx-anc .tk { padding-left: calc(var(--i) * 14px); }
+  .ctx-me { padding: var(--s4); border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--surface-2); }
+  .ctx-me h2 { margin: 6px 0 var(--s2); font-size: var(--fs-lg); font-weight: 600; line-height: 1.3; }
+  .ctx-me h2 a { color: var(--text); text-decoration: none; } .ctx-me h2 a:hover { text-decoration: underline; text-decoration-color: var(--text-3); }
+  .ctx h4 { display: flex; align-items: center; gap: var(--s2); margin: var(--s5) 0 var(--s2); font-size: var(--fs-xs); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
+  .prog { flex: 1; max-width: 120px; height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; } .prog i { display: block; height: 100%; background: var(--live); }
+  .tk { display: grid; grid-template-columns: 10px auto minmax(0, 1fr) auto; gap: var(--s2); align-items: center; padding: 6px 8px; border-radius: var(--r-sm); cursor: pointer; font-size: var(--fs-sm); }
+  .tk:hover { background: var(--surface-2); }
+  .tk .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
+  .tk .dot.OPEN { background: var(--live); } .tk .dot.CLOSED, .tk .dot.MERGED { background: var(--pr); } .tk .dot.NOT_PLANNED, .tk .dot.DRAFT { background: var(--text-3); }
+  .tk .rf { font: 500 var(--fs-xs) var(--mono); color: var(--text-3); white-space: nowrap; }
+  .tk .tt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-2); } .tk.closed .tt { text-decoration: line-through; text-decoration-color: var(--text-3); }
+  .tk .side { display: flex; gap: 6px; align-items: center; }
+  .tk .add { font: 600 var(--fs-xs) var(--font); color: var(--text-3); background: none; border: 1px dashed var(--line-2); border-radius: 99px; padding: 1px 8px; cursor: pointer; }
+  .tk .add:hover { color: var(--text); border-color: var(--text-3); }
+  .ctxbtn { margin-left: auto; font: 500 var(--fs-xs) var(--mono); letter-spacing: 0; text-transform: none; color: var(--text-3); background: none; border: 0; border-radius: 6px; padding: 1px 5px; cursor: pointer; }
+  .ctxbtn:hover { color: var(--text); background: var(--surface-3); }
+  .syncbtn { font: 500 var(--fs-xs) var(--font); color: var(--text-3); background: none; border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; cursor: pointer; white-space: nowrap; }
+  .syncbtn:hover { color: var(--text); border-color: var(--line-2); } .syncbtn.bad { color: var(--late); border-color: rgb(240 112 127 / .4); }
+  .devrev { font: 600 var(--fs-xs) var(--font); color: var(--sess); background: none; border: 1px dashed var(--line-2); border-radius: 99px; padding: 1px 9px; cursor: pointer; }
+  .devrev:hover { color: var(--text); border-color: var(--text-3); } .devrev:disabled { opacity: .5; cursor: default; }
+  a.chip { text-decoration: none; }
   @media (max-width: 760px) {
     header.top { flex-wrap: wrap; padding: var(--s4); gap: var(--s3); } .clock { margin-left: 0; }
     main { padding: var(--s3) var(--s4) calc(var(--dock-h) + var(--s5)); }
@@ -234,12 +316,14 @@
   <div class="brand">Plate <span>/ <span id="vname">Board</span></span></div>
   <div class="clock" id="clock"></div>
   <div class="date" id="date"></div>
+  <div id="sync"></div>
   <div class="stats" id="stats"></div>
 </header>
 <main id="main"></main>
 <nav class="dock">
   <button data-v="ws"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5H5v5M12 11.5h7v5"/></svg>Workstreams</button>
   <button data-v="board"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="10" rx="1.5"/><rect x="17" y="4" width="4" height="13" rx="1.5"/></svg>Board</button>
+  <button data-v="triage"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/><path d="m15 16 2 2 4-4"/></svg>Triage<span class="pip" id="tpip" style="background:var(--surface-3);color:var(--text)"></span></button>
   <button data-v="needs"><svg class="i" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Needs you<span class="pip" id="pip"></span></button>
 </nav>
 <script>
@@ -247,8 +331,27 @@ let S, view = 'ws', selWs = null;
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-async function load() { S = await (await fetch('/api/state')).json(); render(); }
-const VNAME = { ws: 'Workstreams', board: 'Board', needs: 'Needs you' };
+let lastState = '';
+async function load() { const txt = await (await fetch('/api/state')).text(); lastState = txt; S = JSON.parse(txt); render(); }
+// background refresh: collectors run inside the server; re-render only when data changed and you're not mid-edit or mid-drag
+async function refresh() {
+  if (document.hidden) return;
+  const txt = await (await fetch('/api/state')).text().catch(() => lastState);
+  if (txt === lastState) return;
+  const busy = document.activeElement?.closest?.('input, textarea, select') || document.querySelector('.dragging');
+  S = JSON.parse(txt);
+  if (busy) { syncBadge(); return; } // keep lastState stale so the next tick renders
+  lastState = txt; render();
+}
+setInterval(refresh, 20000);
+document.addEventListener('visibilitychange', refresh);
+function syncBadge() {
+  const c = S.collect || {}, names = Object.keys(c);
+  const latest = names.map((n) => c[n].at).sort().pop(), bad = names.filter((n) => !c[n].ok);
+  $('#sync').innerHTML = `<button class="syncbtn ${bad.length ? 'bad' : ''}" title="${esc(names.map((n) => `${n}: ${c[n].ok ? 'ok' : 'FAILED'} · ${c[n].msg} · ${new Date(c[n].at).toLocaleTimeString()}`).join('\n') || 'No collector has run yet')}">${bad.length ? `⚠ ${esc(bad.join(', '))} failed` : latest ? `Synced ${ago(latest)}` : 'Not synced'} · Sync now</button>`;
+  $('#sync button').onclick = async () => { $('#sync button').textContent = 'Syncing…'; await fetch('/api/collect', { method: 'POST' }); setTimeout(refresh, 4000); setTimeout(refresh, 15000); };
+}
+const VNAME = { ws: 'Workstreams', board: 'Board', triage: 'Triage', needs: 'Needs you' };
 const pad = (n) => String(n).padStart(2, '0');
 function tick() {
   const d = new Date();
@@ -259,12 +362,16 @@ tick(); setInterval(tick, 20000);
 function render() {
   document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.v === view));
   $('#vname').textContent = VNAME[view];
-  const need = S.items.filter((i) => i.needsYou).length, inbox = S.items.filter((i) => !i.workstream).length;
+  const need = S.items.filter((i) => i.needsYou).length, inbox = S.items.filter((i) => !i.workstream && i.state !== 'done').length;
   $('#stats').innerHTML = `<div class="stat"><b>${S.items.length}</b><span>Items</span></div><div class="stat"><b>${inbox}</b><span>Inbox</span></div>`
     + `<div class="stat need link ${need ? '' : 'zero'}" onclick="document.querySelector('[data-v=needs]').click()"><b>${need}</b><span>Needs you</span></div>`;
   $('#pip').textContent = need; $('#pip').hidden = !need;
-  $('#main').innerHTML = { ws, board, needs }[view]();
+  $('#tpip').textContent = inbox; $('#tpip').hidden = !inbox;
+  syncBadge();
+  $('#main').innerHTML = { ws, board, triage, needs }[view]();
+  document.querySelector('.tri-act')?.remove();
   if (view === 'board') wireDnD();
+  if (view === 'triage') wireTriage();
   if (view === 'ws') wireWs();
 }
 document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => { view = b.dataset.v; render(); }));
@@ -292,27 +399,50 @@ const card = (i, drag = true, extra = '') => {
   const k = i.source === 'todoist' ? 'todoist' : (i.kind || i.source);
   const label = { todoist: 'Todoist', pr: 'PR', issue: 'Issue', draft: 'Draft PR', session: 'Session', teams: 'Teams', link: 'Link', note: 'Note' }[k] || esc(k);
   return `<div class="card k-${esc(k)} ${i.state === 'done' ? 'done' : ''} ${i.needsYou ? 'need' : ''}" ${drag ? `draggable="true" data-id="${esc(i.id)}"` : ''}>
-  <div class="kind">${GLYPH[k] || ''}${label}${i.repo ? `<span class="ref">${esc(i.repo)}#${esc(i.number)}</span>` : ''}</div>
+  <div class="kind">${GLYPH[k] || ''}${label}${i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context: parent, sub-issues, PRs">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : `<span class="ref">${esc(i.repo)}#${esc(i.number)}</span>`) : ''}</div>
   <a class="ttl" ${SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"` : ''} ${/^https?:/i.test(i.url || '') ? 'target="_blank" rel="noopener"' : ''}>${esc(i.title)}</a>
-  <div class="chips">${meta(i)}${extra}</div></div>`;
+  <div class="chips">${meta(i)}${i.kind === 'pr' ? devinBits(i.url) : ''}${extra}</div></div>`;
 };
 const chip = (t, c = '') => t ? `<span class="chip ${c}">${esc(t)}</span>` : '';
+// Devin review of a PR: run state, the session(s) it produced, and the trigger button
+const devinBits = (url) => {
+  if (!GH_TICKET.test(url || '')) return '';
+  const pr = url.replace(/[#?].*$/, ''), r = S.runs?.[pr];
+  const st = r ? `<span class="chip ${r.state === 'failed' ? 'late' : 'dim'}" title="${esc(`${r.dir}\n${r.msg || ''}`)}">${{ running: 'Devin reviewing…', done: 'Devin review done', failed: 'Devin review failed' }[r.state]}</span>` : '';
+  const sess = S.items.filter((i) => i.tool === 'devin' && i.anchor === pr).map((i) => `<a class="chip" href="${esc(i.url)}" title="Open the review session in Devin">▸ ${esc(i.title.slice(0, 40))}</a>`).join('');
+  return `${st}${sess}${r?.state === 'running' ? '' : `<button class="devrev" data-review="${esc(pr)}" title="Run the Devin review skill on this PR">Review no Devin</button>`}`;
+};
+const base = (p) => String(p || '').split(/[\\/]/).filter(Boolean).pop() || '';
+const ago = (t) => {
+  if (!t) return '';
+  const m = (Date.now() - new Date(t)) / 6e4;
+  return m < 60 ? `${Math.max(1, Math.round(m))}m ago` : m < 1440 ? `${Math.round(m / 60)}h ago` : m < 43200 ? `${Math.round(m / 1440)}d ago` : new Date(t).toLocaleDateString('en-CA');
+};
 const meta = (i) => i.source === 'todoist' ? `${dueTag(i)}${i.recurring ? `<span class="chip dim" title="Recurring">${REPEAT}</span>` : ''}`
-  : [i.source === 'session' ? `<span class="state st-${esc(i.state)}">${esc(i.state)}</span>` : '', i.source === 'session' ? chip(i.tool, 'dim') : '', chip(i.status), chip(i.iteration, 'dim'), dueTag(i)].join('');
+  : [i.source === 'session' ? `<span class="state st-${esc(i.state)}">${esc(i.state)}</span>` : '', i.source === 'session' ? chip(i.tool, 'dim') : '',
+    i.cwd ? `<span class="chip dim" title="${esc(i.cwd)}">${esc(base(i.cwd))}</span>` : '', chip(ago(i.lastActivity), 'dim'), chip(i.status), chip(i.iteration, 'dim'), dueTag(i)].join('');
+// Board columns start collapsed (header + counts, still a drop target); the expanded set is remembered per browser.
+const store = { get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+let openCols = new Set(store.get('plate.openCols', []));
 const col = (slug, name, items, cls = '') => {
-  const w = items.filter((i) => i.needsYou).length;
-  return `<div class="col ${cls}" data-ws="${slug ?? ''}">
-  <h3><span>${esc(name)}</span><span class="counts">${w ? `<span class="w">${w} waiting</span>` : ''}<span class="n">${items.length}</span></span></h3>${items.map((i) => card(i)).join('') || '<div class="none">Drop items here</div>'}</div>`;
+  const w = items.filter((i) => i.needsYou).length, key = slug ?? '__inbox', open = openCols.has(key);
+  return `<div class="col ${cls} ${open ? '' : 'closed'}" data-ws="${slug ?? ''}">
+  <h3 class="tog" data-tog="${esc(key)}"><span>${esc(name)}</span><span class="counts">${w ? `<span class="w">${w} waiting</span>` : ''}<span class="n">${items.length}</span></span></h3>${open ? items.map((i) => card(i)).join('') || '<div class="none">Drop items here</div>' : ''}</div>`;
 };
 const ORDER = { session: 0, teams: 1, link: 2, note: 3, pr: 4, issue: 5, draft: 6 };
 const byDue = (a, b) => (ORDER[a.kind] ?? 7) - (ORDER[b.kind] ?? 7) || (a.due || '9').localeCompare(b.due || '9');
 
 function board() {
-  const inbox = S.items.filter((i) => !i.workstream).sort(byDue);
-  return `<div class="board">${col(null, 'Inbox', inbox, 'inbox')}${S.workstreams.map((w) =>
-    col(w.slug, w.name, S.items.filter((i) => i.workstream === w.slug).sort(byDue))).join('')}</div>`;
+  const live = S.items.filter((i) => i.state !== 'done'); // archived sessions and closed GitHub items stay in each workstream's "Recently done"
+  const inbox = live.filter((i) => !i.workstream).sort(byDue);
+  return `<div class="page-h"><p>Click a column to expand it · drop cards on a collapsed column to move them · bulk-classify in Triage</p></div><div class="board">${col(null, 'Inbox', inbox, 'inbox')}${S.workstreams.filter((w) => w.state !== 'done').map((w) =>
+    col(w.slug, w.name, live.filter((i) => i.workstream === w.slug).sort(byDue))).join('')}</div>`;
 }
 function wireDnD() {
+  document.querySelectorAll('[data-tog]').forEach((h) => (h.onclick = () => {
+    const k = h.dataset.tog; openCols.has(k) ? openCols.delete(k) : openCols.add(k);
+    store.set('plate.openCols', [...openCols]); render();
+  }));
   document.querySelectorAll('.card[draggable]').forEach((c) => {
     c.ondragstart = (e) => { e.dataTransfer.setData('text/plain', c.dataset.id); c.classList.add('dragging'); };
     c.ondragend = () => c.classList.remove('dragging');
@@ -336,7 +466,9 @@ function needs() {
   return `${head}<div class="needs">${list.map((i) => card(i, false, i.workstream ? `<span class="chip ws">▸ ${esc(name(i.workstream))}</span>` : '')).join('')}</div>`;
 }
 // ---------- workstreams (mindmap + drill-in) ----------
-const NW = 214, NH = 68, GX = 76, GY = 18, PAD = 8;
+const NW = 176, R0 = 140, RG = 96, AX = 1.9, PAD = 40; // radial mindmap: max box width, first ring, ring gap (vertical), ring x-stretch, margin
+// one color per top-level branch; amber stays reserved for "needs you"
+const BRANCH = ['#7fb5f0', '#e58a9b', '#8fd0c4', '#b69cf5', '#a3cf72', '#d9c79a', '#f0a6d8', '#7fd0e0', '#9db4ff', '#c9b37a'];
 const post = async (url, body) => {
   const r = await fetch(url, { method: 'POST', body: JSON.stringify(body) });
   const j = await r.json();
@@ -352,32 +484,48 @@ function toast(msg, undo) {
 const wsOf = (slug) => S.workstreams.find((w) => w.slug === slug);
 const wsStats = (slug) => { const m = S.items.filter((i) => i.workstream === slug); return { n: m.length, need: m.filter((i) => i.needsYou).length }; };
 
+// Radial layout: top-level workstreams on an elliptical ring around the center node; each subtree gets an
+// angle slice proportional to its leaves and continues outward on further rings.
 function layoutWs() {
   const slugs = new Set(S.workstreams.map((w) => w.slug));
   const kids = (p) => S.workstreams.filter((w) => (w.parent && slugs.has(w.parent) ? w.parent : null) === p);
-  const pos = new Map(); let leaf = 0, maxD = 0;
-  const place = (w, d, seen) => {
-    seen.add(w.slug); maxD = Math.max(maxD, d);
-    const ch = kids(w.slug).filter((c) => !seen.has(c.slug));
-    let y;
-    if (!ch.length) y = leaf++ * (NH + GY);
-    else { const ys = ch.map((c) => place(c, d + 1, seen)); y = (ys[0] + ys[ys.length - 1]) / 2; }
-    pos.set(w.slug, { x: PAD + d * (NW + GX), y: PAD + y, d });
-    return y;
+  const leaves = new Map();
+  const count = (w, seen) => { seen.add(w.slug); const ch = kids(w.slug).filter((c) => !seen.has(c.slug)); const n = ch.length ? ch.reduce((t, c) => t + count(c, seen), 0) : 1; leaves.set(w.slug, n); return n; };
+  const seen0 = new Set(), roots = kids(null);
+  roots.forEach((r) => count(r, seen0));
+  S.workstreams.filter((w) => !seen0.has(w.slug)).forEach((w) => { roots.push(w); count(w, seen0); }); // broken/cyclic parents surface as roots
+  const total = Math.max(1, roots.reduce((t, r) => t + leaves.get(r.slug), 0));
+  const r1 = Math.max(R0, (total * 100) / (2 * Math.PI * (1 + AX) / 2)); // ~100px of ring perimeter per leaf
+  const pos = new Map(), seen = new Set();
+  const place = (w, d, a0, a1, color) => {
+    seen.add(w.slug);
+    const a = (a0 + a1) / 2, r = r1 + RG * (1 - 0.75 ** d) / 0.25; // each deeper ring 25% closer than the previous gap
+    pos.set(w.slug, { x: r * AX * Math.cos(a), y: r * Math.sin(a), d, a, color });
+    let at = a0;
+    for (const c of kids(w.slug).filter((c) => !seen.has(c.slug))) { const span = ((a1 - a0) * leaves.get(c.slug)) / leaves.get(w.slug); place(c, d + 1, at, at + span, color); at += span; }
   };
-  const seen = new Set();
-  kids(null).forEach((r) => place(r, 0, seen));
-  S.workstreams.filter((w) => !seen.has(w.slug)).forEach((w) => place(w, 0, seen)); // broken/cyclic parents surface as roots
-  return { pos, w: PAD * 2 + (maxD + 1) * NW + maxD * GX, h: PAD * 2 + Math.max(leaf, 1) * (NH + GY) - GY };
+  let at = -Math.PI / 2 - Math.PI / Math.max(roots.length, 2); // start a little before 12 o'clock so a lone branch isn't vertical
+  // a branch fans out over at most half the circle, so a lone big branch doesn't wrap around the center
+  roots.forEach((r, n) => { const share = (2 * Math.PI * leaves.get(r.slug)) / total, span = Math.min(share, Math.PI); place(r, 0, at + (share - span) / 2, at + (share + span) / 2, BRANCH[n % BRANCH.length]); at += share; });
+  // tight bounding box around the center node and every box (a one-sided map doesn't reserve the empty side)
+  let x0 = -90, x1 = 90, y0 = -30, y1 = 30;
+  for (const p of pos.values()) { x0 = Math.min(x0, p.x - NW / 2); x1 = Math.max(x1, p.x + NW / 2); y0 = Math.min(y0, p.y - 26); y1 = Math.max(y1, p.y + 26); }
+  const cx = PAD / 2 - x0, cy = PAD / 2 - y0;
+  for (const p of pos.values()) { p.x += cx; p.y += cy; }
+  return { pos, w: x1 - x0 + PAD, h: y1 - y0 + PAD, cx, cy };
 }
-
+// Curves leave the parent along the line toward the child and arrive horizontally (side nodes) or vertically (top/bottom).
+const curve = (ax, ay, bx, by) => {
+  const dx = bx - ax, dy = by - ay, side = Math.abs(dx) > Math.abs(dy) * 1.2;
+  const c2 = side ? [bx - dx * 0.45, by] : [bx, by - dy * 0.45];
+  return `M${ax} ${ay} C${ax + dx * 0.35} ${ay + dy * 0.35} ${c2[0]} ${c2[1]} ${bx} ${by}`;
+};
 function edgesSvg(L) {
   let out = '';
   for (const w of S.workstreams) {
-    const a = L.pos.get(w.parent), b = L.pos.get(w.slug);
-    if (!a || !b) continue;
-    const x1 = a.x + NW, y1 = a.y + NH / 2, x2 = b.x, y2 = b.y + NH / 2, mx = (x1 + x2) / 2;
-    out += `<path class="edge" d="M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}"/>`;
+    const b = L.pos.get(w.slug); if (!b) continue;
+    const a = L.pos.get(w.parent) || { x: L.cx, y: L.cy };
+    out += `<path class="edge br" style="--b:${b.color}" d="${curve(a.x, a.y, b.x, b.y)}"/>`;
   }
   const done = new Set();
   for (const w of S.workstreams) for (const r of w.related) {
@@ -386,23 +534,14 @@ function edgesSvg(L) {
     if (done.has(key) || !a || !b) continue;
     done.add(key);
     const hl = selWs && (w.slug === selWs || r === selWs) ? ' hl' : '';
-    let d;
-    if (a.d === b.d) { // same column: bulge out to the right
-      const x = a.x + NW, ya = a.y + NH / 2, yb = b.y + NH / 2, k = 46;
-      d = `M${x} ${ya} C${x + k} ${ya} ${x + k} ${yb} ${x} ${yb}`;
-    } else {
-      const [l, rr] = a.d < b.d ? [a, b] : [b, a];
-      const x1 = l.x + NW, y1 = l.y + NH * .72, x2 = rr.x, y2 = rr.y + NH * .72, mx = (x1 + x2) / 2;
-      d = `M${x1} ${y1} C${mx} ${y1 + 26} ${mx} ${y2 + 26} ${x2} ${y2}`;
-    }
-    out += `<path class="edge rel${hl}" d="${d}"/>`;
+    const [qx, qy] = [L.cx + ((a.x + b.x) / 2 - L.cx) * 0.4, L.cy + ((a.y + b.y) / 2 - L.cy) * 0.4]; // bow toward the center
+    out += `<path class="edge rel${hl}" d="M${a.x} ${a.y} Q${qx} ${qy} ${b.x} ${b.y}"/>`;
   }
   return out;
 }
-
 // ---------- workstream focus: click a node → full-area view of that one workstream ----------
-const SAFE_URL = /^(https?|msteams):\/\//i; // only link-out schemes become hrefs
-const MANUAL = ['teams', 'link', 'note'];
+const SAFE_URL = /^(https?|msteams|devin):\/\//i; // only link-out schemes become hrefs (devin:// opens the session in Devin Desktop)
+const MANUAL = ['teams', 'link', 'note', 'ghref'];
 let focus = null, propsOpen = false, enter = false; // focus = slug of the workstream in full view
 const setFocus = (slug) => { focus = slug; selWs = slug; enter = true; window.scrollTo(0, 0); render(); };
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && view === 'ws' && focus && !e.target.closest?.('input, select, textarea')) setFocus(null); });
@@ -417,16 +556,16 @@ function mindmap() {
   const L = layoutWs();
   const nodes = S.workstreams.map((w) => {
     const p = L.pos.get(w.slug), st = wsStats(w.slug);
-    return `<div class="wnode ${st.need ? 'need' : ''} ${esc(w.state)}" draggable="true" data-slug="${esc(w.slug)}"
-      style="left:${p.x}px;top:${p.y}px;width:${NW}px;height:${NH}px" title="${esc(w.name)}">
-      <div class="wn">${esc(w.name)}</div>
-      <div class="wrow"><span class="chip">${st.n} items</span>${st.need ? `<span class="chip need">${st.need} needs you</span>` : ''}${w.state !== 'active' ? `<span class="chip dim">${esc(w.state)}</span>` : ''}</div></div>`;
+    return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''} ${esc(w.state)}" draggable="true" data-slug="${esc(w.slug)}"
+      style="left:${p.x}px;top:${p.y}px;--b:${p.color}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}">
+      <span class="wn">${esc(w.name)}</span>${st.need ? `<span class="wneed">${st.need}</span>` : st.n ? `<span class="wc">${st.n}</span>` : ''}</div>`;
   }).join('');
   return `<div class="ws-main">
-    <div class="ws-bar"><div class="page-h"><h2>Workstreams</h2><p>Click a node to focus on it · drag a node onto another to re-parent · dashed = related · paste a link or note to add it to the Inbox</p></div>
+    <div class="ws-bar"><div class="page-h"><h2>Workstreams</h2><p>Click a node to focus on it · drag a node onto another to re-parent, onto the center to make it a root · dashed = related · paste a link or note to add it to the Inbox</p></div>
       <input id="newName" placeholder="New workstream…" size="18"><button class="btn" id="newRoot">+ Root</button>
-      <span class="rootzone" id="rootzone">Drop here → make root</span></div>
-    <div class="canvas-scroll"><div class="canvas" style="width:${L.w}px;height:${L.h}px"><svg width="${L.w}" height="${L.h}">${edgesSvg(L)}</svg>${nodes || '<div class="empty">No workstreams yet. Create one above.</div>'}</div></div></div>`;
+</div>
+    <div class="canvas-scroll"><div class="canvas" style="width:${L.w}px;height:${L.h}px"><svg width="${L.w}" height="${L.h}">${edgesSvg(L)}</svg>
+      <div class="hub" id="rootzone" style="left:${L.cx}px;top:${L.cy}px" title="Drop a workstream here to make it top-level">On my plate</div>${nodes || '<div class="empty">No workstreams yet. Create one above.</div>'}</div></div></div>`;
 }
 
 // action-first grouping of one workstream's items
@@ -436,7 +575,7 @@ function groupItems(items) {
     const review = i.kind === 'pr' && i.state === 'open' && /review/i.test(i.status || '');
     if (i.state === 'done' || i.state === 'gone') g.done.push(i);
     else if (i.needsYou || review) g.need.push(i);
-    else if (MANUAL.includes(i.source)) g.talk.push(i);
+    else if (MANUAL.includes(i.source) && i.source !== 'ghref') g.talk.push(i);
     else if (i.source === 'todoist') g.soon.push(i);
     else g.prog.push(i);
   }
@@ -533,10 +672,173 @@ function wireWs() {
   document.querySelectorAll('[data-unrel]').forEach((c) => (c.onclick = () => save(slug, { related: curRel.filter((r) => r !== c.dataset.unrel) })));
 }
 
+// ---------- ticket context: a GitHub issue/PR with parent chain, sub-issues, siblings, PRs, dependencies ----------
+const GH_TICKET = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/(issues|pull)\/\d+/i;
+let ctxStack = []; // urls visited in the drawer, for Back
+const onPlate = (url) => S.items.find((i) => i.state !== 'gone' && (i.url || '').replace(/[#?].*$/, '') === url);
+async function openCtx(url, push = true) {
+  if (push) ctxStack.push(url);
+  closeCtx(false);
+  const scrim = document.createElement('div'); scrim.className = 'ctx-scrim'; scrim.onclick = () => closeCtx();
+  const d = document.createElement('aside'); d.className = 'ctx'; d.innerHTML = '<div class="ctx-top">Ticket context</div><p class="hint">Loading from GitHub…</p>';
+  document.body.append(scrim, d);
+  const r = await fetch(`/api/gh/context?url=${encodeURIComponent(url)}`), j = await r.json();
+  if (!document.body.contains(d)) return;
+  d.innerHTML = r.ok ? ctxHtml(j) : `<div class="ctx-top">Ticket context<button class="btn" data-x>Close</button></div><div class="empty">${esc(j.error)}</div>`;
+  d.querySelectorAll('[data-go]').forEach((el) => (el.onclick = (e) => { if (!e.target.closest('a, button')) openCtx(el.dataset.go); }));
+  d.querySelectorAll('[data-add]').forEach((b) => (b.onclick = async () => {
+    const r2 = await post('/api/items/add-github', { url: b.dataset.add, workstream: onPlate(j.ticket.url)?.workstream || null });
+    if (r2) { await load(); openCtx(ctxStack.at(-1), false); }
+  }));
+  d.querySelector('[data-back]')?.addEventListener('click', () => { ctxStack.pop(); openCtx(ctxStack.at(-1), false); });
+  d.querySelector('[data-x]')?.addEventListener('click', () => closeCtx());
+}
+function closeCtx(reset = true) {
+  document.querySelectorAll('.ctx, .ctx-scrim').forEach((x) => x.remove());
+  if (reset) ctxStack = [];
+}
+function ctxHtml(c) {
+  const tk = (t, indent) => {
+    if (!t) return '';
+    const p = onPlate(t.url), closed = t.state !== 'OPEN' && t.state !== 'DRAFT';
+    const ws = p ? `<span class="chip ws">▸ ${esc(p.workstream ? wsOf(p.workstream)?.name || p.workstream : 'Inbox')}</span>` : `<button class="add" data-add="${esc(t.url)}" title="Add to your plate">+ plate</button>`;
+    return `<div class="tk ${closed ? 'closed' : ''}" data-go="${esc(t.url)}" ${indent != null ? `style="--i:${indent}"` : ''} title="${esc(t.state)} · open its context">
+      <span class="dot ${esc(t.state)}"></span><span class="rf">${esc(t.repo)}#${esc(t.number)}</span><span class="tt">${esc(t.title)}</span>
+      <span class="side">${t.subs ? `<span class="chip dim">${t.subs.completed}/${t.subs.total}</span>` : ''}${ws}<a href="${esc(t.url)}" target="_blank" rel="noopener" class="chip dim" title="Open on GitHub">↗</a></span></div>`;
+  };
+  const sec = (title, list, extra = '') => list?.length ? `<h4>${title} · ${list.length}${extra}</h4>${list.map((t) => tk(t)).join('')}` : '';
+  const t = c.ticket, p = onPlate(t.url), subs = c.subIssues, done = subs.filter((x) => x.state !== 'OPEN').length;
+  return `<div class="ctx-top">Ticket context${ctxStack.length > 1 ? '<button class="btn" data-back>← Back</button>' : ''}<button class="btn" data-x>Close</button></div>
+    ${c.ancestors.length ? `<div class="ctx-anc">${c.ancestors.map((a, n) => tk(a, n)).join('')}</div>` : ''}
+    <div class="ctx-me"><div class="kind" style="color:var(--${t.kind === 'pr' ? 'pr' : 'issue'})">${GLYPH[t.kind] || ''} ${t.kind === 'pr' ? 'Pull request' : 'Issue'} · <span class="rf">${esc(t.repo)}#${esc(t.number)}</span> · ${esc(t.state.toLowerCase())}</div>
+      <h2><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.title)}</a></h2>
+      <div class="chips">${t.kind === 'pr' ? devinBits(t.url) : ''}${p ? `<span class="chip">▸ ${esc(p.workstream ? wsOf(p.workstream)?.name || p.workstream : 'Inbox')}</span>${chip(p.status)}${chip(p.iteration, 'dim')}` : `<button class="add" data-add="${esc(t.url)}">+ add to plate</button>`}
+        ${(t.assignees || []).map((a) => chip('@' + a, 'dim')).join('')}${(t.labels || []).map((l) => chip(l, 'dim')).join('')}</div></div>
+    ${c.via ? `<h4>Closes · ${c.closes.length}</h4>${c.closes.map((x) => tk(x)).join('')}<p class="hint">Hierarchy below is ${esc(c.via.repo)}#${esc(c.via.number)}'s.</p>` : ''}
+    ${sec('Sub-issues', subs, subs.length ? ` <span class="prog"><i style="width:${(100 * done) / subs.length}%"></i></span> ${done}/${subs.length}` : '')}
+    ${sec('Blocked by', c.blockedBy)}${sec('Blocking', c.blocking)}
+    ${t.kind !== 'pr' ? sec('Pull requests', c.prs) : ''}
+    ${sec(`Siblings under ${c.ancestors.length ? '#' + c.ancestors.at(-1).number : 'parent'}`, c.siblings)}
+    ${!c.ancestors.length && !subs.length && !c.siblings.length && !c.blockedBy.length && !c.blocking.length && !(c.prs || []).length && !c.via ? '<p class="hint">No parent, sub-issues, dependencies or linked PRs.</p>' : ''}`;
+}
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-review]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation(); b.disabled = true; b.textContent = 'Starting…';
+  const r = await post('/api/devin/review', { url: b.dataset.review });
+  if (r) toast(`Devin review started in ${r.dir}`);
+  await load(); if (document.querySelector('.ctx') && ctxStack.length) openCtx(ctxStack.at(-1), false);
+}, true);
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-ctx]'); if (b) { e.preventDefault(); e.stopPropagation(); openCtx(b.dataset.ctx); } }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.querySelector('.ctx')) { e.stopImmediatePropagation(); closeCtx(); } }, true);
+
+// ---------- triage: dense Inbox list, multi-select, type-ahead move ----------
+let tsel = new Set(), tlast = null, tscope = 'inbox', tkind = 'all';
+const kindOf = (i) => (i.source === 'todoist' ? 'todoist' : i.kind || i.source);
+const KGROUP = { session: 'Sessions', todoist: 'Todoist', pr: 'GitHub', issue: 'GitHub', draft: 'GitHub', teams: 'Links & notes', link: 'Links & notes', note: 'Links & notes' };
+function triageList() {
+  return S.items.filter((i) => i.state !== 'done' && (tscope === 'all' || !i.workstream) && (tkind === 'all' || KGROUP[kindOf(i)] === tkind))
+    .sort((a, b) => (b.lastActivity || b.updated || '').localeCompare(a.lastActivity || a.updated || ''));
+}
+function triage() {
+  const list = triageList();
+  const groups = new Map(); // sessions by directory (one repo ≈ one workstream), the rest by kind
+  for (const i of list) {
+    const g = i.source === 'session' ? (i.cwd || 'Sessions (no directory)') : KGROUP[kindOf(i)] || kindOf(i);
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(i);
+  }
+  for (const id of [...tsel]) if (!list.some((i) => i.id === id)) tsel.delete(id);
+  const kinds = ['all', ...new Set(S.items.filter((i) => i.state !== 'done').map((i) => KGROUP[kindOf(i)]).filter(Boolean))];
+  const seg = (attr, cur, opts) => `<div class="seg">${opts.map(([v, t]) => `<button data-${attr}="${esc(v)}" class="${v === cur ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>`;
+  const row = (i) => {
+    const k = kindOf(i), href = SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"${/^https?:/i.test(i.url) ? ' target="_blank" rel="noopener"' : ''}` : '';
+    return `<div class="trow k-${esc(k)} ${tsel.has(i.id) ? 'sel' : ''}" data-tid="${esc(i.id)}">
+      <input type="checkbox" ${tsel.has(i.id) ? 'checked' : ''} tabindex="-1"><span class="g">${GLYPH[k] || ''}</span>
+      <span class="t"><a ${href}>${esc(i.title)}</a></span>
+      <span class="m">${i.source === 'session' ? chip(ago(i.lastActivity), 'dim') : i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : chip(`${i.repo}#${i.number}`, 'dim')) : ''}${dueTag(i)}${i.workstream ? `<span class="chip ws">▸ ${esc(wsOf(i.workstream)?.name || i.workstream)}</span>` : ''}</span></div>`;
+  };
+  return `<div class="tri">
+    <div class="tri-bar"><div class="page-h"><h2>Triage</h2><p>${list.length} ${tscope === 'inbox' ? 'unclassified' : 'open'} · click / shift-click to select · <kbd>a</kbd> all · <kbd>m</kbd> move · <kbd>Esc</kbd> clear · titles open the item</p></div>
+      ${seg('tscope', tscope, [['inbox', 'Inbox'], ['all', 'All open']])}${seg('tkind', tkind, kinds.map((k) => [k, k === 'all' ? 'All kinds' : k]))}</div>
+    ${list.length ? [...groups].map(([g, items]) => `<section class="tgrp"><h4 data-tgrp="${esc(g)}" title="Select this group">${esc(g)}<span>${items.length}</span></h4>${items.map(row).join('')}</section>`).join('')
+      : '<div class="empty">Inbox zero. Everything has a workstream.</div>'}
+  </div>`;
+}
+function triageBar() {
+  document.querySelector('.tri-act')?.remove();
+  if (!tsel.size) return;
+  const bar = document.createElement('div'); bar.className = 'tri-act';
+  // one click on a destination moves the selection; typing filters them, Enter takes the highlighted (first) one
+  bar.innerHTML = `<b>${tsel.size}</b> selected · move to: <input id="tMove" placeholder="filter or new name…" autocomplete="off">
+    <button class="lnk" id="tClear">Clear selection</button><div class="dests" id="tDests"></div>`;
+  document.body.append(bar);
+  const open = S.workstreams.filter((w) => w.state !== 'done');
+  const dests = () => {
+    const raw = $('#tMove').value.trim(), q = raw.toLowerCase();
+    const hits = !q ? open : [...open.filter((w) => w.name.toLowerCase().startsWith(q)), ...open.filter((w) => !w.name.toLowerCase().startsWith(q) && w.name.toLowerCase().includes(q))];
+    const list = [...(tscope === 'all' && !q ? [{ slug: '', name: 'Inbox' }] : []), ...hits.map((w) => ({ slug: w.slug, name: w.name }))];
+    if (q && !open.some((w) => w.name.toLowerCase() === q)) list.push({ create: raw, name: `+ New workstream “${raw}”` });
+    return list;
+  };
+  const draw = () => {
+    const list = dests();
+    $('#tDests').innerHTML = list.map((d, n) => `<button class="dest ${n === 0 ? 'first' : ''} ${d.create ? 'new' : ''}" data-n="${n}">${esc(d.name)}</button>`).join('');
+    $('#tDests').querySelectorAll('.dest').forEach((b) => (b.onclick = () => { const d = list[b.dataset.n]; moveSel(d.slug || null, d.create); }));
+  };
+  draw();
+  $('#tMove').oninput = draw;
+  $('#tMove').onkeydown = (e) => {
+    if (e.key === 'Escape') return e.target.blur();
+    if (e.key !== 'Enter') return;
+    const d = dests()[0]; if (d) moveSel(d.slug || null, d.create);
+  };
+  $('#tClear').onclick = () => { tsel.clear(); render(); };
+}
+// slug = target workstream; newName = create it first (typed a name that matches nothing)
+async function moveSel(slug, newName) {
+  if (newName) { const c = await post('/api/ws/create', { name: newName, parent: '' }); if (!c) return; slug = c.slug; }
+  const ids = [...tsel], r = await post('/api/move', { ids, workstream: slug || null });
+  if (!r) return;
+  tsel.clear(); await load();
+  const undo = async () => {
+    const back = new Map(); for (const m of r.moved) back.set(m.from, [...(back.get(m.from) || []), m.id]);
+    for (const [from, ids2] of back) await post('/api/move', { ids: ids2, workstream: from });
+    load();
+  };
+  toast(`${newName ? `Created ${newName} · ` : ''}Moved ${r.moved.length} to ${slug ? wsOf(slug)?.name : 'Inbox'}`, undo);
+}
+function wireTriage() {
+  document.querySelectorAll('[data-tscope]').forEach((b) => (b.onclick = () => { tscope = b.dataset.tscope; render(); }));
+  document.querySelectorAll('[data-tkind]').forEach((b) => (b.onclick = () => { tkind = b.dataset.tkind; render(); }));
+  const rows = [...document.querySelectorAll('.trow')], ids = rows.map((r) => r.dataset.tid);
+  rows.forEach((r) => (r.onclick = (e) => {
+    if (e.target.closest('a[href], [data-ctx]')) return; // the title opens the item, the ref its context
+    e.preventDefault();
+    const id = r.dataset.tid;
+    if (e.shiftKey && tlast && ids.includes(tlast)) {
+      const [a, b] = [ids.indexOf(tlast), ids.indexOf(id)].sort((x, y) => x - y);
+      ids.slice(a, b + 1).forEach((x) => tsel.add(x));
+    } else tsel.has(id) ? tsel.delete(id) : tsel.add(id);
+    tlast = id; render();
+  }));
+  document.querySelectorAll('[data-tgrp]').forEach((h) => (h.onclick = () => {
+    const g = [...h.parentElement.querySelectorAll('.trow')].map((r) => r.dataset.tid), all = g.every((x) => tsel.has(x));
+    g.forEach((x) => (all ? tsel.delete(x) : tsel.add(x))); render();
+  }));
+  triageBar();
+}
+document.addEventListener('keydown', (e) => {
+  if (view !== 'triage' || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, select, textarea')) return;
+  if (e.key === 'a') { triageList().forEach((i) => tsel.add(i.id)); render(); }
+  else if (e.key === 'm' && tsel.size) { e.preventDefault(); $('#tMove')?.focus(); }
+  else if (e.key === 'Escape' && tsel.size) { tsel.clear(); render(); }
+});
+
 // ---------- smart paste: Cmd+V outside a form field adds an item ----------
 function classifyPaste(raw) {
   const text = raw.trim(), oneToken = !/\s/.test(text);
-  if (oneToken && (/teams\.microsoft\.com\/l\//i.test(text) || /^msteams:/i.test(text))) return { source: 'teams', title: 'Teams conversation', url: text };
+  if (oneToken && (/teams\.(microsoft\.com|cloud\.microsoft)\/l\//i.test(text) || /^msteams:/i.test(text))) return { source: 'teams', title: 'Teams conversation', url: text };
+  if (oneToken && /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/(issues|pull)\/\d+/i.test(text)) return { source: 'ghref', url: text };
   if (oneToken && /^https?:\/\//i.test(text)) {
     let title = text;
     try { const u = new URL(text); const last = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() || ''); title = u.hostname.replace(/^www\./, '') + (last ? ` › ${last}` : ''); } catch {}
@@ -552,11 +854,15 @@ document.addEventListener('paste', async (e) => {
   e.preventDefault();
   const target = view === 'ws' ? selWs : null; // workstream open in the panel, else Inbox
   const item = { ...classifyPaste(raw), workstream: target };
-  const r = await post('/api/items/add', item);
+  if (item.source === 'ghref') toast('Looking up the GitHub item…');
+  const r = await post(item.source === 'ghref' ? '/api/items/add-github' : '/api/items/add', item);
   if (!r) return;
   await load();
-  const label = { teams: 'Teams link', link: 'link', note: 'note' }[item.source];
-  toast(`Added ${label} to ${target ? wsOf(target)?.name : 'Inbox'}`, async () => { await post('/api/items/remove', { id: r.id }); load(); });
+  const where = (slug) => (slug ? wsOf(slug)?.name : 'Inbox');
+  if (r.existing) return toast(`Already on your plate, in ${where(r.workstream)}`);
+  const it = S.items.find((x) => x.id === r.id);
+  const label = item.source === 'ghref' ? `${it?.repo}#${it?.number}` : { teams: 'Teams link', link: 'link', note: 'note' }[item.source];
+  toast(`Added ${label} to ${where(r.workstream ?? target)}`, async () => { await post('/api/items/remove', { id: r.id }); load(); });
 });
 
 load().then(() => {
