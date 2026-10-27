@@ -57,7 +57,7 @@ npm run collect:devin                        # reads ~/.local/share/devin/cli/se
 DEVIN_SESSIONS_DB=/path/sessions.db npm run collect:devin   # other location (e.g. Windows)
 ```
 
-All local Devin sessions (CLI and Desktop share the store), every directory, no 50-row cap: it reads the SQLite DB instead of `devin list`. Needs Node ≥ 22.5 (`node:sqlite`) or the `sqlite3` CLI. Archive flags come from Devin Desktop's `state.vscdb` (`DEVIN_DESKTOP_STATE` to override). Sessions archived in Devin come in as `done` (only in a workstream's "Recently done"); the rest are `idle`, since the DB has no running/waiting signal. Clicking a session opens it in Devin Desktop (`devin://app/return/…` deep link).
+All local Devin sessions (CLI and Desktop share the store), every directory, no 50-row cap: it reads the SQLite DB instead of `devin list`. Needs Node ≥ 22.5 (`node:sqlite`) or the `sqlite3` CLI. Archive flags come from Devin Desktop's `state.vscdb` (`DEVIN_DESKTOP_STATE` to override). Sessions archived in Devin come in as `done` (only in a workstream's "Recently done"); the rest are `idle`, since the DB has no running/waiting signal. Clicking a session opens it in Devin Desktop. The link format depends on the Desktop version: default `devin://app/return/…` (3.11+); set `devin_link: acp` in `<data>/sources.md` for older ones (e.g. 3.4), which use `devin://acp/session?…`.
 
 ## Collect (sessions)
 

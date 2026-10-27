@@ -14,7 +14,7 @@
     /* semantic: accent is reserved for "needs you" */
     --accent: #ffa56e; --accent-soft: rgb(255 165 110 / .12); --accent-line: rgb(255 165 110 / .38); --accent-ink: #2a1708;
     --late: #f0707f; --today: #e8c35a; --live: #5fd3a2;
-    --pr: #b69cf5; --issue: #7fb5f0; --todo: #8fd0c4; --sess: #e7e2d4;
+    --pr: #56d364; --pr-merged: #a371f7; /* GitHub's own semantics: open PR green, merged purple, closed red */ --issue: #7fb5f0; --todo: #8fd0c4; --sess: #e7e2d4;
     /* type scale */
     --fs-xs: 11px; --fs-sm: 12.5px; --fs-md: 14px; --fs-lg: 17px; --fs-xl: 24px; --fs-2xl: 34px;
     --font: ui-sans-serif, -apple-system, "SF Pro Text", "Inter", system-ui, sans-serif;
@@ -80,23 +80,6 @@
   nav.dock button .pip { position: absolute; top: 5px; right: 20px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-size: 10.5px; font-weight: 700; line-height: 18px; text-align: center; }
   nav.dock .sep { width: 1px; background: var(--line); margin: 8px 2px; }
 
-  /* ---------- board ---------- */
-  .board { display: flex; gap: var(--s4); align-items: flex-start; overflow-x: auto; padding: var(--s2) 2px var(--s4); }
-  .col {
-    flex: none; width: 292px; padding: var(--s3); border: 1px solid var(--line); border-radius: var(--r-lg);
-    background: linear-gradient(180deg, var(--surface-2), var(--surface) 160px); backdrop-filter: blur(10px);
-    transition: border-color .15s, background .15s;
-  }
-  .col.over { border-color: var(--text-2); background: var(--surface-3); box-shadow: 0 0 0 3px rgb(255 255 255 / .06); }
-  .col h3 { margin: 0 0 var(--s3); padding: var(--s1) var(--s2) 0; display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); font-size: var(--fs-lg); font-weight: 600; letter-spacing: -.01em; }
-  .col h3 .counts { flex: none; display: flex; gap: var(--s2); align-items: center; font-size: var(--fs-sm); font-weight: 500; color: var(--text-3); font-variant-numeric: tabular-nums; }
-  .col h3 .counts .n { padding: 1px 8px; border-radius: 9px; background: var(--surface-2); }
-  .col h3 .counts .w { white-space: nowrap; padding: 1px 8px; border-radius: 9px; background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-line); }
-  .col.inbox { width: 340px; background: rgb(255 255 255 / .02); border: 1px dashed var(--line-2); }
-  .col.inbox h3 { color: var(--text-2); }
-  .col.inbox h3 { flex-wrap: wrap; }
-  .col.inbox h3::before { content: "Triage"; flex: 0 0 100%; font-size: var(--fs-xs); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
-  .col .none { color: var(--text-3); font-size: var(--fs-sm); text-align: center; padding: var(--s5) 0; border: 1px dashed var(--line); border-radius: var(--r-md); }
 
   /* ---------- cards ---------- */
   .card {
@@ -108,6 +91,7 @@
   .card:hover { border-color: var(--line-2); background: rgb(20 32 29 / .85); transform: translateY(-1px); }
   .card::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: var(--k); opacity: .75; }
   .card.k-todoist { --k: var(--todo); } .card.k-pr { --k: var(--pr); } .card.k-issue { --k: var(--issue); } .card.k-session { --k: var(--sess); } .card.k-teams { --k: #9db4ff; } .card.k-link { --k: #7fd0e0; } .card.k-note { --k: #d9c79a; } .card.k-draft { --k: var(--text-3); }
+  .gh-merged { --k: var(--pr-merged) !important; } .gh-closed { --k: var(--late) !important; }
   .card.dragging { opacity: .35; transform: scale(.98); }
   .card.done { opacity: .5; } .card.done .ttl { text-decoration: line-through; text-decoration-color: var(--text-3); }
   .card .kind { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--k); }
@@ -155,7 +139,7 @@
   button.btn.ghost { background: none; color: var(--text-2); }
   .rootzone { padding: 6px 14px; border: 1px dashed var(--line-2); border-radius: 99px; color: var(--text-3); font-size: var(--fs-xs); letter-spacing: .06em; text-transform: uppercase; }
   .rootzone.over { border-color: var(--text); color: var(--text); background: var(--surface-2); }
-  .canvas-scroll { overflow: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); padding: var(--s4); }
+  .canvas-scroll { display: flex; overflow: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); padding: var(--s4); box-sizing: border-box; }
   .canvas { position: relative; }
   .canvas svg { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
   .edge { fill: none; stroke: var(--line-2); stroke-width: 1.6; }
@@ -191,6 +175,7 @@
   .crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: var(--s2) 0 var(--s5); color: var(--text-3); font-size: var(--fs-sm); }
   .crumb button { background: none; border: 0; color: var(--text-2); font: inherit; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
   .crumb button:hover { background: var(--surface-2); color: var(--text); } .crumb b { color: var(--text); font-weight: 600; }
+  .crumb.solo { max-width: 1120px; margin-left: auto; margin-right: auto; }
   .crumb .esc { margin-left: auto; font-size: var(--fs-xs); letter-spacing: .06em; text-transform: uppercase; }
   .fhead h1 { margin: 0 0 var(--s3); font-size: var(--fs-2xl); font-weight: 600; letter-spacing: -.03em; line-height: 1.1; }
   .fbody { margin: var(--s3) 0 0; max-width: 62ch; color: var(--text-2); }
@@ -224,16 +209,19 @@
   button.btn.danger { color: var(--late); }
   .toast.ok { display: flex; gap: 14px; align-items: center; background: rgb(14 24 22 / .96); color: var(--text); border: 1px solid var(--line-2); box-shadow: 0 10px 40px rgb(0 0 0 / .5); z-index: 30; }
   .toast.ok button { font: inherit; font-weight: 600; background: none; border: 0; color: var(--accent); cursor: pointer; }
-  /* ---------- board: collapsed columns ---------- */
-  .board { flex-wrap: wrap; }
-  .col h3.tog { cursor: pointer; user-select: none; }
-  .col h3.tog::after { content: "▾"; color: var(--text-3); font-size: var(--fs-sm); }
-  .col.closed { width: 210px; padding-bottom: var(--s1); }
-  .col.closed h3 { font-size: var(--fs-md); } .col.closed h3.tog::after { content: "▸"; }
-  .col.inbox.closed h3::before { content: none; }
 
-  /* ---------- triage ---------- */
-  .tri { max-width: 1040px; padding-bottom: 72px; }
+  /* ---------- Inbox side panel (Workstreams view): triage list, drag rows onto the map ---------- */
+  .wsx.with-panel { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: var(--s4); align-items: start; }
+  .ipanel { position: sticky; top: var(--s3); max-height: calc(100vh - var(--dock-h) - 110px); overflow-y: auto; padding: var(--s3); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
+  .ipanel .tri-bar { margin-bottom: var(--s3); } .ipanel .page-h { flex: 0 0 100%; } .ipanel .page-h h2 { margin: 0; font-size: var(--fs-lg); }
+  .ipanel #tq { flex: 0 0 100%; box-sizing: border-box; }
+  .ipanel .tgrp { margin-bottom: var(--s3); }
+  .ipanel .trow { grid-template-columns: 22px 16px minmax(0, 1fr); cursor: grab; } .ipanel .trow .m { grid-column: 3; flex-wrap: wrap; } .ipanel .trow .m:empty { display: none; }
+  .trow { position: relative; } .ipanel .trow .ctxbtn { margin-left: 0; }
+  .trow .dis { position: absolute; right: 8px; top: 6px; font: inherit; color: var(--text-3); background: none; border: 0; border-radius: 6px; padding: 0 5px; cursor: pointer; visibility: hidden; }
+  .trow:hover .dis { visibility: visible; } .trow .dis:hover { color: var(--text); background: var(--surface-3); }
+  .fhead.over, .sub-ws.over { outline: 2px solid var(--live); outline-offset: 4px; border-radius: var(--r-md); }
+  @media (max-width: 900px) { .wsx.with-panel { grid-template-columns: 1fr; } .ipanel { position: static; max-height: 50vh; } }
   .tri-bar { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; margin-bottom: var(--s4); }
   .tri-bar .page-h { margin: 0 auto 0 0; }
   .seg { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); }
@@ -250,7 +238,7 @@
   .trow .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .trow .t a { color: var(--text); text-decoration: none; } .trow .t a:hover { text-decoration: underline; text-decoration-color: var(--text-3); }
   .trow .m { display: flex; gap: 6px; align-items: center; }
-  .trow.k-todoist { --k: var(--todo); } .trow.k-pr { --k: var(--pr); } .trow.k-issue { --k: var(--issue); } .trow.k-session { --k: var(--sess); } .trow.k-teams { --k: #9db4ff; } .trow.k-link { --k: #7fd0e0; } .trow.k-note { --k: #d9c79a; }
+  .trow.k-todoist { --k: var(--todo); } .trow.k-pr { --k: var(--pr); } .trow.k-issue { --k: var(--issue); } .trow.k-session { --k: var(--sess); } .trow.k-teams { --k: #9db4ff; } .trow.k-link { --k: #7fd0e0; } .trow.k-note { --k: #d9c79a; } .trow.k-draft { --k: var(--text-3); }
   input[type=checkbox] { accent-color: var(--live); margin: 0; }
   .tri-act { position: fixed; left: 50%; bottom: calc(var(--dock-h) + var(--s3)); transform: translateX(-50%); z-index: 11; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; padding: 10px 12px 10px 16px;
     width: min(860px, calc(100vw - 32px)); border: 1px solid var(--line-2); border-radius: var(--r-lg); background: rgb(10 20 18 / .9); backdrop-filter: blur(20px); box-shadow: 0 14px 40px rgb(0 0 0 / .5); font-size: var(--fs-sm); }
@@ -262,7 +250,7 @@
   .dest:hover { background: var(--surface-3); } .dest.first { border-color: var(--live); } .dest.new { color: var(--live); border-style: dashed; }
   .tri-act kbd, .tri-bar kbd { font: 500 10.5px var(--mono); padding: 1px 5px; border: 1px solid var(--line-2); border-radius: 5px; color: var(--text-3); }
   /* radial mindmap: a center node, one color per top-level branch (--b), boxes centered on their point */
-  .canvas { margin: 0 auto; }
+  .canvas { margin: auto; flex: none; }
   .wnode { --b: var(--text-2); transform: translate(-50%, -50%); flex-direction: row; align-items: center; justify-content: center; gap: 7px; max-width: 176px;
     padding: 7px 12px; border: 1.5px solid color-mix(in srgb, var(--b) 75%, transparent); border-radius: 12px; text-align: center; }
   .wnode .wn { min-width: 0; font-size: var(--fs-sm); font-weight: 600; color: color-mix(in srgb, var(--b) 55%, var(--text)); white-space: normal; line-height: 1.3;
@@ -274,7 +262,38 @@
   .hub { position: absolute; transform: translate(-50%, -50%); padding: 12px 22px; border: 2px solid var(--text); border-radius: 14px; background: rgb(10 20 18 / .96);
     color: var(--text); font-size: var(--fs-lg); font-weight: 600; letter-spacing: -.01em; text-transform: none; white-space: nowrap; }
   .hub.over { border-color: var(--live); color: var(--live); }
+  /* needs you on the map: amber ring pulsing out of the node (workstreams), and on the center hub for unclassified ones */
+  .wnode.need::after, .hub.need::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--accent); pointer-events: none; animation: needpulse 2.2s ease-out infinite; }
+  @keyframes needpulse { 0% { opacity: .8; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(1.18, 1.35); } }
+  @media (prefers-reduced-motion: reduce) { .wnode.need::after, .hub.need::after { animation: none; opacity: .6; } }
+  .hub.need { border-color: var(--accent); } .hub .wneed { margin-left: 8px; vertical-align: 2px; }
   .edge.br { stroke: var(--b); stroke-width: 2.2; opacity: .9; }
+  /* Today mode: the map dims, workstreams touched today light up in the order they were first touched */
+  .ws-main.today { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--s4); align-items: start; }
+  .canvas.today .wnode { opacity: .3; filter: saturate(.4); transition: opacity .3s, filter .3s, box-shadow .3s; }
+  .canvas.today .wnode.lit { opacity: 1; filter: none; background: color-mix(in srgb, var(--b) calc(var(--heat) * 22%), rgb(14 24 22 / .92));
+    box-shadow: 0 0 calc(12px + var(--heat) * 26px) -6px var(--b); }
+  .canvas.today.anim .wnode.lit { animation: lightup .5s ease both; animation-delay: var(--d); } /* only right after turning Today on */
+  .canvas.today .edge.br { opacity: .2; } .canvas.today .edge.br.lit { opacity: .9; } .canvas.today .edge.rel { opacity: .25; }
+  @keyframes lightup { from { opacity: .3; filter: saturate(.4); box-shadow: none; } }
+  @media (prefers-reduced-motion: reduce) { .canvas.today.anim .wnode.lit { animation: none; } }
+  .tl { position: sticky; top: var(--s3); max-height: calc(100vh - var(--dock-h) - 120px); overflow-y: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); padding: var(--s3); }
+  .tl h3 { margin: 0 0 var(--s2); font-size: var(--fs-sm); color: var(--text-2); } .tl h3 span { color: var(--text-3); font-weight: 500; }
+  .tl .ev { display: grid; grid-template-columns: 42px 1fr; gap: 2px var(--s2); padding: 6px 4px; border-top: 1px solid var(--line); font-size: var(--fs-sm); cursor: pointer; border-radius: 6px; }
+  .tl .ev:hover { background: var(--surface-2); }
+  .tl .ev time { color: var(--text-3); font: 500 var(--fs-xs) var(--mono); padding-top: 2px; }
+  .tl .ev .what { color: var(--text); overflow-wrap: anywhere; } .tl .ev .what i { font-style: normal; color: var(--text-3); }
+  .tl .ev .where { grid-column: 2; font-size: var(--fs-xs); color: var(--b, var(--text-3)); }
+  button.btn.on { background: var(--surface-3); border-color: var(--text-2); }
+  @media (max-width: 900px) { .ws-main.today { grid-template-columns: 1fr; } .tl { position: static; max-height: none; } }
+  /* per-workstream to-dos (checkboxes in the workstream's .md body) */
+  .todos { margin: var(--s4) 0 0; max-width: 62ch; }
+  .todos label { display: flex; gap: var(--s2); align-items: flex-start; padding: 4px 0; color: var(--text); cursor: pointer; }
+  .todos label.x { color: var(--text-3); text-decoration: line-through; text-decoration-color: var(--text-3); }
+  .todos input[type=checkbox] { margin-top: 3px; accent-color: var(--live); }
+  .todos .addtodo { display: flex; gap: var(--s2); margin-top: var(--s2); } .todos .addtodo input { flex: 1; }
+  /* Teams chat from a ticket (deep link, no API) */
+  .tchat { margin-top: var(--s4); } .tchat .f { margin-top: var(--s3); } .tchat .f input { width: 100%; box-sizing: border-box; }
   /* ---------- ticket context drawer ---------- */
   .ctx-scrim { position: fixed; inset: 0; z-index: 25; background: rgb(0 0 0 / .35); }
   .ctx { position: fixed; top: 0; right: 0; bottom: 0; z-index: 26; width: min(560px, 100vw); overflow-y: auto; padding: var(--s5); border-left: 1px solid var(--line-2);
@@ -322,12 +341,10 @@
 <main id="main"></main>
 <nav class="dock">
   <button data-v="ws"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5H5v5M12 11.5h7v5"/></svg>Workstreams</button>
-  <button data-v="board"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="10" rx="1.5"/><rect x="17" y="4" width="4" height="13" rx="1.5"/></svg>Board</button>
-  <button data-v="triage"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/><path d="m15 16 2 2 4-4"/></svg>Triage<span class="pip" id="tpip" style="background:var(--surface-3);color:var(--text)"></span></button>
   <button data-v="needs"><svg class="i" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Needs you<span class="pip" id="pip"></span></button>
 </nav>
 <script>
-let S, view = 'ws', selWs = null;
+let S, view = 'ws', selWs = null, panelScroll = 0;
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -351,8 +368,10 @@ function syncBadge() {
   $('#sync').innerHTML = `<button class="syncbtn ${bad.length ? 'bad' : ''}" title="${esc(names.map((n) => `${n}: ${c[n].ok ? 'ok' : 'FAILED'} · ${c[n].msg} · ${new Date(c[n].at).toLocaleTimeString()}`).join('\n') || 'No collector has run yet')}">${bad.length ? `⚠ ${esc(bad.join(', '))} failed` : latest ? `Synced ${ago(latest)}` : 'Not synced'} · Sync now</button>`;
   $('#sync button').onclick = async () => { $('#sync button').textContent = 'Syncing…'; await fetch('/api/collect', { method: 'POST' }); setTimeout(refresh, 4000); setTimeout(refresh, 15000); };
 }
-const VNAME = { ws: 'Workstreams', board: 'Board', triage: 'Triage', needs: 'Needs you' };
+const VNAME = { ws: 'Workstreams', needs: 'Needs you' };
 const pad = (n) => String(n).padStart(2, '0');
+// per-browser UI prefs (Today mode, Inbox panel)
+const store = { get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 function tick() {
   const d = new Date();
   $('#clock').textContent = `${d.getHours()}:${pad(d.getMinutes())}`;
@@ -362,19 +381,28 @@ tick(); setInterval(tick, 20000);
 function render() {
   document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.v === view));
   $('#vname').textContent = VNAME[view];
-  const need = S.items.filter((i) => i.needsYou).length, inbox = S.items.filter((i) => !i.workstream && i.state !== 'done').length;
+  const need = S.items.filter((i) => i.needsYou).length, inbox = S.items.filter(inInbox).length;
   $('#stats').innerHTML = `<div class="stat"><b>${S.items.length}</b><span>Items</span></div><div class="stat"><b>${inbox}</b><span>Inbox</span></div>`
     + `<div class="stat need link ${need ? '' : 'zero'}" onclick="document.querySelector('[data-v=needs]').click()"><b>${need}</b><span>Needs you</span></div>`;
   $('#pip').textContent = need; $('#pip').hidden = !need;
-  $('#tpip').textContent = inbox; $('#tpip').hidden = !inbox;
   syncBadge();
-  $('#main').innerHTML = { ws, board, triage, needs }[view]();
+  panelScroll = document.querySelector('.ipanel')?.scrollTop ?? panelScroll; // selecting re-renders; keep the list where it was
+  $('#main').innerHTML = { ws, needs }[view]();
   document.querySelector('.tri-act')?.remove();
-  if (view === 'board') wireDnD();
-  if (view === 'triage') wireTriage();
-  if (view === 'ws') wireWs();
+  if (view === 'ws') { wireWs(); if (panelOpen) wirePanel(); }
+  const ip = document.querySelector('.ipanel'); if (ip) ip.scrollTop = panelScroll;
+  fitView();
 }
 document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => { view = b.dataset.v; render(); }));
+// 1–2 switch views (dock order); `/` opens the Inbox panel's search, `i` toggles the panel
+const VIEWS = [...document.querySelectorAll('nav.dock button')].map((b, n) => { b.title = `${VNAME[b.dataset.v]} (${n + 1})`; return b.dataset.v; });
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, select, textarea, [contenteditable]')) return;
+  const v = VIEWS[Number(e.key) - 1];
+  if (v) { e.preventDefault(); view = v; render(); }
+  else if (e.key === '/') { e.preventDefault(); view = 'ws'; panelOpen = true; render(); $('#tq')?.focus(); }
+  else if (e.key === 'i' && view === 'ws') togglePanel();
+});
 
 const ic = (d) => `<svg class="i sm" viewBox="0 0 24 24">${d}</svg>`;
 const GLYPH = {
@@ -394,11 +422,13 @@ const dueTag = (i) => {
   const lbl = cls === 'today' ? 'Today' : i.due;
   return `<span class="chip ${cls}">${cls === 'late' ? 'Overdue · ' : ''}${lbl}</span>`;
 };
+// merged/closed PRs take GitHub's colors instead of the open-PR green
+const ghState = (i) => { const st = String(i.ghState || i.status || '').toLowerCase(); return i.kind === 'pr' && (st === 'merged' || st === 'closed') ? `gh-${st}` : ''; };
 const KINDLABEL = { todoist: 'Todoist', pr: 'PR', issue: 'Issue', draft: 'Draft PR', session: 'Session', teams: 'Teams', link: 'Link', note: 'Note' };
 const card = (i, drag = true, extra = '') => {
   const k = i.source === 'todoist' ? 'todoist' : (i.kind || i.source);
   const label = { todoist: 'Todoist', pr: 'PR', issue: 'Issue', draft: 'Draft PR', session: 'Session', teams: 'Teams', link: 'Link', note: 'Note' }[k] || esc(k);
-  return `<div class="card k-${esc(k)} ${i.state === 'done' ? 'done' : ''} ${i.needsYou ? 'need' : ''}" ${drag ? `draggable="true" data-id="${esc(i.id)}"` : ''}>
+  return `<div class="card k-${esc(k)} ${ghState(i)} ${i.state === 'done' ? 'done' : ''} ${i.needsYou ? 'need' : ''}" ${drag ? `draggable="true" data-id="${esc(i.id)}"` : ''}>
   <div class="kind">${GLYPH[k] || ''}${label}${i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context: parent, sub-issues, PRs">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : `<span class="ref">${esc(i.repo)}#${esc(i.number)}</span>`) : ''}</div>
   <a class="ttl" ${SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"` : ''} ${/^https?:/i.test(i.url || '') ? 'target="_blank" rel="noopener"' : ''}>${esc(i.title)}</a>
   <div class="chips">${meta(i)}${i.kind === 'pr' ? devinBits(i.url) : ''}${extra}</div></div>`;
@@ -418,46 +448,13 @@ const ago = (t) => {
   const m = (Date.now() - new Date(t)) / 6e4;
   return m < 60 ? `${Math.max(1, Math.round(m))}m ago` : m < 1440 ? `${Math.round(m / 60)}h ago` : m < 43200 ? `${Math.round(m / 1440)}d ago` : new Date(t).toLocaleDateString('en-CA');
 };
-const meta = (i) => i.source === 'todoist' ? `${dueTag(i)}${i.recurring ? `<span class="chip dim" title="Recurring">${REPEAT}</span>` : ''}`
+const meta = (i) => (i.reviewMe ? '<span class="chip need">review requested</span>' : '') + metaOf(i);
+const metaOf = (i) => i.source === 'todoist' ? `${dueTag(i)}${i.recurring ? `<span class="chip dim" title="Recurring">${REPEAT}</span>` : ''}`
   : [i.source === 'session' ? `<span class="state st-${esc(i.state)}">${esc(i.state)}</span>` : '', i.source === 'session' ? chip(i.tool, 'dim') : '',
     i.cwd ? `<span class="chip dim" title="${esc(i.cwd)}">${esc(base(i.cwd))}</span>` : '', chip(ago(i.lastActivity), 'dim'), chip(i.status), chip(i.iteration, 'dim'), dueTag(i)].join('');
-// Board columns start collapsed (header + counts, still a drop target); the expanded set is remembered per browser.
-const store = { get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
-let openCols = new Set(store.get('plate.openCols', []));
-const col = (slug, name, items, cls = '') => {
-  const w = items.filter((i) => i.needsYou).length, key = slug ?? '__inbox', open = openCols.has(key);
-  return `<div class="col ${cls} ${open ? '' : 'closed'}" data-ws="${slug ?? ''}">
-  <h3 class="tog" data-tog="${esc(key)}"><span>${esc(name)}</span><span class="counts">${w ? `<span class="w">${w} waiting</span>` : ''}<span class="n">${items.length}</span></span></h3>${open ? items.map((i) => card(i)).join('') || '<div class="none">Drop items here</div>' : ''}</div>`;
-};
 const ORDER = { session: 0, teams: 1, link: 2, note: 3, pr: 4, issue: 5, draft: 6 };
 const byDue = (a, b) => (ORDER[a.kind] ?? 7) - (ORDER[b.kind] ?? 7) || (a.due || '9').localeCompare(b.due || '9');
 
-function board() {
-  const live = S.items.filter((i) => i.state !== 'done'); // archived sessions and closed GitHub items stay in each workstream's "Recently done"
-  const inbox = live.filter((i) => !i.workstream).sort(byDue);
-  return `<div class="page-h"><p>Click a column to expand it · drop cards on a collapsed column to move them · bulk-classify in Triage</p></div><div class="board">${col(null, 'Inbox', inbox, 'inbox')}${S.workstreams.filter((w) => w.state !== 'done').map((w) =>
-    col(w.slug, w.name, live.filter((i) => i.workstream === w.slug).sort(byDue))).join('')}</div>`;
-}
-function wireDnD() {
-  document.querySelectorAll('[data-tog]').forEach((h) => (h.onclick = () => {
-    const k = h.dataset.tog; openCols.has(k) ? openCols.delete(k) : openCols.add(k);
-    store.set('plate.openCols', [...openCols]); render();
-  }));
-  document.querySelectorAll('.card[draggable]').forEach((c) => {
-    c.ondragstart = (e) => { e.dataTransfer.setData('text/plain', c.dataset.id); c.classList.add('dragging'); };
-    c.ondragend = () => c.classList.remove('dragging');
-  });
-  document.querySelectorAll('.col').forEach((c) => {
-    c.ondragover = (e) => { e.preventDefault(); c.classList.add('over'); };
-    c.ondragleave = () => c.classList.remove('over');
-    c.ondrop = async (e) => {
-      e.preventDefault();
-      const r = await fetch('/api/move', { method: 'POST', body: JSON.stringify({ id: e.dataTransfer.getData('text/plain'), workstream: c.dataset.ws || null }) });
-      if (!r.ok) alert((await r.json()).error);
-      load();
-    };
-  });
-}
 function needs() {
   const list = S.items.filter((i) => i.needsYou).sort(byDue);
   const head = `<div class="page-h"><h2>Needs you</h2><p>${list.length} waiting on you, sessions and deadlines first</p></div>`;
@@ -469,16 +466,18 @@ function needs() {
 const NW = 176, R0 = 140, RG = 96, AX = 1.9, PAD = 40; // radial mindmap: max box width, first ring, ring gap (vertical), ring x-stretch, margin
 // one color per top-level branch; amber stays reserved for "needs you"
 const BRANCH = ['#7fb5f0', '#e58a9b', '#8fd0c4', '#b69cf5', '#a3cf72', '#d9c79a', '#f0a6d8', '#7fd0e0', '#9db4ff', '#c9b37a'];
+// keyed by the root's slug (not its position), so adding a workstream doesn't repaint the others; `color:` in the .md overrides
+const branchColor = (w) => w.color || BRANCH[[...w.slug].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % BRANCH.length];
 const post = async (url, body) => {
   const r = await fetch(url, { method: 'POST', body: JSON.stringify(body) });
   const j = await r.json();
   if (!r.ok) { toast(j.error || 'failed'); return null; }
   return j;
 };
-function toast(msg, undo) {
+function toast(msg, undo, label = 'Undo') {
   document.querySelectorAll('.toast').forEach((t) => t.remove());
   const t = document.createElement('div'); t.className = 'toast' + (undo ? ' ok' : ''); t.textContent = msg;
-  if (undo) { const b = document.createElement('button'); b.textContent = 'Undo'; b.onclick = () => { t.remove(); undo(); }; t.append(b); }
+  if (undo) { const b = document.createElement('button'); b.textContent = label; b.onclick = () => { t.remove(); undo(); }; t.append(b); }
   document.body.append(t); setTimeout(() => t.remove(), undo ? 7000 : 3200);
 }
 const wsOf = (slug) => S.workstreams.find((w) => w.slug === slug);
@@ -506,7 +505,7 @@ function layoutWs() {
   };
   let at = -Math.PI / 2 - Math.PI / Math.max(roots.length, 2); // start a little before 12 o'clock so a lone branch isn't vertical
   // a branch fans out over at most half the circle, so a lone big branch doesn't wrap around the center
-  roots.forEach((r, n) => { const share = (2 * Math.PI * leaves.get(r.slug)) / total, span = Math.min(share, Math.PI); place(r, 0, at + (share - span) / 2, at + (share + span) / 2, BRANCH[n % BRANCH.length]); at += share; });
+  roots.forEach((r) => { const share = (2 * Math.PI * leaves.get(r.slug)) / total, span = Math.min(share, Math.PI); place(r, 0, at + (share - span) / 2, at + (share + span) / 2, branchColor(r)); at += share; });
   // tight bounding box around the center node and every box (a one-sided map doesn't reserve the empty side)
   let x0 = -90, x1 = 90, y0 = -30, y1 = 30;
   for (const p of pos.values()) { x0 = Math.min(x0, p.x - NW / 2); x1 = Math.max(x1, p.x + NW / 2); y0 = Math.min(y0, p.y - 26); y1 = Math.max(y1, p.y + 26); }
@@ -520,12 +519,12 @@ const curve = (ax, ay, bx, by) => {
   const c2 = side ? [bx - dx * 0.45, by] : [bx, by - dy * 0.45];
   return `M${ax} ${ay} C${ax + dx * 0.35} ${ay + dy * 0.35} ${c2[0]} ${c2[1]} ${bx} ${by}`;
 };
-function edgesSvg(L) {
+function edgesSvg(L, heat = new Map()) {
   let out = '';
   for (const w of S.workstreams) {
     const b = L.pos.get(w.slug); if (!b) continue;
     const a = L.pos.get(w.parent) || { x: L.cx, y: L.cy };
-    out += `<path class="edge br" style="--b:${b.color}" d="${curve(a.x, a.y, b.x, b.y)}"/>`;
+    out += `<path class="edge br ${heat.has(w.slug) ? 'lit' : ''}" style="--b:${b.color}" d="${curve(a.x, a.y, b.x, b.y)}"/>`;
   }
   const done = new Set();
   for (const w of S.workstreams) for (const r of w.related) {
@@ -544,29 +543,70 @@ const SAFE_URL = /^(https?|msteams|devin):\/\//i; // only link-out schemes becom
 const MANUAL = ['teams', 'link', 'note', 'ghref'];
 let focus = null, propsOpen = false, enter = false; // focus = slug of the workstream in full view
 const setFocus = (slug) => { focus = slug; selWs = slug; enter = true; window.scrollTo(0, 0); render(); };
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && view === 'ws' && focus && !e.target.closest?.('input, select, textarea')) setFocus(null); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && view === 'ws' && focus && !tsel.size && !e.target.closest?.('input, select, textarea')) setFocus(null); });
 
 function ws() {
   if (focus && !wsOf(focus)) focus = null;
   selWs = focus;
-  return focus ? focusView(wsOf(focus)) : mindmap();
+  const main = focus ? focusView(wsOf(focus)) : mindmap();
+  // the breadcrumb spans the full width, so the Inbox panel starts level with the workstream title
+  const crumb = focus ? crumbHtml(wsOf(focus)) : wsBar();
+  return panelOpen ? `${crumb}<div class="wsx with-panel">${inboxPanel()}<div>${main}</div></div>` : crumb + main;
+}
+// Inbox panel beside the map (or a focused workstream): classify by dragging rows onto nodes
+let panelOpen = store.get('plate.panel', true);
+const togglePanel = () => { panelOpen = !panelOpen; store.set('plate.panel', panelOpen); render(); };
+
+// ---------- Today mode: what moved today (events.jsonl), as lit nodes + a timeline ----------
+let todayOn = store.get('plate.today', false);
+const EVLABEL = { 'item.new': 'added', 'item.moved': 'moved in', 'item.gone': 'left', 'item.removed': 'removed', 'workstream.new': 'new workstream',
+  'workstream.reparented': 'reparented', 'todo.new': 'new to-do', 'todo.done': 'to-do done', 'todo.reopened': 'to-do reopened' };
+const evLabel = (e) => e.type === 'item.state' ? `${e.from || '?'} → ${e.to || '?'}` : EVLABEL[e.type] || e.type;
+// per workstream: event count and the rank of its first event today (lighting order)
+function todayHeat() {
+  const by = new Map();
+  for (const e of [...S.events].sort((a, b) => a.ts.localeCompare(b.ts))) {
+    if (!e.workstream || !wsOf(e.workstream)) continue;
+    if (!by.has(e.workstream)) by.set(e.workstream, { n: 0, rank: by.size });
+    by.get(e.workstream).n++;
+  }
+  const max = Math.max(1, ...[...by.values()].map((v) => v.n));
+  for (const v of by.values()) v.heat = 0.35 + (0.65 * v.n) / max;
+  return by;
+}
+function timeline(L) {
+  const evs = [...S.events].sort((a, b) => b.ts.localeCompare(a.ts));
+  const row = (e) => {
+    const w = wsOf(e.workstream), t = new Date(e.ts);
+    return `<div class="ev" ${w ? `data-focus="${esc(w.slug)}" style="--b:${L.pos.get(w.slug)?.color}"` : ''} title="${esc(e.source || '')} · ${esc(e.type)}">
+      <time>${t.getHours()}:${pad(t.getMinutes())}</time><span class="what"><i>${esc(evLabel(e))}</i> ${esc(e.title || e.ref || '')}</span>
+      <span class="where">${w ? `▸ ${esc(w.name)}` : e.workstream ? esc(e.workstream) : 'Inbox'}</span></div>`;
+  };
+  return `<aside class="tl"><h3>Today <span>· ${evs.length} event${evs.length === 1 ? '' : 's'}</span></h3>${evs.map(row).join('') || '<p class="hint">Nothing moved yet today.</p>'}</aside>`;
 }
 
+// title + controls; drawn above the panel/map grid so the Inbox panel starts level with the canvas
+const wsBar = () => `<div class="ws-bar"><div class="page-h"><h2>Workstreams</h2><p>Click a node to focus on it · drag a node onto another to re-parent, onto the center to make it a root · dashed = related · paste a link or note to add it to the Inbox</p></div>
+      <button class="btn ${panelOpen ? 'on' : ''}" data-panel title="Inbox panel (i)">Inbox · ${S.items.filter(inInbox).length}</button>
+      <button class="btn ${todayOn ? 'on' : ''}" id="todayBtn" title="Light up what moved today (t)">Today</button>
+      <input id="newName" placeholder="New workstream…" size="18"><button class="btn" id="newRoot">+ Root</button>
+</div>`;
 function mindmap() {
-  const L = layoutWs();
+  const L = layoutWs(), heat = todayOn ? todayHeat() : new Map(), inNeed = S.items.filter((i) => i.needsYou && !i.workstream).length;
   const nodes = S.workstreams.map((w) => {
-    const p = L.pos.get(w.slug), st = wsStats(w.slug);
-    return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''} ${esc(w.state)}" draggable="true" data-slug="${esc(w.slug)}"
-      style="left:${p.x}px;top:${p.y}px;--b:${p.color}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}">
+    const p = L.pos.get(w.slug), st = wsStats(w.slug), h = heat.get(w.slug);
+    return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''} ${h ? 'lit' : ''} ${esc(w.state)}" draggable="true" data-slug="${esc(w.slug)}"
+      style="left:${p.x}px;top:${p.y}px;--b:${p.color}${h ? `;--heat:${h.heat.toFixed(2)};--d:${Math.min(h.rank * 0.15, 3)}s` : ''}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${h ? ` · ${h.n} event${h.n > 1 ? 's' : ''} today` : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}">
       <span class="wn">${esc(w.name)}</span>${st.need ? `<span class="wneed">${st.need}</span>` : st.n ? `<span class="wc">${st.n}</span>` : ''}</div>`;
   }).join('');
-  return `<div class="ws-main">
-    <div class="ws-bar"><div class="page-h"><h2>Workstreams</h2><p>Click a node to focus on it · drag a node onto another to re-parent, onto the center to make it a root · dashed = related · paste a link or note to add it to the Inbox</p></div>
-      <input id="newName" placeholder="New workstream…" size="18"><button class="btn" id="newRoot">+ Root</button>
-</div>
-    <div class="canvas-scroll"><div class="canvas" style="width:${L.w}px;height:${L.h}px"><svg width="${L.w}" height="${L.h}">${edgesSvg(L)}</svg>
-      <div class="hub" id="rootzone" style="left:${L.cx}px;top:${L.cy}px" title="Drop a workstream here to make it top-level">On my plate</div>${nodes || '<div class="empty">No workstreams yet. Create one above.</div>'}</div></div></div>`;
+  return `<div class="ws-main ${todayOn ? 'today' : ''}">
+    <div class="canvas-scroll"><div class="canvas ${todayOn ? 'today' : ''} ${todayAnim ? 'anim' : ''}" style="width:${L.w}px;height:${L.h}px"><svg width="${L.w}" height="${L.h}">${edgesSvg(L, heat)}</svg>
+      <div class="hub ${inNeed ? 'need' : ''}" id="rootzone" style="left:${L.cx}px;top:${L.cy}px" title="Drop a workstream here to make it top-level${inNeed ? ` · ${inNeed} in the Inbox need you` : ''}">On my plate${inNeed ? `<span class="wneed">${inNeed}</span>` : ''}</div>${nodes || '<div class="empty">No workstreams yet. Create one above.</div>'}</div></div>
+    ${todayOn ? timeline(L) : ''}</div>`;
 }
+let todayAnim = false;
+const toggleToday = () => { todayOn = !todayOn; store.set('plate.today', todayOn); todayAnim = todayOn; render(); todayAnim = false; };
+document.addEventListener('keydown', (e) => { if (e.key === 't' && view === 'ws' && !focus && !e.metaKey && !e.ctrlKey && !e.altKey && !e.target.closest?.('input, select, textarea')) toggleToday(); });
 
 // action-first grouping of one workstream's items
 function groupItems(items) {
@@ -583,11 +623,39 @@ function groupItems(items) {
   return g;
 }
 
+// Meeting note: runs the vault's own QuickAdd choice (sources.md `meeting_quickadd`, `obsidian_vault`) through its URI.
+// `meeting_values` fill named {{VALUE:x}} variables; QuickAdd still prompts for the unnamed ones (the title).
+function meetingNote(w) {
+  const m = S.meeting;
+  if (!m) return toast('Set meeting_quickadd (QuickAdd choice name) and obsidian_vault in sources.md');
+  const vars = { workstream: w.name, project: w.project || w.name, slug: w.slug, date: S.today };
+  const fill = (t) => String(t).replace(/\{(\w+)\}/g, (all, k) => vars[k] ?? all);
+  const q = [m.vault && `vault=${encodeURIComponent(m.vault)}`, `choice=${encodeURIComponent(m.choice)}`,
+    ...Object.entries(m.values || {}).map(([k, v]) => `value-${encodeURIComponent(k)}=${encodeURIComponent(fill(v))}`)].filter(Boolean).join('&');
+  location.href = `obsidian://quickadd?${q}`;
+  toast(`Opening “${m.choice}” in Obsidian…`);
+}
+// workstream body: free text stays a paragraph; `- [ ]` / `- [x]` lines become a to-do list that writes back to the .md
+const TODO_RE = /^\s*[-*] \[([ xX])\] (.*)$/;
+function bodyHtml(w) {
+  const lines = (w.body || '').split('\n'), text = lines.filter((l) => !TODO_RE.test(l)).join('\n').trim();
+  const todos = lines.filter((l) => TODO_RE.test(l)).map((l) => { const m = l.match(TODO_RE); return { done: m[1] !== ' ', text: m[2].trim() }; });
+  const open = todos.filter((t) => !t.done).length;
+  return `${text ? `<p class="fbody">${esc(text)}</p>` : ''}
+    <div class="todos"><div class="subrow"><span>To-do</span>${todos.length ? `<span class="chip dim">${open} open</span>` : ''}</div>
+      ${todos.map((t, n) => `<label class="${t.done ? 'x' : ''}"><input type="checkbox" data-todo="${n}" ${t.done ? 'checked' : ''}>${esc(t.text)}</label>`).join('')}
+      <div class="addtodo"><input id="todoNew" placeholder="Add a to-do… (Enter)"></div></div>`;
+}
+
+function crumbHtml(w) {
+  const trail = []; // ancestors, root first
+  for (let p = wsOf(w.parent), n = 0; p && n < 20; p = wsOf(p.parent), n++) trail.unshift(p);
+  return `<nav class="crumb ${panelOpen ? '' : 'solo'}"><button data-focus="">Workstreams</button>${trail.map((p) => ` / <button data-focus="${esc(p.slug)}">${esc(p.name)}</button>`).join('')} / <b>${esc(w.name)}</b>
+    <span class="esc">Esc to go back</span></nav>`;
+}
 function focusView(w) {
   const items = S.items.filter((i) => i.workstream === w.slug), g = groupItems(items);
   const open = items.filter((i) => i.state !== 'done').length;
-  const trail = []; // ancestors, root first
-  for (let p = wsOf(w.parent), n = 0; p && n < 20; p = wsOf(p.parent), n++) trail.unshift(p);
   const opt = (v, t, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(t)}</option>`;
   const others = S.workstreams.filter((x) => x.slug !== w.slug);
   const kids = S.workstreams.filter((x) => x.parent === w.slug);
@@ -597,11 +665,9 @@ function focusView(w) {
   const chips = (title, list) => list.length ? `<div class="subrow"><span>${title}</span>${list.map((x) => { const st = wsStats(x.slug); return `<button class="sub-ws ${st.need ? 'need' : ''}" data-focus="${esc(x.slug)}"><b>${esc(x.name)}</b><span>${st.n} items${st.need ? ` · ${st.need} needs you` : ''}</span></button>`; }).join('')}</div>` : '';
   const empty = !items.length ? '<div class="empty">Nothing in this workstream yet. Paste a link or note, or drag items here from the Board.</div>' : '';
   return `<div class="focus ${enter ? 'enter' : ''}">
-    <nav class="crumb"><button data-focus="">Workstreams</button>${trail.map((p) => ` / <button data-focus="${esc(p.slug)}">${esc(p.name)}</button>`).join('')} / <b>${esc(w.name)}</b>
-      <span class="esc">Esc to go back</span></nav>
     <header class="fhead"><h1>${esc(w.name)}</h1>
-      <div class="wrow"><span class="chip">${open} open</span>${g.need.length ? `<span class="chip need">${g.need.length} need you</span>` : ''}<span class="chip dim">${esc(w.state)}</span></div>
-      ${w.body ? `<p class="fbody">${esc(w.body)}</p>` : ''}</header>
+      <div class="wrow"><button class="btn" id="meetBtn" title="New meeting note for this workstream (QuickAdd in Obsidian)">+ Meeting note</button><span class="chip">${open} open</span>${g.need.length ? `<span class="chip need">${g.need.length} need you</span>` : ''}<span class="chip dim">${esc(w.state)}</span></div>
+      ${bodyHtml(w)}</header>
     ${chips('Inside', kids)}${chips('Related', [...rel].map(wsOf).filter(Boolean))}
     ${section('need', 'Needs you / next', 'Waiting sessions, overdue and due-today tasks, PRs in review: this is what moves it forward.', g.need)}
     ${section('', 'In progress', 'Running sessions and open issues and PRs.', g.prog)}
@@ -615,7 +681,8 @@ function focusView(w) {
       <label>Parent</label><select id="fParent">${opt('', '— root —', w.parent || '')}${others.map((x) => opt(x.slug, x.name, w.parent || '')).join('')}</select>
       <label>Related</label><div class="rels">${[...rel].map((r) => `<span class="chip x" data-unrel="${esc(r)}" title="Remove link">${esc(wsOf(r)?.name || r)} ✕</span>`).join('')}
         <select id="fRelAdd"><option value="">+ link…</option>${others.filter((x) => !rel.has(x.slug)).map((x) => opt(x.slug, x.name, '')).join('')}</select></div>
-      <label>GitHub</label><input id="fGh" value="${esc(w.github.join(', '))}" placeholder="repo:owner/name, project:owner/3">
+      <label>GitHub</label><input id="fGh" value="${esc(w.github.join(', '))}" placeholder="repo:owner/name, issue:owner/repo#12">
+      <span></span><span class="hint" style="margin:0">Routing rules: new GitHub items from a <code>repo:</code> (or under an <code>issue:</code> epic) land here instead of the Inbox. Items already on the plate stay put.</span>
       <label>Sub-workstream</label><div class="rels"><input id="newName" placeholder="New child…"><button class="btn" id="newChild">Add</button></div>
       <label>Teams</label><div class="rels"><input id="tLabel" placeholder="Label"><input id="tUrl" placeholder="https://… or msteams://…"><button class="btn" id="tAdd">Add</button></div>
     </div></details></div>`;
@@ -632,6 +699,9 @@ function wireWs() {
   enter = false;
   if (!focus) {
     $('#newRoot').onclick = () => create('');
+    $('#todayBtn').onclick = toggleToday;
+    document.querySelector('[data-panel]').onclick = togglePanel;
+    document.querySelectorAll('.tl [data-focus]').forEach((r) => (r.onclick = () => setFocus(r.dataset.focus)));
     // nodes: click = focus; drag = re-parent; also drop targets for item cards
     document.querySelectorAll('.wnode').forEach((n) => {
       n.onclick = () => setFocus(n.dataset.slug);
@@ -643,8 +713,8 @@ function wireWs() {
         e.preventDefault(); e.stopPropagation(); n.classList.remove('over');
         const dragged = e.dataTransfer.getData('application/x-plate-ws');
         if (dragged) { if (dragged !== n.dataset.slug) { await post('/api/ws/update', { slug: dragged, parent: n.dataset.slug }); load(); } return; }
-        const id = e.dataTransfer.getData('text/plain');
-        if (id) { await post('/api/move', { id, workstream: n.dataset.slug }); load(); }
+        const ids = draggedIds(e);
+        if (ids.length) moveSel(n.dataset.slug, null, ids);
       };
     });
     const rz = $('#rootzone');
@@ -655,9 +725,28 @@ function wireWs() {
   }
   const slug = focus, w = wsOf(slug);
   document.querySelectorAll('[data-focus]').forEach((b) => (b.onclick = () => setFocus(b.dataset.focus || null)));
+  // in focus: panel rows drop on the header (into this workstream) or on a child chip; this workstream's cards drag to the chips
+  const drop = (el, target) => {
+    el.ondragover = (e) => { e.preventDefault(); el.classList.add('over'); };
+    el.ondragleave = () => el.classList.remove('over');
+    el.ondrop = (e) => { e.preventDefault(); el.classList.remove('over'); const ids = draggedIds(e); if (ids.length) moveSel(target, null, ids); };
+  };
+  drop($('.fhead'), slug);
+  $('#meetBtn').onclick = () => meetingNote(w);
+  document.querySelectorAll('.sub-ws[data-focus]').forEach((b) => drop(b, b.dataset.focus));
+  document.querySelectorAll('.focus .card[draggable]').forEach((c) => (c.ondragstart = (e) => e.dataTransfer.setData('text/plain', c.dataset.id)));
   document.querySelectorAll('[data-mv]').forEach((s) => (s.onchange = async () => { if (s.value) { await post('/api/move', { id: s.dataset.mv, workstream: s.value === '__inbox' ? null : s.value }); load(); } }));
   document.querySelectorAll('[data-rm]').forEach((b) => (b.onclick = async () => { await post('/api/items/remove', { id: b.dataset.rm }); load(); }));
   document.querySelector('details.props').ontoggle = (e) => { propsOpen = e.target.open; };
+  const todoText = (n) => (w.body || '').split('\n').filter((l) => TODO_RE.test(l))[n].match(TODO_RE)[2].trim();
+  document.querySelectorAll('[data-todo]').forEach((c) => (c.onchange = async () => {
+    if (!await post('/api/ws/todo', { slug, n: Number(c.dataset.todo), text: todoText(Number(c.dataset.todo)), done: c.checked })) c.checked = !c.checked;
+    load();
+  }));
+  $('#todoNew').onkeydown = async (e) => {
+    if (e.key !== 'Enter' || !e.target.value.trim()) return;
+    if (await post('/api/ws/todo/add', { slug, text: e.target.value })) { await load(); $('#todoNew')?.focus(); }
+  };
   $('#newChild').onclick = () => create(slug);
   $('#fName').onchange = (e) => save(slug, { name: e.target.value });
   $('#fState').onchange = (e) => save(slug, { state: e.target.value });
@@ -690,8 +779,32 @@ async function openCtx(url, push = true) {
     const r2 = await post('/api/items/add-github', { url: b.dataset.add, workstream: onPlate(j.ticket.url)?.workstream || null });
     if (r2) { await load(); openCtx(ctxStack.at(-1), false); }
   }));
+  wireTeamsChat(d);
   d.querySelector('[data-back]')?.addEventListener('click', () => { ctxStack.pop(); openCtx(ctxStack.at(-1), false); });
   d.querySelector('[data-x]')?.addEventListener('click', () => closeCtx());
+}
+// Teams chat about a ticket: a deep link that opens a new chat with people, topic and a draft message (no Graph API).
+// People = author + assignees mapped to e-mails through `people:` in sources.md; editable before opening.
+function teamsChat(t) {
+  const logins = [...new Set([t.author, ...(t.assignees || [])].filter(Boolean))], P = S.people || {};
+  const missing = logins.filter((l) => !P[l]);
+  return `<details class="props tchat"><summary>Teams chat about this ${t.kind === 'pr' ? 'PR' : 'issue'}</summary><div class="f">
+    <label>People</label><input id="tcUsers" value="${esc(logins.filter((l) => P[l]).map((l) => P[l]).join(', '))}" placeholder="work e-mails, comma-separated">
+    ${missing.length ? `<span></span><span class="hint" style="margin:0">No e-mail for ${missing.map((l) => '@' + esc(l)).join(', ')}: add <code>- ${esc(missing[0])}: e-mail</code> under <code>people:</code> in sources.md</span>` : ''}
+    <label>Topic</label><input id="tcTopic" value="${esc(`${t.repo}#${t.number} ${t.title}`.slice(0, 120))}">
+    <label>Message</label><input id="tcMsg" value="${esc(`${t.title}: ${t.url}`)}">
+    <span></span><div class="rels"><a class="btn" id="tcOpen">Open in Teams</a><a class="chip dim" id="tcWeb" target="_blank" rel="noopener" title="Same chat in the browser">web</a></div></div></details>`;
+}
+function wireTeamsChat(d) {
+  if (!d.querySelector('#tcUsers')) return;
+  const sync = () => {
+    const users = d.querySelector('#tcUsers').value.split(/[,;\s]+/).filter(Boolean).map(encodeURIComponent).join(',');
+    const q = `users=${users}&topicName=${encodeURIComponent(d.querySelector('#tcTopic').value)}&message=${encodeURIComponent(d.querySelector('#tcMsg').value)}`;
+    d.querySelector('#tcOpen').href = `msteams://teams.microsoft.com/l/chat/0/0?${q}`;
+    d.querySelector('#tcWeb').href = `https://teams.microsoft.com/l/chat/0/0?${q}`;
+  };
+  d.querySelectorAll('.tchat input').forEach((i) => (i.oninput = sync));
+  sync();
 }
 function closeCtx(reset = true) {
   document.querySelectorAll('.ctx, .ctx-scrim').forEach((x) => x.remove());
@@ -714,6 +827,7 @@ function ctxHtml(c) {
       <h2><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.title)}</a></h2>
       <div class="chips">${t.kind === 'pr' ? devinBits(t.url) : ''}${p ? `<span class="chip">▸ ${esc(p.workstream ? wsOf(p.workstream)?.name || p.workstream : 'Inbox')}</span>${chip(p.status)}${chip(p.iteration, 'dim')}` : `<button class="add" data-add="${esc(t.url)}">+ add to plate</button>`}
         ${(t.assignees || []).map((a) => chip('@' + a, 'dim')).join('')}${(t.labels || []).map((l) => chip(l, 'dim')).join('')}</div></div>
+    ${teamsChat(t)}
     ${c.via ? `<h4>Closes · ${c.closes.length}</h4>${c.closes.map((x) => tk(x)).join('')}<p class="hint">Hierarchy below is ${esc(c.via.repo)}#${esc(c.via.number)}'s.</p>` : ''}
     ${sec('Sub-issues', subs, subs.length ? ` <span class="prog"><i style="width:${(100 * done) / subs.length}%"></i></span> ${done}/${subs.length}` : '')}
     ${sec('Blocked by', c.blockedBy)}${sec('Blocking', c.blocking)}
@@ -731,38 +845,69 @@ document.addEventListener('click', async (e) => {
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-ctx]'); if (b) { e.preventDefault(); e.stopPropagation(); openCtx(b.dataset.ctx); } }, true);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.querySelector('.ctx')) { e.stopImmediatePropagation(); closeCtx(); } }, true);
 
+// ---------- fit the Workstreams view to the window: the map scales down (zoom) instead of scrolling, panes end above the dock ----------
+const MIN_ZOOM = 0.55;
+function fitView() {
+  if (view !== 'ws') return;
+  const bottom = parseFloat(getComputedStyle($('main')).paddingBottom) || 0;
+  const room = (el) => Math.max(240, innerHeight - (el.getBoundingClientRect().top + scrollY) - bottom);
+  const cs = document.querySelector('.canvas-scroll'), cv = cs?.querySelector('.canvas');
+  if (cv) {
+    cs.style.height = `${room(cs)}px`;
+    const pad = 2 * 16 + 2, w = parseFloat(cv.style.width), h = parseFloat(cv.style.height);
+    cv.style.zoom = Math.max(MIN_ZOOM, Math.min(1, (cs.clientWidth - pad) / w, (cs.clientHeight - pad) / h));
+  }
+  for (const el of document.querySelectorAll('.ipanel, .tl')) el.style.maxHeight = `${room(el)}px`;
+  const ip = document.querySelector('.ipanel'); if (ip && cs) ip.style.height = cs.style.height; // same box as the map beside it
+}
+addEventListener('resize', () => requestAnimationFrame(fitView));
+// panel-only interactions (select, search, filters) redraw just the panel, so the map doesn't jump or replay
+function renderPanel() {
+  const ip = document.querySelector('.ipanel'); if (!ip) return render();
+  const top = ip.scrollTop; ip.outerHTML = inboxPanel(); wirePanel();
+  const n = document.querySelector('.ipanel'); n.scrollTop = top; fitView();
+}
+
 // ---------- triage: dense Inbox list, multi-select, type-ahead move ----------
-let tsel = new Set(), tlast = null, tscope = 'inbox', tkind = 'all';
+let tsel = new Set(), tlast = null, tscope = 'inbox', tkind = 'all', tq = '';
 const kindOf = (i) => (i.source === 'todoist' ? 'todoist' : i.kind || i.source);
 const KGROUP = { session: 'Sessions', todoist: 'Todoist', pr: 'GitHub', issue: 'GitHub', draft: 'GitHub', teams: 'Links & notes', link: 'Links & notes', note: 'Links & notes' };
+// search: every word must appear in the title, repo#N, directory, url, note or workstream name
+const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const hay = (i) => fold([i.title, i.repo && `${i.repo}#${i.number}`, i.cwd, i.url, i.note, wsOf(i.workstream)?.name].join(' '));
+const inInbox = (i) => !i.workstream && i.state !== 'done' && !i.dismissed;
 function triageList() {
-  return S.items.filter((i) => i.state !== 'done' && (tscope === 'all' || !i.workstream) && (tkind === 'all' || KGROUP[kindOf(i)] === tkind))
+  const words = fold(tq).split(/\s+/).filter(Boolean);
+  return S.items.filter((i) => i.state !== 'done' && (tscope === 'dismissed' ? i.dismissed : !i.dismissed && (tscope === 'all' || !i.workstream)) && (tkind === 'all' || KGROUP[kindOf(i)] === tkind)
+    && (!words.length || words.every((w) => hay(i).includes(w))))
     .sort((a, b) => (b.lastActivity || b.updated || '').localeCompare(a.lastActivity || a.updated || ''));
 }
-function triage() {
+function inboxPanel() {
   const list = triageList();
-  const groups = new Map(); // sessions by directory (one repo ≈ one workstream), the rest by kind
+  let groups = new Map(); // review requests first, sessions by directory (one repo ≈ one workstream), the rest by kind
   for (const i of list) {
-    const g = i.source === 'session' ? (i.cwd || 'Sessions (no directory)') : KGROUP[kindOf(i)] || kindOf(i);
+    const g = i.reviewMe ? 'Review requested' : i.source === 'session' ? (i.cwd || 'Sessions (no directory)') : KGROUP[kindOf(i)] || kindOf(i);
     if (!groups.has(g)) groups.set(g, []);
     groups.get(g).push(i);
   }
+  if (groups.has('Review requested')) { const r = groups.get('Review requested'); groups.delete('Review requested'); groups = new Map([['Review requested', r], ...groups]); }
   for (const id of [...tsel]) if (!list.some((i) => i.id === id)) tsel.delete(id);
   const kinds = ['all', ...new Set(S.items.filter((i) => i.state !== 'done').map((i) => KGROUP[kindOf(i)]).filter(Boolean))];
   const seg = (attr, cur, opts) => `<div class="seg">${opts.map(([v, t]) => `<button data-${attr}="${esc(v)}" class="${v === cur ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>`;
   const row = (i) => {
     const k = kindOf(i), href = SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"${/^https?:/i.test(i.url) ? ' target="_blank" rel="noopener"' : ''}` : '';
-    return `<div class="trow k-${esc(k)} ${tsel.has(i.id) ? 'sel' : ''}" data-tid="${esc(i.id)}">
+    return `<div class="trow k-${esc(k)} ${ghState(i)} ${tsel.has(i.id) ? 'sel' : ''}" data-tid="${esc(i.id)}" draggable="true">
       <input type="checkbox" ${tsel.has(i.id) ? 'checked' : ''} tabindex="-1"><span class="g">${GLYPH[k] || ''}</span>
       <span class="t"><a ${href}>${esc(i.title)}</a></span>
-      <span class="m">${i.source === 'session' ? chip(ago(i.lastActivity), 'dim') : i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : chip(`${i.repo}#${i.number}`, 'dim')) : ''}${dueTag(i)}${i.workstream ? `<span class="chip ws">▸ ${esc(wsOf(i.workstream)?.name || i.workstream)}</span>` : ''}</span></div>`;
+      <span class="m">${i.source === 'session' ? chip(ago(i.lastActivity), 'dim') : i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : chip(`${i.repo}#${i.number}`, 'dim')) : ''}${dueTag(i)}${i.workstream ? `<span class="chip ws">▸ ${esc(wsOf(i.workstream)?.name || i.workstream)}</span>` : ''}${i.reviewMe ? '<span class="chip need">review</span>' : ''}<button class="dis" data-dismiss="${esc(i.id)}" title="${i.dismissed ? 'Restore to the Inbox' : 'Dismiss (d)'}">${i.dismissed ? '↺' : '✕'}</button></span></div>`;
   };
-  return `<div class="tri">
-    <div class="tri-bar"><div class="page-h"><h2>Triage</h2><p>${list.length} ${tscope === 'inbox' ? 'unclassified' : 'open'} · click / shift-click to select · <kbd>a</kbd> all · <kbd>m</kbd> move · <kbd>Esc</kbd> clear · titles open the item</p></div>
-      ${seg('tscope', tscope, [['inbox', 'Inbox'], ['all', 'All open']])}${seg('tkind', tkind, kinds.map((k) => [k, k === 'all' ? 'All kinds' : k]))}</div>
+  return `<aside class="ipanel">
+    <div class="tri-bar"><div class="page-h"><h2>Inbox</h2><p>${list.length} ${tq ? 'matching' : tscope === 'inbox' ? 'unclassified' : 'open'} · drag onto a workstream · click / shift-click to select · <kbd>/</kbd> search · <kbd>a</kbd> all · <kbd>m</kbd> move · <kbd>d</kbd> dismiss · <kbd>i</kbd> hide</p></div>
+      <input id="tq" type="search" placeholder="Search…" value="${esc(tq)}" autocomplete="off">
+      ${seg('tscope', tscope, [['inbox', 'Inbox'], ['all', 'All open'], ['dismissed', 'Dismissed']])}${seg('tkind', tkind, kinds.map((k) => [k, k === 'all' ? 'All kinds' : k]))}</div>
     ${list.length ? [...groups].map(([g, items]) => `<section class="tgrp"><h4 data-tgrp="${esc(g)}" title="Select this group">${esc(g)}<span>${items.length}</span></h4>${items.map(row).join('')}</section>`).join('')
-      : '<div class="empty">Inbox zero. Everything has a workstream.</div>'}
-  </div>`;
+      : tq ? '<div class="empty">Nothing matches this search.</div>' : tscope === 'dismissed' ? '<div class="empty">Nothing dismissed.</div>' : '<div class="empty">Inbox zero. Everything has a workstream.</div>'}
+  </aside>`;
 }
 function triageBar() {
   document.querySelector('.tri-act')?.remove();
@@ -770,7 +915,7 @@ function triageBar() {
   const bar = document.createElement('div'); bar.className = 'tri-act';
   // one click on a destination moves the selection; typing filters them, Enter takes the highlighted (first) one
   bar.innerHTML = `<b>${tsel.size}</b> selected · move to: <input id="tMove" placeholder="filter or new name…" autocomplete="off">
-    <button class="lnk" id="tClear">Clear selection</button><div class="dests" id="tDests"></div>`;
+    <button class="btn" id="tDismiss">${tscope === 'dismissed' ? 'Restore' : 'Dismiss'}</button><button class="lnk" id="tClear">Clear selection</button><div class="dests" id="tDests"></div>`;
   document.body.append(bar);
   const open = S.workstreams.filter((w) => w.state !== 'done');
   const dests = () => {
@@ -792,12 +937,20 @@ function triageBar() {
     if (e.key !== 'Enter') return;
     const d = dests()[0]; if (d) moveSel(d.slug || null, d.create);
   };
-  $('#tClear').onclick = () => { tsel.clear(); render(); };
+  $('#tClear').onclick = () => { tsel.clear(); renderPanel(); };
+  $('#tDismiss').onclick = () => dismiss([...tsel], tscope !== 'dismissed');
 }
-// slug = target workstream; newName = create it first (typed a name that matches nothing)
-async function moveSel(slug, newName) {
+// dismiss = hide from the Inbox without classifying (any source: collectors keep the flag); on = false restores
+async function dismiss(ids, on = true) {
+  const r = await post('/api/dismiss', { ids, dismissed: on });
+  if (!r) return;
+  ids.forEach((id) => tsel.delete(id)); await load();
+  toast(`${on ? 'Dismissed' : 'Restored'} ${r.changed.length}`, async () => { await post('/api/dismiss', { ids: r.changed, dismissed: !on }); load(); });
+}
+// slug = target workstream; newName = create it first (typed a name that matches nothing); ids = the selection, or what was dragged
+async function moveSel(slug, newName, ids = [...tsel]) {
   if (newName) { const c = await post('/api/ws/create', { name: newName, parent: '' }); if (!c) return; slug = c.slug; }
-  const ids = [...tsel], r = await post('/api/move', { ids, workstream: slug || null });
+  const r = await post('/api/move', { ids, workstream: slug || null });
   if (!r) return;
   tsel.clear(); await load();
   const undo = async () => {
@@ -807,31 +960,47 @@ async function moveSel(slug, newName) {
   };
   toast(`${newName ? `Created ${newName} · ` : ''}Moved ${r.moved.length} to ${slug ? wsOf(slug)?.name : 'Inbox'}`, undo);
 }
-function wireTriage() {
-  document.querySelectorAll('[data-tscope]').forEach((b) => (b.onclick = () => { tscope = b.dataset.tscope; render(); }));
-  document.querySelectorAll('[data-tkind]').forEach((b) => (b.onclick = () => { tkind = b.dataset.tkind; render(); }));
+// dragging a selected row drags the whole selection; drop targets read this type (else the single id in text/plain)
+const DRAG_IDS = 'application/x-plate-ids';
+const draggedIds = (e) => { try { return JSON.parse(e.dataTransfer.getData(DRAG_IDS)); } catch { const id = e.dataTransfer.getData('text/plain'); return id ? [id] : []; } };
+function wirePanel() {
+  // re-rendering replaces the input, so put focus and caret back after each keystroke
+  $('#tq').oninput = (e) => { tq = e.target.value; const at = e.target.selectionStart; renderPanel(); const q = $('#tq'); q.focus(); q.setSelectionRange(at, at); };
+  $('#tq').onkeydown = (e) => { if (e.key === 'Escape') { e.stopPropagation(); if (tq) { tq = ''; renderPanel(); } else e.target.blur(); } };
+  document.querySelectorAll('[data-tscope]').forEach((b) => (b.onclick = () => { tscope = b.dataset.tscope; renderPanel(); }));
+  document.querySelectorAll('[data-tkind]').forEach((b) => (b.onclick = () => { tkind = b.dataset.tkind; renderPanel(); }));
   const rows = [...document.querySelectorAll('.trow')], ids = rows.map((r) => r.dataset.tid);
   rows.forEach((r) => (r.onclick = (e) => {
-    if (e.target.closest('a[href], [data-ctx]')) return; // the title opens the item, the ref its context
+    if (e.target.closest('a[href], [data-ctx], [data-dismiss]')) return; // the title opens the item, the ref its context
     e.preventDefault();
     const id = r.dataset.tid;
     if (e.shiftKey && tlast && ids.includes(tlast)) {
       const [a, b] = [ids.indexOf(tlast), ids.indexOf(id)].sort((x, y) => x - y);
       ids.slice(a, b + 1).forEach((x) => tsel.add(x));
     } else tsel.has(id) ? tsel.delete(id) : tsel.add(id);
-    tlast = id; render();
+    tlast = id; renderPanel();
   }));
+  document.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); dismiss([b.dataset.dismiss], tscope !== 'dismissed'); }));
+  rows.forEach((r) => {
+    r.ondragstart = (e) => {
+      const ids = tsel.has(r.dataset.tid) ? [...tsel] : [r.dataset.tid];
+      e.dataTransfer.setData(DRAG_IDS, JSON.stringify(ids)); e.dataTransfer.setData('text/plain', ids[0]);
+      r.classList.add('dragging');
+    };
+    r.ondragend = () => r.classList.remove('dragging');
+  });
   document.querySelectorAll('[data-tgrp]').forEach((h) => (h.onclick = () => {
     const g = [...h.parentElement.querySelectorAll('.trow')].map((r) => r.dataset.tid), all = g.every((x) => tsel.has(x));
-    g.forEach((x) => (all ? tsel.delete(x) : tsel.add(x))); render();
+    g.forEach((x) => (all ? tsel.delete(x) : tsel.add(x))); renderPanel();
   }));
   triageBar();
 }
 document.addEventListener('keydown', (e) => {
-  if (view !== 'triage' || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, select, textarea')) return;
-  if (e.key === 'a') { triageList().forEach((i) => tsel.add(i.id)); render(); }
+  if (view !== 'ws' || !panelOpen || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, select, textarea')) return;
+  if (e.key === 'a') { triageList().forEach((i) => tsel.add(i.id)); renderPanel(); }
   else if (e.key === 'm' && tsel.size) { e.preventDefault(); $('#tMove')?.focus(); }
-  else if (e.key === 'Escape' && tsel.size) { tsel.clear(); render(); }
+  else if (e.key === 'Escape' && tsel.size) { tsel.clear(); renderPanel(); }
+  else if (e.key === 'd' && tsel.size) dismiss([...tsel], tscope !== 'dismissed');
 });
 
 // ---------- smart paste: Cmd+V outside a form field adds an item ----------
@@ -859,9 +1028,16 @@ document.addEventListener('paste', async (e) => {
   if (!r) return;
   await load();
   const where = (slug) => (slug ? wsOf(slug)?.name : 'Inbox');
-  if (r.existing) return toast(`Already on your plate, in ${where(r.workstream)}`);
+  if (r.existing) {
+    // already on the plate: offer to bring it into the workstream that's open
+    if (!target || r.workstream === target) return toast(`Already on your plate, in ${where(r.workstream)}`);
+    return toast(`Already in ${where(r.workstream)}`, async () => {
+      const m = await post('/api/move', { id: r.id, workstream: target });
+      if (m) { await load(); toast(`Moved to ${where(target)}`, async () => { await post('/api/move', { id: r.id, workstream: r.workstream }); load(); }); }
+    }, `Move to ${where(target)}`);
+  }
   const it = S.items.find((x) => x.id === r.id);
-  const label = item.source === 'ghref' ? `${it?.repo}#${it?.number}` : { teams: 'Teams link', link: 'link', note: 'note' }[item.source];
+  const label = item.source === 'ghref' ? `${it?.repo}#${it?.number}${r.prs ? ` + ${r.prs} PR${r.prs > 1 ? 's' : ''}` : ''}` : { teams: 'Teams link', link: 'link', note: 'note' }[item.source];
   toast(`Added ${label} to ${where(r.workstream ?? target)}`, async () => { await post('/api/items/remove', { id: r.id }); load(); });
 });
 

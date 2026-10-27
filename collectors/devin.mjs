@@ -17,6 +17,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { upsert } from '../lib/upsert.mjs';
+import { readSources } from '../lib/store.mjs';
 
 const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : null; };
 const db = arg('db') || process.env.DEVIN_SESSIONS_DB || path.join(os.homedir(), '.local/share/devin/cli/sessions.db');
@@ -48,11 +49,15 @@ async function annotations() {
 }
 
 const iso = (t) => (t ? new Date(t < 1e12 ? t * 1000 : t).toISOString() : undefined); // epoch s or ms
-// Devin Desktop's shell routes `devin://app/return/<base64url(path)>` to an in-app path; a local session's page is
-// /sessions/<encoded "acp/devin-cli/<id>">. (`devin://acp/session?…` is the old editor UI's handler: "This session doesn't exist".)
-// Cloud sessions keep the acp form, untested.
+// Two Desktop generations, two link handlers (sources.md `devin_link`):
+//   shell (default; Desktop 3.11+): the shell routes `devin://app/return/<base64url(path)>` to an in-app path,
+//         a local session's page being /sessions/<encoded "acp/devin-cli/<id>">. Here the acp form says "This session doesn't exist".
+//   acp   (older Desktop, e.g. 3.4, where the editor UI is the app): `devin://acp/session?sessionId=<id>&connectorId=devin-cli`.
+// Cloud sessions always use the acp form, untested.
+const LINK = readSources().devin_link === 'acp' ? 'acp' : 'shell';
 const link = (r) => /cloud/i.test(r.backend_type || '')
   ? `devin://acp/session?sessionId=${encodeURIComponent(`devin-${String(r.id).replace(/^devin-/, '')}`)}&connectorId=devin-cloud`
+  : LINK === 'acp' ? `devin://acp/session?sessionId=${encodeURIComponent(r.id)}&connectorId=devin-cli`
   : `devin://app/return/${Buffer.from(`/sessions/${encodeURIComponent(`acp/devin-cli/${r.id}`)}`).toString('base64url')}`;
 
 const notes = await annotations();

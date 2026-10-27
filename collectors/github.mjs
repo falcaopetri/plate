@@ -84,7 +84,7 @@ const fromGraphql = (n) => {
   const closes = isPr ? c.closingIssuesReferences.nodes : [];
   return {
     id: n.id, kind: isPr ? 'pr' : isIssue ? 'issue' : 'draft', url: c.url || null, title: c.title, repo: c.repository?.nameWithOwner || null,
-    number: c.number ?? null, status, iteration, assignees: c.assignees?.nodes.map((a) => a.login), closed: /^(closed|merged)$/i.test(c.state || ''),
+    number: c.number ?? null, status, iteration, assignees: c.assignees?.nodes.map((a) => a.login), closed: /^(closed|merged)$/i.test(c.state || ''), ghState: c.state ? c.state.toLowerCase() : null,
     parent: isIssue ? c.parent?.url || null : undefined, closes: isPr ? closes.map((x) => x.url) : undefined,
     lineage: isIssue ? chain(c) : closes.flatMap((x) => [x.url, ...chain(x)]), // the epics this item could belong to, nearest first
   };
@@ -96,7 +96,7 @@ const fromItemList = (it) => {
     id: it.id, kind: c.type === 'PullRequest' ? 'pr' : c.type === 'Issue' ? 'issue' : 'draft', url: c.url || null, title: it.title || c.title,
     repo: (typeof c.repository === 'string' ? c.repository : typeof it.repository === 'string' ? it.repository : '').replace(/^https:\/\/github.com\//, '') || null,
     number: c.number ?? null, status: it.status || null, iteration: (it.iteration && typeof it.iteration === 'object' ? it.iteration.title : it.iteration) || null,
-    assignees: Array.isArray(it.assignees) ? it.assignees : undefined, closed: /^(closed|merged)$/i.test(c.state || ''), lineage: [],
+    assignees: Array.isArray(it.assignees) ? it.assignees : undefined, closed: /^(closed|merged)$/i.test(c.state || ''), ghState: c.state ? c.state.toLowerCase() : null, lineage: [],
   };
 };
 
@@ -122,7 +122,7 @@ for (const r of raw) {
   const epic = [r.url, ...r.lineage].find((u) => epicWs.has(u));
   incoming.push({
     id: `github:${r.id}`, source: 'github', kind: r.kind, url: r.url, title: r.title, repo: r.repo, number: r.number,
-    status: r.status, iteration: r.iteration, assignees: r.assignees, parent: r.parent, closes: r.closes,
+    status: r.status, iteration: r.iteration, assignees: r.assignees, parent: r.parent, closes: r.closes, ghState: r.ghState,
     state: DONE.test(r.status || '') || r.closed ? 'done' : 'open',
     workstream: (epic && epicWs.get(epic)) ?? repoWs.get(r.repo) ?? undefined,
   });
