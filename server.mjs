@@ -4,9 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ticketContext } from './lib/ghcontext.mjs';
-import { withLock, collectNow, startSchedule, status } from './lib/schedule.mjs';
+import { withLock, collectNow, startSchedule, status, busy } from './lib/schedule.mjs';
+import { transcript } from './lib/devintranscript.mjs';
 import { startReview, runs } from './lib/devinrun.mjs';
-import { DATA_DIR, readItems, writeItems, readWorkstreams, readEvents, readSources, appendEvent, needsYou, today, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, BadRequest } from './lib/store.mjs';
+import { DATA_DIR, readItems, writeItems, readWorkstreams, readEvents, readSources, appendEvent, needsYou, today, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, BadRequest } from './lib/store.mjs';
 
 const PORT = Number(process.env.PORT) || 4173;
 const repo = path.dirname(fileURLToPath(import.meta.url));
@@ -26,7 +27,7 @@ http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   try {
     // writes are serialized with the scheduled collectors (lib/schedule.mjs)
-    await (req.method === 'POST' ? withLock(() => handle(req, res, url)) : handle(req, res, url));
+    await (req.method === 'POST' ? withLock(() => handle(req, res, url), `POST ${url.pathname}`) : handle(req, res, url));
   } catch (e) { json(res, e instanceof BadRequest ? 400 : 500, { error: e instanceof BadRequest ? e.message : String(e) }); }
 }).listen(PORT, '127.0.0.1', () => { console.log(`plate on http://localhost:${PORT}  (data: ${DATA_DIR})`); startSchedule(); });
 
@@ -38,11 +39,11 @@ async function handle(req, res, url) {
       // events: today's (local date), for the mindmap's Today mode; people: login -> e-mail for Teams chats
       const events = readEvents().filter((e) => new Date(e.ts).toLocaleDateString('en-CA') === t), src = readSources();
       const meeting = src.meeting_quickadd ? { choice: src.meeting_quickadd, vault: src.obsidian_vault || null, values: src.meeting_values } : null;
-      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams: readWorkstreams(), items, events, people: src.people, meeting, setup: setupPending(), collect: status, runs });
+      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams: readWorkstreams(), items, events, people: src.people, meeting, setup: setupPending(), collect: status, runs, busy, devinModel: src.devin_review_model || null });
     }
     if (url.pathname === '/api/collect' && req.method === 'POST') {
       // runs outside the request's lock: each collector takes the lock itself
-      setTimeout(() => collectNow(), 0);
+      setTimeout(async () => { await collectNow(); await withLock(() => applyRules(), 'rules'); }, 0);
       return json(res, 202, { ok: true });
     }
     if (url.pathname === '/api/move' && req.method === 'POST') {
@@ -79,7 +80,13 @@ async function handle(req, res, url) {
       if (changed.length) writeItems(items);
       return json(res, 200, { ok: true, changed });
     }
-    if (url.pathname === '/api/devin/review' && req.method === 'POST') return json(res, 200, startReview(JSON.parse(await readBody(req)).url));
+    if (url.pathname === '/api/item/update' && req.method === 'POST') {
+      const { id, ...patch } = JSON.parse(await readBody(req)); // alias / label / snoozedUntil on any item
+      return json(res, 200, { ok: true, item: patchItem(id, patch) });
+    }
+    if (url.pathname === '/api/rules/apply' && req.method === 'POST') return json(res, 200, { ok: true, routed: applyRules() });
+    if (url.pathname === '/api/devin/review' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startReview(b.url, b.model)); }
+    if (url.pathname === '/api/devin/transcript') return json(res, 200, await transcript(url.searchParams.get('id')));
     if (url.pathname === '/api/gh/context') return json(res, 200, await ticketContext(url.searchParams.get('url')));
     if (url.pathname === '/api/items/add-github' && req.method === 'POST') {
       return json(res, 200, await addGithubItem(JSON.parse(await readBody(req))));
@@ -115,7 +122,7 @@ async function handle(req, res, url) {
     if (url.pathname === '/api/ws/update' && req.method === 'POST') {
       const { slug, ...patch } = JSON.parse(await readBody(req));
       updateWorkstream(slug, patch);
-      return json(res, 200, { ok: true });
+      return json(res, 200, { ok: true, routed: 'github' in patch ? applyRules() : 0 }); // new anchors claim matching Inbox items
     }
     const file = path.join(pub, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname).replace(/^(\.\.[/\\])+/, ''));
     if (!file.startsWith(pub) || !fs.existsSync(file)) { res.writeHead(404); return res.end('not found'); }

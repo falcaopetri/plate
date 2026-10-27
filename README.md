@@ -18,11 +18,11 @@ The Claude preview tooling uses `.claude/launch.json` (config `plate`).
 
 ## Devin review of a PR
 
-PR cards and the ticket-context drawer have **Review no Devin**: it runs `devin -p "/code-review <PR url>"` in the background, in the folder set as `devin_review_dir` in `<data>/sources.md` (the workspace with clones of every repo). The card shows the run state, then a link to the session it created (opens in Devin Desktop). Requires `devin auth login` once on that machine. Override the prompt with `devin_review_prompt: "/my-skill {url}"`.
+PR cards and the ticket-context drawer have **Review no Devin**: it runs `devin -p "/code-review <PR url>"` in the background, in the folder set as `devin_review_dir` in `<data>/sources.md` (the workspace with clones of every repo). The card shows the run state, then a link to the session it created (opens in Devin Desktop). Requires `devin auth login` once on that machine. The box next to the button picks the model (`devin --model`; default `devin_review_model`). The session gets the alias `Review: <PR title>`, is linked from the PR and links back to it, and has a **transcript** button (read-only drawer, local sessions only: `app.devin.ai` refuses to be framed). Override the prompt with `devin_review_prompt: "/my-skill {url}"`.
 
 ## Automatic collection
 
-While `npm start` runs, the server runs the collectors itself: Devin every 2 min, GitHub every 15 min (only with boards in `sources.md`), review requests every 10 min, Todoist every 15 min (only with `TODOIST_API_TOKEN`; the MCP-dump route can't run unattended). Intervals: `PLATE_EVERY_DEVIN` / `PLATE_EVERY_GITHUB` / `PLATE_EVERY_TODOIST` in minutes; `PLATE_NO_SCHEDULE=1` turns it off. The header shows the last sync (hover for each collector's result) and a **Sync now** button; the page refreshes itself every 20 s when the data changed, unless you're typing or dragging.
+While `npm start` runs, the server runs the collectors itself: Devin every 2 min, GitHub every 15 min (only with boards in `sources.md`), review requests every 10 min, Todoist every 15 min (only with `TODOIST_API_TOKEN`; the MCP-dump route can't run unattended). Intervals: `PLATE_EVERY_DEVIN` / `PLATE_EVERY_GITHUB` / `PLATE_EVERY_TODOIST` in minutes; `PLATE_NO_SCHEDULE=1` turns it off for that run; `collect: off` in `sources.md` turns it off persistently. The header shows the last sync (hover for each collector's result) and a **Sync now** button; the page refreshes itself every 20 s when the data changed, unless you're typing or dragging.
 
 ## Collect (Todoist)
 
@@ -77,6 +77,8 @@ A session may carry `"github": "<item url>"`: a new session inherits that item's
 |---|---|
 | `github_projects: [owner/N, …]` | GitHub Projects boards to collect (needs `gh auth refresh -s read:project`) |
 | `github_reviews: off` | turns off the review-requests collector (on by default) |
+| `collect: off` | turns off all automatic collection (timers); **Sync now** still runs the enabled collectors by hand |
+| `devin_review_model` | default `--model` for "Review no Devin" (e.g. `opus`); the box next to the button overrides it |
 | `devin_review_dir` | folder where "Review no Devin" runs (the one with the repo clones) |
 | `devin_review_prompt` | override, `{url}` placeholder (default `/code-review {url}`) |
 | `devin_link: acp` | Devin Desktop older than 3.11 (default `shell`) |

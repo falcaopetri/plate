@@ -6,6 +6,29 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 5 — 2026-10-27: routing rules on existing items, snooze, rename/label, Devin model + transcript, write-lock diagnostics
+
+- **Routing rules apply to items already on the plate:** an Inbox item whose repo matches a workstream's `repo:` anchor moves there (and an Inbox session anchored to a classified PR follows the PR). Runs after every collector, on Sync now, when a workstream's anchors change, and from the Inbox's **Apply rules** button.
+- **Snooze** in Needs you (3 hours / tomorrow 9:00 / 3 days / next Monday): the item leaves Needs you until then and sits in a "Snoozed" section.
+- **Rename / label** (✎ on any card): `alias` shows instead of the title, `label` is free text with suggestions (e.g. "Chat com PO"). Collectors never overwrite them. Devin review sessions get the alias `Review: <PR title>` automatically.
+- **Devin review model:** a box next to **Review no Devin** (remembered in the browser) or `devin_review_model` in `sources.md`; passed as `devin --model`.
+- **Review sessions are linked both ways:** the PR lists its sessions, a session shows `↳ owner/repo#N` (opens the PR context).
+- **Devin transcript drawer** (local sessions): reads the conversation from `sessions.db`, read-only.
+- **Write lock diagnostics:** `/api/state` carries `busy` (what holds the lock); a write that waits >5s logs it; the UI gives up after 20s and says what the server is busy with; a collector that hangs is killed (SIGKILL) and abandoned after 130s instead of blocking every write.
+
+**Setup**
+1. Restart the server.
+2. Optional: `devin_review_model: opus` in `sources.md`.
+3. `devin auth login` once on any machine that uses Review no Devin (the Desktop login does not carry over to the CLI).
+
+## 4 — 2026-10-26: `collect: off`
+
+- New `sources.md` key `collect: off`: stops every automatic collector (Devin included, which had no switch), read at each tick, so no restart needed. **Sync now** still collects by hand.
+
+**Setup**
+1. Restart the server.
+2. Optional: add `collect: off` to `sources.md` to keep the plate manual-only.
+
 ## 3 — 2026-10-26: Inbox panel, review requests, dismiss, to-dos, Today mode, Teams chat, meeting notes
 
 - **Board and Triage views removed.** The Triage list is now the **Inbox panel** beside the mindmap (`i` toggles, `/` searches): multi-select and drag rows onto workstream nodes, the focused workstream's title, or its child chips.

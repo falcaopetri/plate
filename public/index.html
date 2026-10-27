@@ -322,6 +322,18 @@
   .ctxbtn:hover { color: var(--text); background: var(--surface-3); }
   .syncbtn { font: 500 var(--fs-xs) var(--font); color: var(--text-3); background: none; border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; cursor: pointer; white-space: nowrap; }
   .syncbtn:hover { color: var(--text); border-color: var(--line-2); } .syncbtn.bad { color: var(--late); border-color: rgb(240 112 127 / .4); }
+  .ibtn { font: 600 var(--fs-xs) var(--font); color: var(--text-3); background: none; border: 1px solid transparent; border-radius: 99px; padding: 1px 7px; cursor: pointer; }
+  .ibtn:hover { color: var(--text); border-color: var(--line-2); }
+  select.snz, input.devmodel { font: 600 var(--fs-xs) var(--font); color: var(--text-3); background: transparent; border: 1px dashed var(--line-2); border-radius: 99px; padding: 1px 7px; max-width: 120px; }
+  input.devmodel { width: 82px; } select.snz option { color: #111; }
+  .modal-scrim { position: fixed; inset: 0; z-index: 40; background: rgb(0 0 0 / .5); display: grid; place-items: center; }
+  .modal { width: min(460px, 92vw); padding: var(--s5); border-radius: var(--r-md); background: rgb(14 24 22 / .97); border: 1px solid var(--line-2); display: grid; gap: var(--s2); }
+  .modal h3 { margin: 0 0 var(--s2); font-size: var(--fs-md); } .modal label { color: var(--text-3); font-size: var(--fs-xs); }
+  .modal input { font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 6px 10px; }
+  .modal .row { display: flex; gap: var(--s2); justify-content: flex-end; margin-top: var(--s2); }
+  .tr-msg { margin: 0 0 var(--s3); } .tr-msg b { display: block; font-size: var(--fs-xs); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 2px; }
+  .tr-msg.assistant b { color: var(--sess); } .tr-msg div { white-space: pre-wrap; word-break: break-word; font-size: var(--fs-sm); line-height: 1.5; }
+  .snoozed { margin-top: var(--s5); opacity: .8; }
   .devrev { font: 600 var(--fs-xs) var(--font); color: var(--sess); background: none; border: 1px dashed var(--line-2); border-radius: 99px; padding: 1px 9px; cursor: pointer; }
   .devrev:hover { color: var(--text); border-color: var(--text-3); } .devrev:disabled { opacity: .5; cursor: default; }
   a.chip { text-decoration: none; }
@@ -343,6 +355,7 @@
   <button data-v="ws"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5H5v5M12 11.5h7v5"/></svg>Workstreams</button>
   <button data-v="needs"><svg class="i" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Needs you<span class="pip" id="pip"></span></button>
 </nav>
+<datalist id="devmodels"><option value="opus"><option value="sonnet"><option value="claude-sonnet-4"><option value="claude-opus-4.6"><option value="codex"></datalist>
 <script>
 let S, view = 'ws', selWs = null, panelScroll = 0;
 const $ = (s) => document.querySelector(s);
@@ -431,18 +444,19 @@ const card = (i, drag = true, extra = '') => {
   const label = { todoist: 'Todoist', pr: 'PR', issue: 'Issue', draft: 'Draft PR', session: 'Session', teams: 'Teams', link: 'Link', note: 'Note' }[k] || esc(k);
   return `<div class="card k-${esc(k)} ${ghState(i)} ${i.state === 'done' ? 'done' : ''} ${i.needsYou ? 'need' : ''}" ${drag ? `draggable="true" data-id="${esc(i.id)}"` : ''}>
   <div class="kind">${GLYPH[k] || ''}${label}${i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context: parent, sub-issues, PRs">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : `<span class="ref">${esc(i.repo)}#${esc(i.number)}</span>`) : ''}</div>
-  <a class="ttl" ${SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"` : ''} ${/^https?:/i.test(i.url || '') ? 'target="_blank" rel="noopener"' : ''}>${esc(i.title)}</a>
-  <div class="chips">${meta(i)}${i.kind === 'pr' ? devinBits(i.url) : ''}${extra}</div></div>`;
+  <a class="ttl" ${SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"` : ''} ${/^https?:/i.test(i.url || '') ? 'target="_blank" rel="noopener"' : ''}>${esc(nameOf(i))}</a>
+  <div class="chips">${i.label ? `<span class="chip" title="Label">${esc(i.label)}</span>` : ''}${meta(i)}${i.kind === 'pr' ? devinBits(i.url) : ''}${extra}${snoozeBits(i)}<button class="ibtn" data-edit="${esc(i.id)}" title="Rename / label">✎</button></div></div>`;
 };
 const chip = (t, c = '') => t ? `<span class="chip ${c}">${esc(t)}</span>` : '';
 // Devin review of a PR: run state, the session(s) it produced, and the trigger button
 const devinBits = (url) => {
   if (!GH_TICKET.test(url || '')) return '';
   const pr = url.replace(/[#?].*$/, ''), r = S.runs?.[pr];
-  const st = r ? `<span class="chip ${r.state === 'failed' ? 'late' : 'dim'}" title="${esc(`${r.dir}\n${r.msg || ''}`)}">${{ running: 'Devin reviewing…', done: 'Devin review done', failed: 'Devin review failed' }[r.state]}</span>` : '';
-  const sess = S.items.filter((i) => i.tool === 'devin' && i.anchor === pr).map((i) => `<a class="chip" href="${esc(i.url)}" title="Open the review session in Devin">▸ ${esc(i.title.slice(0, 40))}</a>`).join('');
-  return `${st}${sess}${r?.state === 'running' ? '' : `<button class="devrev" data-review="${esc(pr)}" title="Run the Devin review skill on this PR">Review no Devin</button>`}`;
+  const st = r ? `<span class="chip ${r.state === 'failed' ? 'late' : 'dim'}" title="${esc(`${r.dir}\n${r.model ? `model: ${r.model}\n` : ''}${r.msg || ''}`)}">${{ running: 'Devin reviewing…', done: 'Devin review done', failed: `Devin review failed${r.msg ? `: ${r.msg.slice(0, 70)}` : ''}` }[r.state]}</span>` : '';
+  const sess = S.items.filter((i) => i.tool === 'devin' && i.anchor === pr).map((i) => `<a class="chip" href="${esc(i.url)}" title="Open the review session in Devin">▸ ${esc(nameOf(i).slice(0, 40))}</a><button class="chip dim" data-tr="${esc(i.id.replace(/^session:/, ''))}" title="Read the conversation here">transcript</button>`).join('');
+  return `${st}${sess}${r?.state === 'running' ? '' : `<input class="devmodel" list="devmodels" placeholder="${esc(S.devinModel || 'model')}" value="${esc(devModel())}" title="Model for the review (devin --model). Empty = ${esc(S.devinModel || 'Devin default')}"><button class="devrev" data-review="${esc(pr)}" title="Run the Devin review skill on this PR">Review no Devin</button>`}`;
 };
+const devModel = () => { try { return localStorage.getItem('plate.devmodel') || ''; } catch { return ''; } };
 const base = (p) => String(p || '').split(/[\\/]/).filter(Boolean).pop() || '';
 const ago = (t) => {
   if (!t) return '';
@@ -452,29 +466,62 @@ const ago = (t) => {
 const meta = (i) => (i.reviewMe ? '<span class="chip need">review requested</span>' : '') + metaOf(i);
 const metaOf = (i) => i.source === 'todoist' ? `${dueTag(i)}${i.recurring ? `<span class="chip dim" title="Recurring">${REPEAT}</span>` : ''}`
   : [i.source === 'session' ? `<span class="state st-${esc(i.state)}">${esc(i.state)}</span>` : '', i.source === 'session' ? chip(i.tool, 'dim') : '',
-    i.cwd ? `<span class="chip dim" title="${esc(i.cwd)}">${esc(base(i.cwd))}</span>` : '', chip(ago(i.lastActivity), 'dim'), chip(i.status), chip(i.iteration, 'dim'), dueTag(i)].join('');
+    i.cwd ? `<span class="chip dim" title="${esc(i.cwd)}">${esc(base(i.cwd))}</span>` : '',
+    i.anchor && GH_TICKET.test(i.anchor) ? `<button class="chip" data-ctx="${esc(i.anchor)}" title="${esc(onPlate(i.anchor)?.title || i.anchor)}">↳ ${esc(i.anchor.replace(/^https:\/\/github\.com\//, '').replace('/pull/', '#'))}</button>` : '',
+    i.tool === 'devin' && i.id.startsWith('session:') ? `<button class="chip dim" data-tr="${esc(i.id.slice(8))}" title="Read the conversation here">transcript</button>` : '', chip(ago(i.lastActivity), 'dim'), chip(i.status), chip(i.iteration, 'dim'), dueTag(i)].join('');
 const ORDER = { session: 0, teams: 1, link: 2, note: 3, pr: 4, issue: 5, draft: 6 };
 const byDue = (a, b) => (ORDER[a.kind] ?? 7) - (ORDER[b.kind] ?? 7) || (a.due || '9').localeCompare(b.due || '9');
 
 function needs() {
   const list = S.items.filter((i) => i.needsYou).sort(byDue);
   const head = `<div class="page-h"><h2>Needs you</h2><p>${list.length} waiting on you, sessions and deadlines first</p></div>`;
-  if (!list.length) return head + '<div class="empty">Nothing waiting on you.</div>';
-  const name = (s) => S.workstreams.find((w) => w.slug === s)?.name;
-  return `${head}<div class="needs">${list.map((i) => card(i, false, i.workstream ? `<span class="chip ws">▸ ${esc(name(i.workstream))}</span>` : '')).join('')}</div>`;
+  const name = (s) => S.workstreams.find((w) => w.slug === s)?.name, ws = (i) => (i.workstream ? `<span class="chip ws">▸ ${esc(name(i.workstream))}</span>` : '');
+  const sn = S.items.filter(isSnoozed).sort((a, b) => a.snoozedUntil.localeCompare(b.snoozedUntil));
+  const later = sn.length ? `<div class="snoozed"><div class="page-h"><h2>Snoozed</h2><p>${sn.length} coming back later</p></div><div class="needs">${sn.map((i) => card(i, false, ws(i))).join('')}</div></div>` : '';
+  if (!list.length) return head + '<div class="empty">Nothing waiting on you.</div>' + later;
+  return `${head}<div class="needs">${list.map((i) => card(i, false, ws(i))).join('')}</div>${later}`;
 }
 // ---------- workstreams (mindmap + drill-in) ----------
 const NW = 176, R0 = 140, RG = 96, AX = 1.9, PAD = 40; // radial mindmap: max box width, first ring, ring gap (vertical), ring x-stretch, margin
 // one color per top-level branch; amber stays reserved for "needs you"
 const BRANCH = ['#7fb5f0', '#e58a9b', '#8fd0c4', '#b69cf5', '#a3cf72', '#d9c79a', '#f0a6d8', '#7fd0e0', '#9db4ff', '#c9b37a'];
 // keyed by the root's slug (not its position), so adding a workstream doesn't repaint the others; `color:` in the .md overrides
-const branchColor = (w) => w.color || BRANCH[[...w.slug].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % BRANCH.length];
-const post = async (url, body) => {
-  const r = await fetch(url, { method: 'POST', body: JSON.stringify(body) });
-  const j = await r.json();
-  if (!r.ok) { toast(j.error || 'failed'); return null; }
-  return j;
+// a branch drifts in hue as it descends (the root keeps its color; a child's own `color:` wins and restarts the drift)
+const shiftHue = (hex, deg) => {
+  const [r, g, b] = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16) / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, dl = mx - mn;
+  const sat = dl ? dl / (1 - Math.abs(2 * l - 1)) : 0;
+  let h = !dl ? 0 : mx === r ? ((g - b) / dl + 6) % 6 : mx === g ? (b - r) / dl + 2 : (r - g) / dl + 4;
+  h = (h * 60 + deg + 360) % 360;
+  const k = (n) => (n + h / 30) % 12, a = sat * Math.min(l, 1 - l), f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return '#' + [f(0), f(8), f(4)].map((x) => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
 };
+const branchColor = (w) => w.color || BRANCH[[...w.slug].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % BRANCH.length];
+// 20s ceiling: a write queues behind collectors and other writes (server lock); a stuck one now says what it waits on instead of hanging
+const post = async (url, body) => {
+  try {
+    const r = await fetch(url, { method: 'POST', body: JSON.stringify(body), signal: AbortSignal.timeout(20000) });
+    const j = await r.json();
+    if (!r.ok) { toast(j.error || 'failed'); return null; }
+    return j;
+  } catch (e) {
+    const b = S.busy?.what ? ` (server busy with: ${S.busy.what}, since ${new Date(S.busy.since).toLocaleTimeString()})` : '';
+    toast(e.name === 'TimeoutError' ? `The server did not answer in 20s${b}. Check the terminal running plate.` : `Request failed: ${e.message}`);
+    return null;
+  }
+};
+const ITEM_LABELS = ['Alinhamento do time', 'Chat com time de usuários', 'Chat com PO', 'Reunião de trabalho', '1:1'];
+const nameOf = (i) => i.alias || i.title;
+const SNOOZE = [['3h', '3 hours'], ['tomorrow', 'Tomorrow 9:00'], ['3d', '3 days'], ['monday', 'Next Monday 9:00']];
+const snoozeAt = (v) => {
+  const d = new Date();
+  if (v === '3h') d.setHours(d.getHours() + 3);
+  else { d.setHours(9, 0, 0, 0); if (v === 'tomorrow') d.setDate(d.getDate() + 1); else if (v === '3d') d.setDate(d.getDate() + 3); else d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); }
+  return d.toISOString();
+};
+const isSnoozed = (i) => !!i.snoozedUntil && Date.parse(i.snoozedUntil) > Date.now();
+const snoozeBits = (i) => isSnoozed(i)
+  ? `<span class="chip dim" title="Needs you again then">snoozed → ${esc(new Date(i.snoozedUntil).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' }))}</span><button class="ibtn" data-unsnooze="${esc(i.id)}" title="Bring back now">↺</button>`
+  : i.needsYou ? `<select class="snz" data-snooze="${esc(i.id)}" title="Hide from Needs you until later"><option value="">⏰ Snooze</option>${SNOOZE.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>` : '';
 function toast(msg, undo, label = 'Undo') {
   document.querySelectorAll('.toast').forEach((t) => t.remove());
   const t = document.createElement('div'); t.className = 'toast' + (undo ? ' ok' : ''); t.textContent = msg;
@@ -502,7 +549,7 @@ function layoutWs() {
     const a = (a0 + a1) / 2, r = r1 + RG * (1 - 0.75 ** d) / 0.25; // each deeper ring 25% closer than the previous gap
     pos.set(w.slug, { x: r * AX * Math.cos(a), y: r * Math.sin(a), d, a, color });
     let at = a0;
-    for (const c of kids(w.slug).filter((c) => !seen.has(c.slug))) { const span = ((a1 - a0) * leaves.get(c.slug)) / leaves.get(w.slug); place(c, d + 1, at, at + span, color); at += span; }
+    for (const c of kids(w.slug).filter((c) => !seen.has(c.slug))) { const span = ((a1 - a0) * leaves.get(c.slug)) / leaves.get(w.slug); place(c, d + 1, at, at + span, c.color || shiftHue(color, 22)); at += span; }
   };
   let at = -Math.PI / 2 - Math.PI / Math.max(roots.length, 2); // start a little before 12 o'clock so a lone branch isn't vertical
   // a branch fans out over at most half the circle, so a lone big branch doesn't wrap around the center
@@ -839,10 +886,50 @@ function ctxHtml(c) {
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('[data-review]'); if (!b) return;
   e.preventDefault(); e.stopPropagation(); b.disabled = true; b.textContent = 'Starting…';
-  const r = await post('/api/devin/review', { url: b.dataset.review });
-  if (r) toast(`Devin review started in ${r.dir}`);
+  const model = b.parentElement.querySelector('.devmodel')?.value.trim() || '';
+  try { localStorage.setItem('plate.devmodel', model); } catch {}
+  const r = await post('/api/devin/review', { url: b.dataset.review, model });
+  if (r) toast(`Devin review started${r.model ? ` with ${r.model}` : ''} in ${r.dir}`);
   await load(); if (document.querySelector('.ctx') && ctxStack.length) openCtx(ctxStack.at(-1), false);
 }, true);
+// annotate any item: rename (alias) + label; snooze from Needs you; transcript drawer; routing rules
+function editItem(id) {
+  const i = S.items.find((x) => x.id === id); if (!i) return;
+  const used = [...new Set([...ITEM_LABELS, ...S.items.map((x) => x.label).filter(Boolean)])];
+  const scrim = document.createElement('div'); scrim.className = 'modal-scrim';
+  scrim.innerHTML = `<form class="modal"><h3>Rename / label</h3><label>Name (empty = original: ${esc(i.title.slice(0, 60))})</label><input name="alias" value="${esc(i.alias || '')}" placeholder="${esc(i.title)}">
+    <label>Label</label><input name="label" list="itemlabels" value="${esc(i.label || '')}" placeholder="e.g. ${esc(ITEM_LABELS[0])}"><datalist id="itemlabels">${used.map((l) => `<option value="${esc(l)}">`).join('')}</datalist>
+    <div class="row"><button type="button" class="btn" data-cancel>Cancel</button><button class="btn">Save</button></div></form>`;
+  document.body.append(scrim);
+  const close = () => scrim.remove();
+  scrim.onclick = (e) => { if (e.target === scrim || e.target.closest('[data-cancel]')) close(); };
+  scrim.querySelector('form').onsubmit = async (e) => { e.preventDefault(); const f = e.target; if (await post('/api/item/update', { id, alias: f.alias.value, label: f.label.value })) { close(); load(); } };
+  scrim.querySelector('input').focus();
+}
+async function openTranscript(id) {
+  closeCtx(false);
+  const scrim = document.createElement('div'); scrim.className = 'ctx-scrim'; scrim.onclick = () => closeCtx();
+  const d = document.createElement('aside'); d.className = 'ctx'; d.innerHTML = '<div class="ctx-top">Devin session<button class="btn" data-x>Close</button></div><p class="hint">Loading…</p>';
+  document.body.append(scrim, d);
+  d.querySelector('[data-x]').onclick = () => closeCtx();
+  const r = await fetch(`/api/devin/transcript?id=${encodeURIComponent(id)}`), j = await r.json();
+  if (!document.body.contains(d)) return;
+  d.innerHTML = r.ok ? `<div class="ctx-top">Devin session · read-only<button class="btn" data-x>Close</button></div><h2>${esc(j.title || id)}</h2><p class="hint">${esc(j.model || '')} · ${esc(j.cwd || '')}</p>`
+      + (j.messages.map((m) => `<div class="tr-msg ${m.role}"><b>${m.role === 'user' ? 'You' : 'Devin'}</b><div>${esc(m.text)}</div></div>`).join('') || '<p class="hint">No messages yet.</p>')
+    : `<div class="ctx-top">Devin session<button class="btn" data-x>Close</button></div><div class="empty">${esc(j.error)}</div>`;
+  d.querySelector('[data-x]').onclick = () => closeCtx();
+}
+document.addEventListener('click', async (e) => {
+  const ed = e.target.closest('[data-edit]'), tr = e.target.closest('[data-tr]'), un = e.target.closest('[data-unsnooze]'), ru = e.target.closest('[data-rules]');
+  if (ed) { e.preventDefault(); e.stopPropagation(); editItem(ed.dataset.edit); }
+  else if (tr) { e.preventDefault(); e.stopPropagation(); openTranscript(tr.dataset.tr); }
+  else if (un) { e.stopPropagation(); if (await post('/api/item/update', { id: un.dataset.unsnooze, snoozedUntil: '' })) load(); }
+  else if (ru) { e.stopPropagation(); const r = await post('/api/rules/apply', {}); if (r) { toast(r.routed ? `Routed ${r.routed} item${r.routed > 1 ? 's' : ''} by rule` : 'No Inbox item matches a rule (a workstream needs a repo: anchor)'); load(); } }
+}, true);
+document.addEventListener('change', async (e) => {
+  const s = e.target.closest('select[data-snooze]'); if (!s || !s.value) return;
+  if (await post('/api/item/update', { id: s.dataset.snooze, snoozedUntil: snoozeAt(s.value) })) load();
+});
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-ctx]'); if (b) { e.preventDefault(); e.stopPropagation(); openCtx(b.dataset.ctx); } }, true);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.querySelector('.ctx')) { e.stopImmediatePropagation(); closeCtx(); } }, true);
 
@@ -899,13 +986,13 @@ function inboxPanel() {
     const k = kindOf(i), href = SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"${/^https?:/i.test(i.url) ? ' target="_blank" rel="noopener"' : ''}` : '';
     return `<div class="trow k-${esc(k)} ${ghState(i)} ${tsel.has(i.id) ? 'sel' : ''}" data-tid="${esc(i.id)}" draggable="true">
       <input type="checkbox" ${tsel.has(i.id) ? 'checked' : ''} tabindex="-1"><span class="g">${GLYPH[k] || ''}</span>
-      <span class="t"><a ${href}>${esc(i.title)}</a></span>
+      <span class="t"><a ${href}>${esc(nameOf(i))}</a></span>
       <span class="m">${i.source === 'session' ? chip(ago(i.lastActivity), 'dim') : i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : chip(`${i.repo}#${i.number}`, 'dim')) : ''}${dueTag(i)}${i.workstream ? `<span class="chip ws">▸ ${esc(wsOf(i.workstream)?.name || i.workstream)}</span>` : ''}${i.reviewMe ? '<span class="chip need">review</span>' : ''}<button class="dis" data-dismiss="${esc(i.id)}" title="${i.dismissed ? 'Restore to the Inbox' : 'Dismiss (d)'}">${i.dismissed ? '↺' : '✕'}</button></span></div>`;
   };
   return `<aside class="ipanel">
     <div class="tri-bar"><div class="page-h"><h2>Inbox</h2><p>${list.length} ${tq ? 'matching' : tscope === 'inbox' ? 'unclassified' : 'open'} · drag onto a workstream · click / shift-click to select · <kbd>/</kbd> search · <kbd>a</kbd> all · <kbd>m</kbd> move · <kbd>d</kbd> dismiss · <kbd>i</kbd> hide</p></div>
       <input id="tq" type="search" placeholder="Search…" value="${esc(tq)}" autocomplete="off">
-      ${seg('tscope', tscope, [['inbox', 'Inbox'], ['all', 'All open'], ['dismissed', 'Dismissed']])}${seg('tkind', tkind, kinds.map((k) => [k, k === 'all' ? 'All kinds' : k]))}</div>
+      <button class="btn" data-rules title="Move Inbox items that match a workstream's repo: anchor (also runs after every sync)">Apply rules</button>${seg('tscope', tscope, [['inbox', 'Inbox'], ['all', 'All open'], ['dismissed', 'Dismissed']])}${seg('tkind', tkind, kinds.map((k) => [k, k === 'all' ? 'All kinds' : k]))}</div>
     ${list.length ? [...groups].map(([g, items]) => `<section class="tgrp"><h4 data-tgrp="${esc(g)}" title="Select this group">${esc(g)}<span>${items.length}</span></h4>${items.map(row).join('')}</section>`).join('')
       : tq ? '<div class="empty">Nothing matches this search.</div>' : tscope === 'dismissed' ? '<div class="empty">Nothing dismissed.</div>' : '<div class="empty">Inbox zero. Everything has a workstream.</div>'}
   </aside>`;
