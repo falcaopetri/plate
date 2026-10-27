@@ -9,6 +9,13 @@ import { startReview, runs } from './lib/devinrun.mjs';
 import { DATA_DIR, readItems, writeItems, readWorkstreams, readEvents, readSources, appendEvent, needsYou, today, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, BadRequest } from './lib/store.mjs';
 
 const PORT = Number(process.env.PORT) || 4173;
+const repo = path.dirname(fileURLToPath(import.meta.url));
+// newest CHANGELOG entry this machine hasn't applied (`.plate-changelog-seen`), so the header can say setup is pending
+const setupPending = () => {
+  const read = (f) => { try { return fs.readFileSync(path.join(repo, f), 'utf8'); } catch { return ''; } };
+  const latest = Number(read('CHANGELOG.md').match(/^## (\d+)/m)?.[1] || 0), seen = Number(read('.plate-changelog-seen').trim() || 0);
+  return latest > seen ? { latest, seen } : null;
+};
 const pub = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css' };
 
@@ -31,7 +38,7 @@ async function handle(req, res, url) {
       // events: today's (local date), for the mindmap's Today mode; people: login -> e-mail for Teams chats
       const events = readEvents().filter((e) => new Date(e.ts).toLocaleDateString('en-CA') === t), src = readSources();
       const meeting = src.meeting_quickadd ? { choice: src.meeting_quickadd, vault: src.obsidian_vault || null, values: src.meeting_values } : null;
-      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams: readWorkstreams(), items, events, people: src.people, meeting, collect: status, runs });
+      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams: readWorkstreams(), items, events, people: src.people, meeting, setup: setupPending(), collect: status, runs });
     }
     if (url.pathname === '/api/collect' && req.method === 'POST') {
       // runs outside the request's lock: each collector takes the lock itself

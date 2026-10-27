@@ -22,7 +22,7 @@ PR cards and the ticket-context drawer have **Review no Devin**: it runs `devin 
 
 ## Automatic collection
 
-While `npm start` runs, the server runs the collectors itself: Devin every 2 min, GitHub every 15 min (only with boards in `sources.md`), Todoist every 15 min (only with `TODOIST_API_TOKEN`; the MCP-dump route can't run unattended). Intervals: `PLATE_EVERY_DEVIN` / `PLATE_EVERY_GITHUB` / `PLATE_EVERY_TODOIST` in minutes; `PLATE_NO_SCHEDULE=1` turns it off. The header shows the last sync (hover for each collector's result) and a **Sync now** button; the page refreshes itself every 20 s when the data changed, unless you're typing or dragging.
+While `npm start` runs, the server runs the collectors itself: Devin every 2 min, GitHub every 15 min (only with boards in `sources.md`), review requests every 10 min, Todoist every 15 min (only with `TODOIST_API_TOKEN`; the MCP-dump route can't run unattended). Intervals: `PLATE_EVERY_DEVIN` / `PLATE_EVERY_GITHUB` / `PLATE_EVERY_TODOIST` in minutes; `PLATE_NO_SCHEDULE=1` turns it off. The header shows the last sync (hover for each collector's result) and a **Sync now** button; the page refreshes itself every 20 s when the data changed, unless you're typing or dragging.
 
 ## Collect (Todoist)
 
@@ -65,10 +65,27 @@ All local Devin sessions (CLI and Desktop share the store), every directory, no 
 A session may carry `"github": "<item url>"`: a new session inherits that item's workstream, so it lands next to its ticket/PR.
 
 ## Views
-- **Workstreams** (landing) — mindmap of the workstream tree (`parent` solid, `related` dashed); drag a node onto another to re-parent; click a node for a full-area focus view of that workstream (needs you / in progress / coming up / conversations).
-- **Board** — Inbox + one column per workstream, collapsed by default (click a header to expand; remembered per browser); drag a card onto any column to reclassify (rewrites `workstream`, appends `item.moved`). `done` items are hidden here.
-- **Triage** — dense list of the Inbox (or all open items), sessions grouped by directory. Click / shift-click / click a group header to select, `a` selects all, `m` focuses the move box: type a workstream name and Enter moves the whole selection (an unknown name creates the workstream). Undo in the toast.
-- **Needs you** — open Todoist items due today or overdue, plus sessions in state `waiting`.
-- Paste a link or note (Cmd+V outside a form field) to add a `teams` / `link` / `note` item. Teams web links are stored as `msteams://` so they open the desktop app. A GitHub issue/PR url becomes a `ghref` item with its real title, kind and state (via `gh api`, if it can reach the repo), routed by the `repo:` anchor; `collect:github` replaces it with the board item when the same url shows up there.
+- **Workstreams** (landing): mindmap of the workstream tree (`parent` solid, `related` dashed); drag a node onto another to re-parent; click a node for a full-area focus view (needs you / in progress / coming up / conversations, to-dos, + Meeting note). `t` = Today mode (what moved today lights up, with a timeline).
+- **Inbox panel** (beside the map, `i`): unclassified items grouped by kind, review requests first. Search (`/`), filter, click / shift-click to select, `a` all, `m` move by name, `d` dismiss; drag rows (or the selection) onto a node, the focused workstream's title or its child chips. Scope "Dismissed" restores.
+- **Needs you**: open Todoist items due today or overdue, sessions in state `waiting`, PRs requesting your review. On the map these make nodes pulse.
+- Paste a link or note (Cmd+V outside a form field) to add a `teams` / `link` / `note` item; a GitHub issue/PR url becomes a `ghref` (an issue also brings the PRs that close it). Pasting something already on the plate offers to move it into the open workstream.
+- Ticket drawer (⌖ on a GitHub card): parent chain, sub-issues, PRs, dependencies, and a Teams chat about the ticket.
+
+## Configuration (`<data>/sources.md` frontmatter)
+
+| key | what |
+|---|---|
+| `github_projects: [owner/N, …]` | GitHub Projects boards to collect (needs `gh auth refresh -s read:project`) |
+| `github_reviews: off` | turns off the review-requests collector (on by default) |
+| `devin_review_dir` | folder where "Review no Devin" runs (the one with the repo clones) |
+| `devin_review_prompt` | override, `{url}` placeholder (default `/code-review {url}`) |
+| `devin_link: acp` | Devin Desktop older than 3.11 (default `shell`) |
+| `people:` block list `- <github login>: <e-mail>` | pre-fills Teams chats about a ticket |
+| `obsidian_vault`, `meeting_quickadd` | vault name and QuickAdd choice for "+ Meeting note" |
+| `meeting_values:` block list `- <variable>: <text>` | fills the choice's `{{VALUE:<variable>}}`; placeholders `{workstream}` `{project}` `{slug}` `{date}` |
+
+Per workstream (`workstreams/<slug>.md`): `github: [repo:owner/name, issue:owner/repo#N]` routes new GitHub items there; `project:` (vault note name for meeting notes), `color:` (branch color). Environment: `PLATE_DATA_DIR`, `PORT`, `TODOIST_API_TOKEN`, `PLATE_EVERY_<COLLECTOR>` (minutes), `PLATE_NO_SCHEDULE=1`.
+
+**Upgrading:** `CHANGELOG.md` lists, per change, the setup a running machine needs after a pull.
 
 Agents and contributors: see `AGENTS.md`.

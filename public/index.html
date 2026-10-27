@@ -365,7 +365,8 @@ document.addEventListener('visibilitychange', refresh);
 function syncBadge() {
   const c = S.collect || {}, names = Object.keys(c);
   const latest = names.map((n) => c[n].at).sort().pop(), bad = names.filter((n) => !c[n].ok);
-  $('#sync').innerHTML = `<button class="syncbtn ${bad.length ? 'bad' : ''}" title="${esc(names.map((n) => `${n}: ${c[n].ok ? 'ok' : 'FAILED'} · ${c[n].msg} · ${new Date(c[n].at).toLocaleTimeString()}`).join('\n') || 'No collector has run yet')}">${bad.length ? `⚠ ${esc(bad.join(', '))} failed` : latest ? `Synced ${ago(latest)}` : 'Not synced'} · Sync now</button>`;
+  const su = S.setup ? `<span class="syncbtn bad" title="CHANGELOG.md has entries this machine hasn't applied (${S.setup.seen ? `last applied: ${S.setup.seen}` : 'no .plate-changelog-seen yet'}). Ask your agent to apply them; see AGENTS.md, After every pull.">Setup pending · changelog #${S.setup.seen + 1 === S.setup.latest ? S.setup.latest : `${S.setup.seen + 1}–${S.setup.latest}`}</span> ` : '';
+  $('#sync').innerHTML = su + `<button class="syncbtn ${bad.length ? 'bad' : ''}" title="${esc(names.map((n) => `${n}: ${c[n].ok ? 'ok' : 'FAILED'} · ${c[n].msg} · ${new Date(c[n].at).toLocaleTimeString()}`).join('\n') || 'No collector has run yet')}">${bad.length ? `⚠ ${esc(bad.join(', '))} failed` : latest ? `Synced ${ago(latest)}` : 'Not synced'} · Sync now</button>`;
   $('#sync button').onclick = async () => { $('#sync button').textContent = 'Syncing…'; await fetch('/api/collect', { method: 'POST' }); setTimeout(refresh, 4000); setTimeout(refresh, 15000); };
 }
 const VNAME = { ws: 'Workstreams', needs: 'Needs you' };

@@ -1,0 +1,60 @@
+# Changelog
+
+Newest first. Each entry has a number; **Setup** lists what a machine that already runs Plate must do after pulling it
+(config in `<data>/sources.md`, logins, restarts). Entries without Setup need only a restart.
+
+Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
+gitignored file `.plate-changelog-seen` at the repo root.
+
+## 3 — 2026-10-26: Inbox panel, review requests, dismiss, to-dos, Today mode, Teams chat, meeting notes
+
+- **Board and Triage views removed.** The Triage list is now the **Inbox panel** beside the mindmap (`i` toggles, `/` searches): multi-select and drag rows onto workstream nodes, the focused workstream's title, or its child chips.
+- **Dismiss** Inbox items without classifying them (`d`, the row's ✕); scope "Dismissed" restores them.
+- **Review requests:** new collector `reviews` (every 10 min) brings open PRs that request a review from *you* directly (`user-review-requested:@me`, not team requests) into the Inbox and Needs you.
+- **Attaching an issue** (paste or "+ plate") also brings the PRs that close it.
+- **Paste dedupe:** pasting a link already on the plate offers to move it into the open workstream.
+- **To-dos per workstream:** `- [ ]` lines in the body of `workstreams/<slug>.md`, ticked and added in the focus view.
+- **Today mode** (`t` on the mindmap): workstreams touched today light up, with a timeline of today's events.
+- **Needs you on the map:** nodes pulse amber; the center hub pulses for Inbox items that need you.
+- **Teams chat** from a ticket (drawer ⌖): deep link with author + assignees, title and URL.
+- **+ Meeting note** on a workstream: runs your vault's QuickAdd meeting choice through `obsidian://quickadd`.
+- Stable branch colors on the mindmap; PR colors follow GitHub (open green, merged purple, closed red); keys `1`–`2` switch views.
+- `readSources()` no longer breaks when `sources.md` is missing.
+- **This changelog**, plus a "Setup pending" badge in the header while it has entries this machine hasn't applied (`.plate-changelog-seen`).
+
+**Setup**
+1. Restart the server (new routes and a new collector).
+2. If this checkout has a local edit to `readSources` in `lib/store.mjs` (the missing-`sources.md` fix), drop it before pulling: this version includes it (`git checkout -- lib/store.mjs`, then pull).
+3. `gh auth status` must show the `repo` scope for the review search (it already needs `read:project` for boards). To turn the review collector off: `github_reviews: off`.
+4. Teams chat: map GitHub logins to work e-mails, so the chat is pre-filled:
+   ```yaml
+   people:
+     - octocat: octocat@company.com
+   ```
+5. Meeting notes: name the vault and the QuickAdd choice exactly as in Obsidian, and fill the choice's named variables (`{{VALUE:project}}` → key `project`). Placeholders: `{workstream}`, `{project}`, `{slug}`, `{date}`. QuickAdd still asks for unnamed ones (the title) in Obsidian.
+   ```yaml
+   obsidian_vault: My Work Vault
+   meeting_quickadd: Meeting note
+   meeting_values:
+     - project: "[[{project}]]"
+   ```
+   When a workstream's vault project note has another name, add `project: <note name>` to that workstream's `.md`.
+6. Optional: `color: "#7fb5f0"` in a root workstream's `.md` pins its branch color.
+
+## 2 — 2026-10-26: Devin Desktop link format
+
+Session links depend on the Devin Desktop generation.
+
+**Setup**
+1. On Devin Desktop older than 3.11 (e.g. 3.4): `devin_link: acp` in `sources.md`. Newer ones need nothing (`shell` is the default).
+
+## 1 — 2026-10-25: baseline (cockpit v1, collectors, Devin review)
+
+Workstreams mindmap, GitHub Projects / Devin / Todoist / sessions collectors, ticket context drawer, auto-sync, "Review no Devin".
+
+**Setup** (a fresh machine)
+1. Node ≥ 18 (≥ 22.5, or the `sqlite3` CLI, for the Devin collector).
+2. Point at the data folder: `PLATE_DATA_DIR=…` or a `.plate-data-dir` file with the path.
+3. GitHub boards: `gh auth refresh -s read:project`, then `github_projects: [owner/N, …]`.
+4. Devin review button: `devin auth login` once, and `devin_review_dir: <folder with the repo clones>`.
+5. Todoist (optional): `TODOIST_API_TOKEN` in the environment.

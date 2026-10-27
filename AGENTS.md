@@ -11,6 +11,10 @@ npm run collect                # todoist + github + sessions
 ```
 **Restart gotcha:** the server loads routes at startup. After changing `server.mjs`/`lib/`, restart: `lsof -ti:4173 | xargs kill; npm start`. Frontend changes (`public/index.html`) only need a reload. Preview tooling uses `.claude/launch.json` (config `plate`); if 4173 is busy it picks another port.
 
+## After every pull (on any machine)
+Read `CHANGELOG.md` and compare its entry numbers with `.plate-changelog-seen` (gitignored, at the repo root; one number). For each newer entry, do its **Setup** steps on this machine: tell the user what was added, ask for the values only they know (e-mails, vault and QuickAdd choice names) and write them into `<data>/sources.md`; then restart the server and write the newest number into `.plate-changelog-seen`. No marker file yet: check which Setup keys are already present in `sources.md` to tell what this machine already has, confirm with the user, then write the marker.
+**When you change something that needs setup** (a new `sources.md` key, scope, login, env var, a removed/renamed view or key), add a numbered entry at the top of `CHANGELOG.md` with a Setup list, and document the key in README's Configuration table.
+
 ## Data model
 Schema source of truth: **`README.md` in the data folder** (`$PLATE_DATA_DIR`, default `./data`; set it to your own data folder). Don't duplicate it here; read it before touching data code. Summary:
 - `workstreams/<slug>.md` — YAML frontmatter + body. **Primary entity.** Tree via `parent` (one slug), graph edges via `related` (undirected), `state` active|paused|done, anchors `github: ["repo:owner/name", …]`.

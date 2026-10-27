@@ -4,4 +4,5 @@ node_modules/
 *.log
 design-refs/
 .plate-data-dir
+.plate-changelog-seen
 data/
