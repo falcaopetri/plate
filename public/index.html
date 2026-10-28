@@ -165,6 +165,22 @@
   .wnode.fresh { border-color: var(--live); box-shadow: 0 0 0 3px rgb(95 211 162 / .25), 0 0 26px -4px var(--live); z-index: 2; }
   .wnode.fresh::before { content: "new"; position: absolute; top: -9px; left: 50%; transform: translateX(-50%); padding: 0 6px; border-radius: 8px; background: var(--live); color: #04140d; font: 700 9.5px/14px var(--font); letter-spacing: .06em; text-transform: uppercase; }
   .wnode.fresh::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--live); pointer-events: none; animation: needpulse 1.6s ease-out infinite; }
+  .top3 { display: flex; gap: var(--s2); align-items: stretch; margin: 0 0 var(--s3); }
+  .top3 .t3lbl { flex: none; align-self: center; padding-right: var(--s2); font-size: var(--fs-xs); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); } .t3lbl b { color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .t3 { position: relative; flex: 1 1 0; min-width: 0; display: flex; gap: 10px; align-items: center; padding: 8px 12px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--surface-2); cursor: pointer; }
+  .t3:hover { background: var(--surface-3); } .t3 .n { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--text); color: var(--bg); font: 700 11px/20px var(--font); text-align: center; }
+  .t3 .tx { min-width: 0; } .t3 .tt { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t3 .ts { display: block; font-size: var(--fs-xs); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t3.done .tt { text-decoration: line-through; color: var(--text-3); } .t3.done .n { background: var(--live); }
+  .t3 .x { position: absolute; right: 6px; top: 4px; border: 0; background: none; color: var(--text-3); cursor: pointer; visibility: hidden; } .t3:hover .x { visibility: visible; } .t3 .x:hover { color: var(--text); }
+  .t3.free { border-style: dashed; background: none; color: var(--text-3); font-size: var(--fs-sm); cursor: default; } .t3.free .n { background: none; border: 1px dashed var(--live); color: var(--live); } .t3.free:hover { background: none; }
+  .t3.ghost { border-style: dashed; border-color: var(--line-2); background: none; opacity: .75; } .t3.ghost .n { background: none; border: 1px dashed var(--text-3); color: var(--text-3); }
+  .t3.ghost .tt { font-weight: 500; color: var(--text-2); font-style: italic; } .t3.ghost:hover { opacity: 1; border-color: var(--live); } .t3.ghost .plus { flex: none; margin-left: auto; color: var(--live); font-size: var(--fs-xs); white-space: nowrap; }
+  .t3lbl .carry { margin-left: 6px; padding: 1px 8px; border: 1px solid var(--line-2); border-radius: 99px; background: none; color: var(--live); font: inherit; letter-spacing: 0; text-transform: none; cursor: pointer; } .t3lbl .carry:hover { background: var(--surface-2); }
+  .pinstar { color: var(--today); font-size: 11px; margin-left: 4px; } .wnode .pinstar { position: absolute; top: -7px; right: -5px; font-size: 13px; text-shadow: 0 0 6px #000; }
+  .cmenu { position: fixed; z-index: 40; min-width: 210px; max-width: 300px; padding: 5px; border: 1px solid var(--line-2); border-radius: 12px; background: rgb(12 22 20 / .98); box-shadow: 0 16px 40px -14px #000; }
+  .cmenu .h { padding: 5px 10px 6px; font-size: var(--fs-xs); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cmenu button { display: block; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: var(--fs-sm); text-align: left; cursor: pointer; } .cmenu button:hover:not(:disabled) { background: var(--surface-3); } .cmenu button:disabled { color: var(--text-3); cursor: default; }
   .edge.tk { stroke: var(--b); stroke-width: 1.1; opacity: .5; }
   .canvas svg { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
   .edge { fill: none; stroke: var(--line-2); stroke-width: 1.6; }
@@ -447,7 +463,7 @@ function render() {
   syncBadge();
   tabAlert(need);
   panelScroll = document.querySelector('.ipanel')?.scrollTop ?? panelScroll; // selecting re-renders; keep the list where it was
-  $('#main').innerHTML = { ws, needs }[view]();
+  $('#main').innerHTML = top3Strip() + { ws, needs }[view]();
   document.querySelector('.tri-act')?.remove();
   if (view === 'ws') { wireWs(); if (panelOpen) wirePanel(); }
   const ip = document.querySelector('.ipanel'); if (ip) ip.scrollTop = panelScroll;
@@ -488,8 +504,8 @@ const KINDLABEL = { todoist: 'Todoist', pr: 'PR', issue: 'Issue', draft: 'Draft 
 const card = (i, drag = true, extra = '') => {
   const k = i.source === 'todoist' || i.source === 'tasknotes' ? 'todoist' : (i.kind || i.source);
   const label = i.source === 'tasknotes' ? 'TaskNote' : { todoist: 'Todoist', pr: 'PR', issue: 'Issue', draft: 'Draft PR', session: 'Session', teams: 'Teams', link: 'Link', note: 'Note' }[k] || esc(k);
-  return `<div class="card k-${esc(k)} ${ghState(i)} ${i.state === 'done' ? 'done' : ''} ${i.needsYou ? 'need' : ''}" ${drag ? `draggable="true" data-id="${esc(i.id)}"` : ''}>
-  <div class="kind">${GLYPH[k] || ''}${label}${i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context: parent, sub-issues, PRs">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : `<span class="ref">${esc(i.repo)}#${esc(i.number)}</span>`) : ''}</div>
+  return `<div class="card k-${esc(k)} ${ghState(i)} ${i.state === 'done' ? 'done' : ''} ${i.needsYou ? 'need' : ''}" data-pin="item:${esc(i.id)}" ${drag ? `draggable="true" data-id="${esc(i.id)}"` : ''}>
+  <div class="kind">${GLYPH[k] || ''}${label}${isPinned('item', i.id) ? '<span class="pinstar" title="In today\'s top 3">★</span>' : ''}${i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context: parent, sub-issues, PRs">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : `<span class="ref">${esc(i.repo)}#${esc(i.number)}</span>`) : ''}</div>
   <a class="ttl" ${SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"` : ''} ${/^https?:/i.test(i.url || '') ? 'target="_blank" rel="noopener"' : ''}>${esc(nameOf(i))}</a>
   <div class="chips">${i.label ? `<span class="chip" title="Label">${esc(i.label)}</span>` : ''}${meta(i)}${isPull(i) ? devinBits(i.url) : ''}${extra}${snoozeBits(i)}<button class="ibtn" data-edit="${esc(i.id)}" title="Rename / label">✎</button></div></div>`;
 };
@@ -666,6 +682,54 @@ function edgesSvg(L, heat = new Map()) {
   }
   return out;
 }
+// ---------- today's top 3: pinned items/workstreams (right-click anything → pin); one file line per day, so tomorrow starts empty ----------
+const isPinned = (type, ref) => (S.top3 || []).some((p) => p.type === type && p.ref === ref);
+function pinInfo(p) {
+  if (p.type === 'ws') { const w = wsOf(p.ref); return { t: w ? w.name : `(removed) ${p.ref}`, sub: w ? 'Workstream' : '', done: w?.state === 'done' }; }
+  const i = S.items.find((x) => x.id === p.ref);
+  return i ? { t: nameOf(i), sub: [i.kind || i.source, wsOf(i.workstream)?.name || 'Inbox'].join(' · '), done: i.state === 'done' } : { t: '(gone)', sub: '', done: true };
+}
+// carry-over offer: while slots are free, the last day that had pins shows its still-open, not-yet-pinned ones as faded cards; a click pins one for today
+const prevPins = () => S.top3Prev ? S.top3Prev.pins.filter((p) => { const f = pinInfo(p); return !f.done && f.sub !== '' && !isPinned(p.type, p.ref); }).slice(0, 3 - (S.top3 || []).length) : [];
+const dayLabel = (d) => d === shiftDay(S.today, -1) ? 'yesterday' : new Date(`${d}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+function top3Strip() {
+  const pins = S.top3 || [], free = 3 - pins.length, prev = prevPins();
+  const slots = pins.map((p, n) => { const f = pinInfo(p); return `<div class="t3 ${f.done ? 'done' : ''}" data-pin="${esc(p.type)}:${esc(p.ref)}" data-open="${n}" title="${esc(f.t)}"><span class="n">${n + 1}</span><span class="tx"><span class="tt">${esc(f.t)}</span><span class="ts">${esc(f.sub)}</span></span><button class="x" data-unpin="${n}" title="Unpin">✕</button></div>`; });
+  prev.forEach((p, n) => { const f = pinInfo(p); slots.push(`<div class="t3 ghost" data-pin="${esc(p.type)}:${esc(p.ref)}" data-carry="${n}" title="Pin for today: ${esc(f.t)}"><span class="n">${n + 1}</span><span class="tx"><span class="tt">${esc(f.t)}</span><span class="ts">${esc(f.sub)}</span></span><span class="plus">＋ today</span></div>`); });
+  for (let n = pins.length + prev.length; n < 3; n++) slots.push(`<div class="t3 free"><span class="n">${n + 1}</span>Free slot · right-click a node or card to pin</div>`);
+  return `<div class="top3"><span class="t3lbl">Today's focus <b>${pins.length}/3</b>${prev.length ? ` · from ${esc(dayLabel(S.top3Prev.day))}<button class="carry" data-carryall>carry all</button>` : free ? ` · ${free} free` : ''}</span>${slots.join('')}</div>`;
+}
+function openPin(p) {
+  if (p.type === 'ws') { view = 'ws'; return setFocus(p.ref); }
+  const i = S.items.find((x) => x.id === p.ref); if (!i) return;
+  if (SAFE_URL.test(i.url || '')) return void window.open(i.url, '_blank', 'noopener');
+  view = 'ws'; if (i.workstream) return setFocus(i.workstream);
+  focus = null; panelOpen = true; tscope = 'inbox'; tq = nameOf(i); render();
+}
+async function carry(list) { for (const p of list.filter(Boolean)) if (!(await post('/api/top3', { type: p.type, ref: p.ref, on: true }))) break; load(); }
+async function setPin(type, ref, on) { if (await post('/api/top3', { type, ref, on })) load(); }
+document.addEventListener('click', (e) => {
+  const x = e.target.closest('[data-unpin]');
+  if (x) { e.stopPropagation(); const p = S.top3[Number(x.dataset.unpin)]; if (p) setPin(p.type, p.ref, false); return; }
+  const t = e.target.closest('.t3[data-open]'); if (t) openPin(S.top3[Number(t.dataset.open)]);
+  const g = e.target.closest('.t3[data-carry]'), all = e.target.closest('[data-carryall]');
+  if (g || all) { carry(all ? prevPins() : [prevPins()[Number(g.dataset.carry)]]); return; }
+  if (!e.target.closest('.cmenu')) document.querySelector('.cmenu')?.remove();
+});
+document.addEventListener('contextmenu', (e) => {
+  document.querySelector('.cmenu')?.remove();
+  const el = e.target.closest('[data-pin]'); if (!el || e.target.closest('input, textarea, select')) return;
+  const [type, ...rest] = el.dataset.pin.split(':'), ref = rest.join(':'), pinned = isPinned(type, ref), full = (S.top3 || []).length >= 3;
+  e.preventDefault();
+  const name = pinInfo({ type, ref }).t, m = document.createElement('div'); m.className = 'cmenu';
+  m.innerHTML = `<div class="h">${esc(name)}</div>` + (pinned ? '<button data-act="off">☆ Unpin from today\'s top 3</button>' : full ? '<button disabled>Top 3 is full · unpin one first</button>' : '<button data-act="on">★ Pin to today\'s top 3</button>');
+  m.onclick = (ev) => { const a = ev.target.closest('[data-act]'); if (!a) return; m.remove(); setPin(type, ref, a.dataset.act === 'on'); };
+  document.body.append(m);
+  m.style.left = `${Math.min(e.clientX, innerWidth - m.offsetWidth - 8)}px`; m.style.top = `${Math.min(e.clientY, innerHeight - m.offsetHeight - 8)}px`;
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelector('.cmenu')?.remove(); }, true);
+addEventListener('scroll', () => document.querySelector('.cmenu')?.remove(), true);
+
 // Hovering a node lights it, its parent, children and related ones; everything else fades (off in Today mode, which dims on its own)
 function wireNbhd() {
   const cv = document.querySelector('.canvas'); if (!cv || todayOn) return;
@@ -817,9 +881,9 @@ function mindmap() {
   const L = layoutWs(), leaves = taskLeaves(L), heat = todayOn ? todayHeat() : new Map(), inNeed = S.items.filter((i) => i.needsYou && !i.workstream).length;
   const nodes = S.workstreams.map((w) => {
     const p = L.pos.get(w.slug), st = wsStats(w.slug), h = heat.get(w.slug), nt = wsTasks(w).length, idle = todayOn ? null : idleInfo(w);
-    return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''}  ${h ? 'lit' : ''} ${idle ? 'stale' : ''} ${w.slug === freshWs ? 'fresh' : ''} ${esc(w.state)}" draggable="true" data-slug="${esc(w.slug)}"
+    return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''}  ${h ? 'lit' : ''} ${idle ? 'stale' : ''} ${w.slug === freshWs ? 'fresh' : ''} ${esc(w.state)}" draggable="true" data-slug="${esc(w.slug)}" data-pin="ws:${esc(w.slug)}"
       style="left:${p.x}px;top:${p.y}px;--b:${p.color}${h ? `;--heat:${h.heat.toFixed(2)};--d:${Math.min(h.rank * 0.15, 3)}s` : ''}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${h ? ` · ${h.n} event${h.n > 1 ? 's' : ''} today` : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}${idle ? ` · idle ${idle.untracked ? '≥' : ''}${idle.days}d` : ''}">
-      <span class="wn">${esc(w.name)}</span>${st.need ? `<span class="wneed">${st.need}</span>` : st.n ? `<span class="wc">${st.n}</span>` : ''}${idle ? `<span class="wst" title="No activity for ${idle.days} days${idle.untracked ? ' (since the log began)' : ''}">${idle.days}d</span>` : ''}${nt ? `<button class="wtog ${tasksOpen.has(w.slug) ? 'on' : ''}" data-tog="${esc(w.slug)}" title="Show its ${nt} open task${nt > 1 ? 's' : ''}">☑ ${nt}</button>` : ''}</div>`;
+      ${isPinned('ws', w.slug) ? '<span class="pinstar" title="In today\'s top 3">★</span>' : ''}<span class="wn">${esc(w.name)}</span>${st.need ? `<span class="wneed">${st.need}</span>` : st.n ? `<span class="wc">${st.n}</span>` : ''}${idle ? `<span class="wst" title="No activity for ${idle.days} days${idle.untracked ? ' (since the log began)' : ''}">${idle.days}d</span>` : ''}${nt ? `<button class="wtog ${tasksOpen.has(w.slug) ? 'on' : ''}" data-tog="${esc(w.slug)}" title="Show its ${nt} open task${nt > 1 ? 's' : ''}">☑ ${nt}</button>` : ''}</div>`;
   }).join('');
   return `<div class="ws-main ${todayOn ? 'today' : ''}">
     <div class="canvas-scroll"><div class="canvas ${todayOn ? 'today' : ''} ${todayAnim ? 'anim' : ''}" style="width:${L.w}px;height:${L.h}px"><svg width="${L.w}" height="${L.h}">${edgesSvg(L, heat)}${leaves.map((t) => `<path class="edge tk" style="--b:${t.color}" d="M${t.px} ${t.py} L${t.x} ${t.y}"/>`).join('')}</svg>
@@ -902,7 +966,7 @@ function focusView(w) {
   const chips = (title, list) => list.length ? `<div class="subrow"><span>${title}</span>${list.map((x) => { const st = wsStats(x.slug); return `<button class="sub-ws ${st.need ? 'need' : ''}" data-focus="${esc(x.slug)}"><b>${esc(x.name)}</b><span>${st.n} items${st.need ? ` · ${st.need} needs you` : ''}</span></button>`; }).join('')}</div>` : '';
   const empty = !items.length ? '<div class="empty">Nothing in this workstream yet. Paste a link or note, or drag items here from the Board.</div>' : '';
   return `<div class="focus ${enter ? 'enter' : ''}">
-    <header class="fhead"><h1>${esc(w.name)}</h1>
+    <header class="fhead" data-pin="ws:${esc(w.slug)}"><h1>${esc(w.name)}</h1>
       <div class="wrow"><button class="btn" id="meetBtn" title="New meeting note for this workstream (QuickAdd in Obsidian)">+ Meeting note</button><span class="chip">${open} open</span>${g.need.length ? `<span class="chip need">${g.need.length} need you</span>` : ''}<span class="chip dim">${esc(w.state)}</span>${idleInfo(w) ? `<span class="chip dim" title="No event on this workstream for a while (sources.md: stale_days)">idle ${idleInfo(w).untracked ? '≥' : ''}${idleInfo(w).days}d</span>` : ''}</div>
       ${bodyHtml(w)}</header>
     ${peopleHtml(w)}
@@ -1270,7 +1334,7 @@ function inboxPanel() {
   const seg = (attr, cur, opts) => `<div class="seg">${opts.map(([v, t]) => `<button data-${attr}="${esc(v)}" class="${v === cur ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>`;
   const row = (i) => {
     const k = kindOf(i), href = SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"${/^https?:/i.test(i.url) ? ' target="_blank" rel="noopener"' : ''}` : '';
-    return `<div class="trow k-${esc(k)} ${ghState(i)} ${tsel.has(i.id) ? 'sel' : ''}" data-tid="${esc(i.id)}" draggable="true">
+    return `<div class="trow k-${esc(k)} ${ghState(i)} ${tsel.has(i.id) ? 'sel' : ''}" data-tid="${esc(i.id)}" data-pin="item:${esc(i.id)}" draggable="true">
       <input type="checkbox" ${tsel.has(i.id) ? 'checked' : ''} tabindex="-1"><span class="g">${GLYPH[k] || ''}</span>
       <span class="t"><a ${href}>${esc(nameOf(i))}</a></span>
       <span class="m">${i.source === 'session' ? chip(ago(i.lastActivity), 'dim') : i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : chip(`${i.repo}#${i.number}`, 'dim')) : ''}${dueTag(i)}${i.workstream ? `<span class="chip ws">▸ ${esc(wsOf(i.workstream)?.name || i.workstream)}</span>` : ''}${i.reviewMe ? '<span class="chip need">review</span>' : ''}<button class="dis" data-dismiss="${esc(i.id)}" title="${i.dismissed ? 'Restore to the Inbox' : 'Dismiss (d)'}">${i.dismissed ? '↺' : '✕'}</button></span></div>`;

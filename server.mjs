@@ -8,7 +8,7 @@ import { withLock, collectNow, startSchedule, status, busy } from './lib/schedul
 import { lookupByEmail } from './lib/directory.mjs';
 import { transcript } from './lib/devintranscript.mjs';
 import { startReview, runs } from './lib/devinrun.mjs';
-import { DATA_DIR, readItems, writeItems, readWorkstreams, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
+import { DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
 
 const PORT = Number(process.env.PORT) || 4173;
 const repo = path.dirname(fileURLToPath(import.meta.url));
@@ -41,7 +41,7 @@ async function handle(req, res, url) {
       const log = readEvents(), events = eventsBetween(log, t, t), src = readSources();
       const meeting = src.meeting_quickadd ? { choice: src.meeting_quickadd, vault: src.obsidian_vault || null, values: src.meeting_values } : null;
       const workstreams = readWorkstreams();
-      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams, canTask: tasknotesDir() !== null, contacts: readContacts(workstreams.flatMap((w) => w.people)), items, events, activity: activitySummary(log), staleDays: Number(src.stale_days) || 3, people: src.people, meeting, setup: setupPending(), collect: status, runs, busy, devinModel: src.devin_review_model || null });
+      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams, canTask: tasknotesDir() !== null, contacts: readContacts(workstreams.flatMap((w) => w.people)), items, events, top3: readTop3(t), top3Prev: readTop3Prev(t), activity: activitySummary(log), staleDays: Number(src.stale_days) || 3, people: src.people, meeting, setup: setupPending(), collect: status, runs, busy, devinModel: src.devin_review_model || null });
     }
     if (url.pathname === '/api/events') {
       // one local day (`day`) or a window (`from`..`to`, inclusive) of the event log, for Today mode's replay + the days that have any
@@ -76,6 +76,11 @@ async function handle(req, res, url) {
       }
       if (moved.length) writeItems(items);
       return json(res, 200, { ok: true, moved });
+    }
+    if (url.pathname === '/api/top3' && req.method === 'POST') {
+      // body: {type: 'ws' | 'item', ref, on}; pins or unpins for today (max 3), answers today's pins
+      const { type, ref, on = true } = JSON.parse(await readBody(req));
+      return json(res, 200, { top3: setTop3(today(), type, ref, !!on) });
     }
     if (url.pathname === '/api/dismiss' && req.method === 'POST') {
       // body: {ids, dismissed}; hides items from the Inbox (any source; collectors keep the flag) or brings them back
