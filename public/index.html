@@ -337,6 +337,11 @@
   .tchat { margin-top: var(--s4); } .tchat .f { margin-top: var(--s3); } .tchat .f input { width: 100%; box-sizing: border-box; }
   /* ---------- ticket context drawer ---------- */
   .ctx-scrim { position: fixed; inset: 0; z-index: 25; background: rgb(0 0 0 / .35); }
+  .setrow { margin: var(--s3) 0; } .setrow label { display: block; font-size: var(--fs-xs); color: var(--text-2); margin-bottom: 4px; }
+  .setrow input, .setrow select { width: 100%; font: var(--fs-sm) var(--font); color: var(--text); background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 6px 10px; } .setrow select option { color: #111; }
+  .setgrp { margin: var(--s4) 0 0; font-size: var(--fs-sm); color: var(--text-2); } .setonly { display: block; margin: var(--s3) 0; font-size: var(--fs-xs); color: var(--text-2); } .setonly input { width: auto; margin-right: 6px; } .setrow[hidden], .setgrp[hidden] { display: none; }
+  .setrow .hint { margin: 4px 0 0; } .btn.on { border-color: var(--text-3); color: var(--text); }
+  .logbox { font: var(--fs-xs) var(--mono); color: var(--text-2); white-space: pre-wrap; word-break: break-word; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); padding: var(--s3); max-height: 70vh; overflow-y: auto; }
   .ctx { position: fixed; top: 0; right: 0; bottom: 0; z-index: 26; width: min(560px, 100vw); overflow-y: auto; padding: var(--s5); border-left: 1px solid var(--line-2);
     background: rgb(9 17 16 / .97); backdrop-filter: blur(20px); box-shadow: -20px 0 60px rgb(0 0 0 / .5); animation: ctxin .22s ease both; }
   @keyframes ctxin { from { transform: translateX(24px); opacity: 0; } }
@@ -401,6 +406,7 @@
   <div class="clock" id="clock"></div>
   <div class="date" id="date"></div>
   <div id="sync"></div>
+  <button class="syncbtn" id="gear" title="Settings (sources.md) and log">⚙</button>
   <div class="stats" id="stats"></div>
 </header>
 <main id="main"></main>
@@ -432,7 +438,7 @@ function syncBadge() {
   const c = S.collect || {}, names = Object.keys(c);
   const latest = names.map((n) => c[n].at).sort().pop(), bad = names.filter((n) => !c[n].ok);
   const su = S.setup ? `<span class="syncbtn bad" title="CHANGELOG.md has entries this machine hasn't applied (${S.setup.seen ? `last applied: ${S.setup.seen}` : 'no .plate-changelog-seen yet'}). Ask your agent to apply them; see AGENTS.md, After every pull.">Setup pending · changelog #${S.setup.seen + 1 === S.setup.latest ? S.setup.latest : `${S.setup.seen + 1}–${S.setup.latest}`}</span> ` : '';
-  $('#sync').innerHTML = su + `<button class="syncbtn ${bad.length ? 'bad' : ''}" title="${esc(names.map((n) => `${n}: ${c[n].ok ? 'ok' : 'FAILED'} · ${c[n].msg} · ${new Date(c[n].at).toLocaleTimeString()}`).join('\n') || 'No collector has run yet')}">${bad.length ? `⚠ ${esc(bad.join(', '))} failed` : latest ? `Synced ${ago(latest)}` : 'Not synced'} · Sync now</button>`;
+  $('#sync').innerHTML = su + `<button class="syncbtn ${bad.length ? 'bad' : ''}" title="${esc('Keys: r d = Devin · r g = GitHub · r a = all\n' + names.map((n) => `${n}: ${c[n].ok ? 'ok' : 'FAILED'} · ${c[n].msg} · ${new Date(c[n].at).toLocaleTimeString()}`).join('\n') || 'No collector has run yet')}">${bad.length ? `⚠ ${esc(bad.join(', '))} failed` : latest ? `Synced ${ago(latest)}` : 'Not synced'} · Sync now</button>`;
   $('#sync button').onclick = async () => { $('#sync button').textContent = 'Syncing…'; await fetch('/api/collect', { method: 'POST' }); setTimeout(refresh, 4000); setTimeout(refresh, 15000); };
 }
 const VNAME = { ws: 'Workstreams', needs: 'Needs you' };
@@ -480,6 +486,21 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'i' && view === 'ws') togglePanel();
 });
 
+// r then d / g / a: sync Devin / GitHub (board, repos, my tickets, review requests) / everything right now
+let rArm = 0;
+const SYNCS = { d: [['devin'], 'Devin'], g: [['github', 'mine', 'reviews'], 'GitHub'], a: [null, 'everything'] };
+document.addEventListener('keydown', async (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, select, textarea, [contenteditable]')) return;
+  if (rArm && Date.now() - rArm < 1500 && SYNCS[e.key]) {
+    rArm = 0; e.preventDefault(); e.stopImmediatePropagation();
+    const [only, what] = SYNCS[e.key];
+    toast(`Syncing ${what}…`);
+    await fetch('/api/collect', { method: 'POST', body: JSON.stringify(only ? { only } : {}) });
+    setTimeout(refresh, 2500); setTimeout(refresh, 8000);
+  } else if (e.key === 'r') { rArm = Date.now(); toast('r → d Devin · g GitHub · a all'); }
+  else rArm = 0;
+}, true);
+
 const ic = (d) => `<svg class="i sm" viewBox="0 0 24 24">${d}</svg>`;
 const GLYPH = {
   todoist: ic('<circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/>'),
@@ -507,7 +528,7 @@ const card = (i, drag = true, extra = '') => {
   return `<div class="card k-${esc(k)} ${ghState(i)} ${i.state === 'done' ? 'done' : ''} ${i.needsYou ? 'need' : ''}" data-pin="item:${esc(i.id)}" ${drag ? `draggable="true" data-id="${esc(i.id)}"` : ''}>
   <div class="kind">${GLYPH[k] || ''}${label}${isPinned('item', i.id) ? '<span class="pinstar" title="In today\'s top 3">★</span>' : ''}${i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context: parent, sub-issues, PRs">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : `<span class="ref">${esc(i.repo)}#${esc(i.number)}</span>`) : ''}</div>
   <a class="ttl" ${SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"` : ''} ${/^https?:/i.test(i.url || '') ? 'target="_blank" rel="noopener"' : ''}>${esc(nameOf(i))}</a>
-  <div class="chips">${i.label ? `<span class="chip" title="Label">${esc(i.label)}</span>` : ''}${meta(i)}${isPull(i) ? devinBits(i.url) : ''}${extra}${snoozeBits(i)}<button class="ibtn" data-edit="${esc(i.id)}" title="Rename / label">✎</button></div></div>`;
+  <div class="chips">${i.label ? `<span class="chip" title="Label">${esc(i.label)}</span>` : ''}${meta(i)}${i.kind === 'draft' || isPull(i) || (i.kind === 'issue' && GH_TICKET.test(i.url || '')) ? devinBits(i.url) : ''}${extra}${snoozeBits(i)}<button class="ibtn" data-edit="${esc(i.id)}" title="Rename / label">✎</button></div></div>`;
 };
 const chip = (t, c = '') => t ? `<span class="chip ${c}">${esc(t)}</span>` : '';
 // a PR by its url, so a draft (kind `draft` on a pasted link) gets the Devin review button too
@@ -515,10 +536,12 @@ const isPull = (i) => /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+/i.tes
 // Devin review of a PR: run state, the session(s) it produced, and the trigger button
 const devinBits = (url) => {
   if (!GH_TICKET.test(url || '')) return '';
-  const pr = url.replace(/[#?].*$/, ''), r = S.runs?.[pr];
-  const st = r ? `<span class="chip ${r.state === 'failed' ? 'late' : 'dim'}" title="${esc(`${r.dir}\n${r.model ? `model: ${r.model}\n` : ''}${r.msg || ''}`)}">${{ running: 'Devin reviewing…', done: 'Devin review done', failed: `Devin review failed${r.msg ? `: ${r.msg.slice(0, 70)}` : ''}` }[r.state]}</span>` : '';
-  const sess = S.items.filter((i) => i.tool === 'devin' && i.anchor === pr && i.state !== 'done').map((i) => `<a class="chip" href="${esc(i.url)}" title="Open the review session in Devin">▸ ${esc(nameOf(i).slice(0, 40))}</a><button class="chip dim" data-tr="${esc(i.id.replace(/^session:/, ''))}" title="Read the conversation here">transcript</button>`).join('');
-  return `${st}${sess}${r?.state === 'running' ? '' : `<input class="devmodel" list="devmodels" placeholder="${esc(S.devinModel || 'model')}" value="${esc(devModel())}" title="Model for the review (devin --model). Empty = ${esc(S.devinModel || 'Devin default')}"><button class="devrev" data-review="${esc(pr)}" title="Run the Devin review skill on this PR">Review no Devin</button>`}`;
+  const pr = url.replace(/[#?].*$/, ''), r = S.runs?.[pr], c = S.runs?.[`close:${pr}`], pull = /\/pull\//.test(pr);
+  const runChip = (x, what) => x ? `<span class="chip ${x.state === 'failed' ? 'late' : 'dim'}" title="${esc(`${x.dir}\n${x.model ? `model: ${x.model}\n` : ''}${x.msg || ''}`)}">${{ running: `Devin ${what}…`, done: `Devin ${what} done`, failed: `Devin ${what} failed${x.msg ? `: ${x.msg.slice(0, 70)}` : ''}` }[x.state]}</span>` : '';
+  const sess = S.items.filter((i) => i.tool === 'devin' && i.anchor === pr && i.state !== 'done').map((i) => `<a class="chip" href="${esc(i.url)}" title="Open the session in Devin">▸ ${esc(nameOf(i).slice(0, 40))}</a><button class="chip dim" data-tr="${esc(i.id.replace(/^session:/, ''))}" title="Read the conversation here">transcript</button>`).join('');
+  const busy = r?.state === 'running' || c?.state === 'running';
+  const model = busy ? '' : `<input class="devmodel" list="devmodels" placeholder="${esc(S.devinModel || 'model')}" value="${esc(devModel())}" title="Model (devin --model). Empty = the configured one (${esc(S.devinModel || 'Devin default')})">`;
+  return `${runChip(r, 'review')}${runChip(c, 'check')}${sess}${model}${pull && r?.state !== 'running' ? `<button class="devrev" data-review="${esc(pr)}" title="Run the Devin review skill on this PR">Review no Devin</button>` : ''}${c?.state === 'running' ? '' : `<button class="devrev" data-close="${esc(pr)}" title="Start a Devin session that says what is left to close this ticket (devin_close_prompt / devin_close_model)">O que falta?</button>`}`;
 };
 const devModel = () => { try { return localStorage.getItem('plate.devmodel') || ''; } catch { return ''; } };
 const base = (p) => String(p || '').split(/[\\/]/).filter(Boolean).pop() || '';
@@ -527,7 +550,14 @@ const ago = (t) => {
   const m = (Date.now() - new Date(t)) / 6e4;
   return m < 60 ? `${Math.max(1, Math.round(m))}m ago` : m < 1440 ? `${Math.round(m / 60)}h ago` : m < 43200 ? `${Math.round(m / 1440)}d ago` : new Date(t).toLocaleDateString('en-CA');
 };
-const meta = (i) => (i.reviewMe ? '<span class="chip need">review requested</span>' : '') + metaOf(i);
+const WHY = { author: 'mine', assignee: 'assigned', mention: 'mentioned' };
+const newAct = (i) => !!i.activity && i.activity.at > (i.activitySeen || '') && i.state !== 'done';
+// a comment/review by someone else on a ticket of mine: amber until seen (opening the ticket from here, or the tick)
+const actBits = (i) => i.activity ? (newAct(i)
+  ? `<span class="chip need" title="${esc(`${i.activity.what} by @${i.activity.by}, ${ago(i.activity.at)}\n${i.activity.text}`)}">💬 @${esc(i.activity.by)} ${esc(ago(i.activity.at))}</span><button class="ibtn" data-seen="${esc(i.id)}" title="Mark as seen">✓</button>`
+  : `<span class="chip dim" title="${esc(i.activity.text)}">💬 @${esc(i.activity.by)} ${esc(ago(i.activity.at))}</span>`) : '';
+const whyBits = (i) => (i.mineWhy || []).filter((w) => w !== 'author' || i.source !== 'mine').map((w) => `<span class="chip dim" title="Why it is on the plate">${WHY[w] || esc(w)}</span>`).join('');
+const meta = (i) => (i.reviewMe ? '<span class="chip need">review requested</span>' : '') + actBits(i) + whyBits(i) + metaOf(i);
 const metaOf = (i) => i.source === 'todoist' || i.source === 'tasknotes' ? `${dueTag(i)}${i.recurring ? `<span class="chip dim" title="Recurring">${REPEAT}</span>` : ''}`
   : [i.source === 'session' ? `<span class="state st-${esc(i.state)}">${esc(i.state)}</span>` : '', i.source === 'session' && i.turn === 'me' && i.state !== 'done' ? '<span class="chip need" title="Devin finished its turn: the next move is yours">your turn</span>' : '', i.source === 'session' ? chip(i.tool, 'dim') : '',
     i.cwd ? `<span class="chip dim" title="${esc(i.cwd)}">${esc(base(i.cwd))}</span>` : '',
@@ -1151,7 +1181,7 @@ function ctxHtml(c) {
     ${c.ancestors.length ? `<div class="ctx-anc">${c.ancestors.map((a, n) => tk(a, n)).join('')}</div>` : ''}
     <div class="ctx-me"><div class="kind" style="color:var(--${t.kind === 'pr' ? 'pr' : 'issue'})">${GLYPH[t.kind] || ''} ${t.kind === 'pr' ? 'Pull request' : 'Issue'} · <span class="rf">${esc(t.repo)}#${esc(t.number)}</span> · ${esc(t.state.toLowerCase())}</div>
       <h2><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.title)}</a></h2>
-      <div class="chips">${isPull(t) ? devinBits(t.url) : ''}${p ? `<span class="chip">▸ ${esc(p.workstream ? wsOf(p.workstream)?.name || p.workstream : 'Inbox')}</span>${chip(p.status)}${chip(p.iteration, 'dim')}` : `<button class="add" data-add="${esc(t.url)}">+ add to plate</button>`}
+      <div class="chips">${GH_TICKET.test(t.url || '') ? devinBits(t.url) : ''}${p ? `<span class="chip">▸ ${esc(p.workstream ? wsOf(p.workstream)?.name || p.workstream : 'Inbox')}</span>${chip(p.status)}${chip(p.iteration, 'dim')}` : `<button class="add" data-add="${esc(t.url)}">+ add to plate</button>`}
         ${(t.assignees || []).map((a) => chip('@' + a, 'dim')).join('')}${(t.labels || []).map((l) => chip(l, 'dim')).join('')}</div></div>
     ${teamsChat(t)}
     ${c.via ? `<h4>Closes · ${c.closes.length}</h4>${c.closes.map((x) => tk(x)).join('')}<p class="hint">Hierarchy below is ${esc(c.via.repo)}#${esc(c.via.number)}'s.</p>` : ''}
@@ -1162,12 +1192,13 @@ function ctxHtml(c) {
     ${!c.ancestors.length && !subs.length && !c.siblings.length && !c.blockedBy.length && !c.blocking.length && !(c.prs || []).length && !c.via ? '<p class="hint">No parent, sub-issues, dependencies or linked PRs.</p>' : ''}`;
 }
 document.addEventListener('click', async (e) => {
-  const b = e.target.closest('[data-review]'); if (!b) return;
+  const b = e.target.closest('[data-review], [data-close]'); if (!b) return;
+  const closing = !!b.dataset.close;
   e.preventDefault(); e.stopPropagation(); b.disabled = true; b.textContent = 'Starting…';
   const model = b.parentElement.querySelector('.devmodel')?.value.trim() || '';
   try { localStorage.setItem('plate.devmodel', model); } catch {}
-  const r = await post('/api/devin/review', { url: b.dataset.review, model });
-  if (r) toast(`Devin review started${r.model ? ` with ${r.model}` : ''} in ${r.dir}`);
+  const r = await post(closing ? '/api/devin/close' : '/api/devin/review', { url: closing ? b.dataset.close : b.dataset.review, model });
+  if (r) toast(`Devin ${closing ? 'check' : 'review'} started${r.model ? ` with ${r.model}` : ''} in ${r.dir}`);
   await load(); if (document.querySelector('.ctx') && ctxStack.length) openCtx(ctxStack.at(-1), false);
 }, true);
 // annotate any item: rename (alias) + label; snooze from Needs you; transcript drawer; routing rules
@@ -1209,6 +1240,49 @@ function md(src) {
   close();
   return out.join('').replace(/\u0000(\d+)\u0000/g, (_, n) => code[n]);
 }
+// Settings = sources.md as a form (scalar keys and flat lists; people/meeting_values stay in the file) + the server log
+async function openSettings(tab = 'settings') {
+  closeCtx(false);
+  const scrim = document.createElement('div'); scrim.className = 'ctx-scrim'; scrim.onclick = () => closeCtx();
+  const d = document.createElement('aside'); d.className = 'ctx';
+  document.body.append(scrim, d);
+  const top = (t) => `<div class="ctx-top"><span><button class="btn ${t === 'settings' ? 'on' : ''}" data-tab="settings">Settings</button> <button class="btn ${t === 'log' ? 'on' : ''}" data-tab="log">Log</button></span><button class="btn" data-x>Close</button></div>`;
+  const wire = () => { d.querySelector('[data-x]').onclick = () => closeCtx(); d.querySelectorAll('[data-tab]').forEach((b) => { b.onclick = () => openSettings(b.dataset.tab); }); };
+  if (tab === 'log') {
+    const j = await (await fetch('/api/log?n=300')).json();
+    d.innerHTML = `${top('log')}<h2>Server log</h2><p class="hint">Last ${j.lines.length} lines of <code>.cache/plate.log</code>. Writes, errors, slow reads, collector runs and lock waits; the 20 s polls are not logged. <button class="btn" data-refresh>Refresh</button></p><pre class="logbox">${esc(j.lines.join('\n')) || '(empty)'}</pre>`;
+    wire(); d.querySelector('[data-refresh]').onclick = () => openSettings('log');
+    const box = d.querySelector('.logbox'); box.scrollTop = box.scrollHeight;
+    return;
+  }
+  const j = await (await fetch('/api/settings')).json();
+  // sources.md only holds overrides, so each row shows the default it falls back to and whether you changed it
+  const set = (f) => (Array.isArray(j.values[f.key]) ? j.values[f.key].length > 0 : j.values[f.key] !== '');
+  const field = (f) => {
+    const v = j.values[f.key], id = `set_${f.key}`, custom = set(f);
+    const input = f.type.startsWith('enum:') ? `<select id="${id}" data-key="${f.key}">${f.type.slice(5).split('|').map((o) => `<option value="${o}" ${o === v ? 'selected' : ''}>${o || `default (${esc(f.def)})`}</option>`).join('')}</select>`
+      : `<input id="${id}" data-key="${f.key}" ${f.type === 'number' ? 'type="number" min="1"' : ''} value="${esc(Array.isArray(v) ? v.join(', ') : v)}" placeholder="${esc(f.def)}">`;
+    return `<div class="setrow ${custom ? 'custom' : ''}" data-custom="${custom ? 1 : 0}"><label for="${id}"><code>${f.key}</code> <span class="chip ${custom ? 'need' : 'dim'}">${custom ? 'custom' : 'default'}</span>${custom ? `<button class="ibtn" data-reset="${f.key}" title="Back to the default (${esc(f.def)})">↺ default</button>` : ''}</label>${input}<p class="hint">${esc(f.help)} · default: <b>${esc(f.def)}</b></p></div>`;
+  };
+  const map = (o) => Object.entries(o || {}).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(' · ') || 'none';
+  const groups = [...new Set(j.schema.map((f) => f.group))];
+  const nCustom = j.schema.filter(set).length;
+  d.innerHTML = `${top('settings')}<h2>Settings</h2><p class="hint">Every key Plate reads, with its default. <code>sources.md</code> keeps only what you changed (<b>${nCustom}</b> of ${j.schema.length} now): <code>${esc(j.file)}</code>. Saved as you leave a field; empty or ↺ = back to the default. Intervals and <code>collect</code> are read at every tick, the rest at the next use.</p>
+    <label class="setonly"><input type="checkbox" id="onlyCustom" ${store.get('plate.setOnly', false) ? 'checked' : ''}> Only what I changed</label>
+    ${groups.map((g) => `<h3 class="setgrp">${esc(g)}</h3>${j.schema.filter((f) => f.group === g).map(field).join('')}`).join('')}
+    <div class="setrow"><label><code>people</code> · <code>meeting_values</code></label><p class="hint">Mappings, edited in the file. people: ${map(j.people)} · meeting_values: ${map(j.meeting_values)}</p></div>`;
+  const applyOnly = () => { const on = $('#onlyCustom').checked; store.set('plate.setOnly', on); d.querySelectorAll('.setrow[data-custom="0"]').forEach((r) => { r.hidden = on; }); d.querySelectorAll('.setgrp').forEach((h) => { let n = h.nextElementSibling, any = false; while (n && !n.classList.contains('setgrp')) { if (!n.hidden) any = true; n = n.nextElementSibling; } h.hidden = !any; }); };
+  $('#onlyCustom').onchange = applyOnly; applyOnly();
+  d.querySelectorAll('[data-reset]').forEach((b) => { b.onclick = async () => { if (await post('/api/settings', { [b.dataset.reset]: '' })) { toast(`${b.dataset.reset}: default again`); load(); openSettings('settings'); } }; });
+  wire();
+  d.querySelectorAll('[data-key]').forEach((el) => {
+    el.onchange = async () => {
+      const r = await post('/api/settings', { [el.dataset.key]: el.value });
+      if (r) { toast(`${el.dataset.key} saved`); load(); } else openSettings('settings');
+    };
+  });
+}
+$('#gear').onclick = () => openSettings();
 async function openTranscript(id) {
   closeCtx(false);
   const scrim = document.createElement('div'); scrim.className = 'ctx-scrim'; scrim.onclick = () => closeCtx();
@@ -1230,6 +1304,10 @@ async function openTranscript(id) {
   d.querySelector('[data-x]').onclick = () => closeCtx();
 }
 document.addEventListener('click', async (e) => {
+  // opening a ticket from its card counts as having seen its new comment
+  const link = e.target.closest('.card a.ttl'), sn = e.target.closest('[data-seen]');
+  const seenId = sn ? sn.dataset.seen : link ? link.closest('.card')?.dataset.pin?.replace(/^item:/, '') : null;
+  if (seenId && newAct(S.items.find((x) => x.id === seenId) || {})) { if (sn) { e.stopPropagation(); } post('/api/item/update', { id: seenId, activitySeen: new Date().toISOString() }).then(() => sn && load()); }
   const ed = e.target.closest('[data-edit]'), tr = e.target.closest('[data-tr]'), un = e.target.closest('[data-unsnooze]'), ru = e.target.closest('[data-rules]');
   if (ed) { e.preventDefault(); e.stopPropagation(); editItem(ed.dataset.edit); }
   else if (tr) { e.preventDefault(); e.stopPropagation(); openTranscript(tr.dataset.tr); }
@@ -1337,7 +1415,7 @@ function inboxPanel() {
     return `<div class="trow k-${esc(k)} ${ghState(i)} ${tsel.has(i.id) ? 'sel' : ''}" data-tid="${esc(i.id)}" data-pin="item:${esc(i.id)}" draggable="true">
       <input type="checkbox" ${tsel.has(i.id) ? 'checked' : ''} tabindex="-1"><span class="g">${GLYPH[k] || ''}</span>
       <span class="t"><a ${href}>${esc(nameOf(i))}</a></span>
-      <span class="m">${i.source === 'session' ? chip(ago(i.lastActivity), 'dim') : i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : chip(`${i.repo}#${i.number}`, 'dim')) : ''}${dueTag(i)}${i.workstream ? `<span class="chip ws">▸ ${esc(wsOf(i.workstream)?.name || i.workstream)}</span>` : ''}${i.reviewMe ? '<span class="chip need">review</span>' : ''}<button class="dis" data-dismiss="${esc(i.id)}" title="${i.dismissed ? 'Restore to the Inbox' : 'Dismiss (d)'}">${i.dismissed ? '↺' : '✕'}</button></span></div>`;
+      <span class="m">${i.source === 'session' ? chip(ago(i.lastActivity), 'dim') : i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : chip(`${i.repo}#${i.number}`, 'dim')) : ''}${dueTag(i)}${i.workstream ? `<span class="chip ws">▸ ${esc(wsOf(i.workstream)?.name || i.workstream)}</span>` : ''}${i.reviewMe ? '<span class="chip need">review</span>' : ''}${newAct(i) ? `<span class="chip need" title="${esc('@' + i.activity.by + ': ' + i.activity.text)}">💬 @${esc(i.activity.by)}</span>` : ''}<button class="dis" data-dismiss="${esc(i.id)}" title="${i.dismissed ? 'Restore to the Inbox' : 'Dismiss (d)'}">${i.dismissed ? '↺' : '✕'}</button></span></div>`;
   };
   return `<aside class="ipanel">
     <div class="tri-bar"><div class="page-h"><h2>Inbox</h2><p>${list.length} ${tq ? 'matching' : tscope === 'inbox' ? 'unclassified' : 'open'} · drag onto a workstream · click / shift-click to select · <kbd>/</kbd> search · <kbd>a</kbd> all · <kbd>m</kbd> move · <kbd>d</kbd> dismiss · <kbd>i</kbd> hide</p></div>

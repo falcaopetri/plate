@@ -11,7 +11,7 @@
 // Routing on creation: the workstream with a `repo:` anchor for the PR's repo, else the Inbox.
 import { execFileSync } from 'node:child_process';
 import { upsert } from '../lib/upsert.mjs';
-import { readItems, writeItems, readWorkstreams } from '../lib/store.mjs';
+import { readItems, writeItems, repoAnchors } from '../lib/store.mjs';
 
 const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : null; };
 const q = arg('query') || 'is:pr is:open user-review-requested:@me archived:false';
@@ -38,11 +38,10 @@ for (const i of items) {
 }
 if (flagged) writeItems(items);
 
-const repoWs = new Map();
-for (const w of readWorkstreams()) for (const a of w.github) if (a.startsWith('repo:')) repoWs.set(a.slice(5), w.slug);
+const repoWs = repoAnchors(); // lowercase repo -> slug; an anchor can be a {repo: …} object, which a plain startsWith choked on
 const incoming = prs.filter((p) => !elsewhere.has(p.url)).map((p) => ({
   id: `review:${p.url}`, source: 'review', kind: 'pr', url: p.url, title: p.title, repo: p.repository.nameWithOwner, number: p.number,
   author: p.author?.login || null, draft: p.isDraft || undefined, ghState: 'open', status: 'Review requested', reviewMe: true,
-  state: 'open', created: p.createdAt, lastActivity: p.updatedAt, workstream: repoWs.get(p.repository.nameWithOwner),
+  state: 'open', created: p.createdAt, lastActivity: p.updatedAt, workstream: repoWs.get(p.repository.nameWithOwner.toLowerCase()),
 }));
 upsert('review', incoming, { closedStates: ['gone'] });

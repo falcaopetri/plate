@@ -7,8 +7,9 @@ import { ticketContext } from './lib/ghcontext.mjs';
 import { withLock, collectNow, startSchedule, status, busy } from './lib/schedule.mjs';
 import { lookupByEmail } from './lib/directory.mjs';
 import { transcript } from './lib/devintranscript.mjs';
-import { startReview, runs } from './lib/devinrun.mjs';
-import { DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
+import { startReview, startClose, runs } from './lib/devinrun.mjs';
+import { log, tail } from './lib/log.mjs';
+import { DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, readSettings, patchSources, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
 
 const PORT = Number(process.env.PORT) || 4173;
 const repo = path.dirname(fileURLToPath(import.meta.url));
@@ -25,12 +26,20 @@ const json = (res, code, body) => { res.writeHead(code, { 'Content-Type': 'appli
 const readBody = (req) => new Promise((ok) => { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => ok(b)); });
 
 http.createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://localhost');
+  const url = new URL(req.url, 'http://localhost'), t0 = Date.now();
+  // one line per write, per error and per slow read; the 20s /api/state polls would drown the rest
+  res.on('finish', () => {
+    const ms = Date.now() - t0, quiet = req.method === 'GET' && res.statusCode < 400 && ms < 1000;
+    if (!quiet && !(url.pathname === '/api/log')) (res.statusCode >= 400 ? log.warn : log.info)(`${req.method} ${url.pathname} ${res.statusCode} ${ms}ms`);
+  });
   try {
     // writes are serialized with the scheduled collectors (lib/schedule.mjs)
     await (req.method === 'POST' ? withLock(() => handle(req, res, url), `POST ${url.pathname}`) : handle(req, res, url));
-  } catch (e) { json(res, e instanceof BadRequest ? 400 : 500, { error: e instanceof BadRequest ? e.message : String(e) }); }
-}).listen(PORT, '127.0.0.1', () => { console.log(`plate on http://localhost:${PORT}  (data: ${DATA_DIR})`); startSchedule(); });
+  } catch (e) {
+    if (!(e instanceof BadRequest)) log.error(`${req.method} ${url.pathname}: ${e.stack || e}`);
+    json(res, e instanceof BadRequest ? 400 : 500, { error: e instanceof BadRequest ? e.message : String(e) });
+  }
+}).listen(PORT, '127.0.0.1', () => { log.info(`plate on http://localhost:${PORT}  (data: ${DATA_DIR})`); startSchedule(); });
 
 async function handle(req, res, url) {
   {
@@ -53,7 +62,9 @@ async function handle(req, res, url) {
     }
     if (url.pathname === '/api/collect' && req.method === 'POST') {
       // runs outside the request's lock: each collector takes the lock itself
-      setTimeout(async () => { await collectNow(); await withLock(() => applyRules(), 'rules'); }, 0);
+      // body (optional): {only: ['devin', …]} for a partial sync (the r+d / r+g shortcuts); none = everything enabled
+      const raw = await readBody(req), only = raw ? JSON.parse(raw).only : null;
+      setTimeout(async () => { await collectNow(Array.isArray(only) ? only : undefined); await withLock(() => applyRules(), 'rules'); }, 0);
       return json(res, 202, { ok: true });
     }
     if (url.pathname === '/api/move' && req.method === 'POST') {
@@ -101,6 +112,10 @@ async function handle(req, res, url) {
     }
     if (url.pathname === '/api/rules/apply' && req.method === 'POST') return json(res, 200, { ok: true, routed: applyRules() });
     if (url.pathname === '/api/devin/review' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startReview(b.url, b.model)); }
+    if (url.pathname === '/api/devin/close' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startClose(b.url, b.model)); }
+    if (url.pathname === '/api/settings' && req.method === 'POST') { const patch = JSON.parse(await readBody(req)); log.info(`settings: ${Object.keys(patch).join(', ')}`); return json(res, 200, patchSources(patch)); }
+    if (url.pathname === '/api/settings') return json(res, 200, readSettings());
+    if (url.pathname === '/api/log') return json(res, 200, { lines: tail(Number(url.searchParams.get('n')) || 200) });
     if (url.pathname === '/api/devin/transcript') return json(res, 200, await transcript(url.searchParams.get('id')));
     if (url.pathname === '/api/gh/context') return json(res, 200, await ticketContext(url.searchParams.get('url')));
     if (url.pathname === '/api/items/add-github' && req.method === 'POST') {

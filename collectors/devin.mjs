@@ -41,10 +41,12 @@ async function query(file, sql) {
 // session id -> {archived, done, folder}; empty when Desktop was never installed on this machine
 async function annotations() {
   if (!fs.existsSync(stateDb)) { console.warn(`devin: no Desktop state at ${stateDb}; archived sessions can't be told apart`); return new Map(); }
-  const rows = await query(stateDb, "SELECT value FROM ItemTable WHERE key LIKE 'devin.desktopShell.localSessionAnnotations.%'");
+  // any key naming the annotations (the prefix has differed between Desktop generations), so an older Desktop's archive flags still count
+  const rows = await query(stateDb, "SELECT value FROM ItemTable WHERE key LIKE '%ocalSessionAnnotations%'");
   const out = new Map();
   for (const r of rows) {
-    for (const [k, v] of Object.entries(JSON.parse(String(r.value)))) out.set(k.split('/').pop(), v);
+    let o; try { o = JSON.parse(String(r.value)); } catch { continue; }
+    for (const [k, v] of Object.entries(o || {})) out.set(k.split('/').pop(), v);
   }
   return out;
 }
@@ -67,8 +69,12 @@ const link = (r) => /cloud/i.test(r.backend_type || '')
 const WAIT_MIN = Number(readSources().devin_waiting_minutes ?? 2);
 const notes = await annotations();
 const rows = await query(db, `SELECT s.id, s.title, s.working_directory, s.backend_type, s.model, s.created_at, s.last_activity_at, s.hidden,
-  json_extract(n.chat_message, '$.role') AS head_role, json_array_length(json_extract(n.chat_message, '$.tool_calls')) AS head_tools
+  json_extract(n.chat_message, '$.role') AS head_role, json_array_length(json_extract(n.chat_message, '$.tool_calls')) AS head_tools,
+  substr(n.chat_message, 1, 600) AS head_raw
   FROM sessions s LEFT JOIN message_nodes n ON n.session_id = s.id AND n.node_id = s.main_chain_id`);
+// Devin's last message ended its turn (text with no tool call), or the last tool call was cancelled/interrupted: either way it won't
+// continue by itself. The cancelled case is matched on the tool result's text (role `tool`), not verified against a real cancelled run.
+const yoursTurn = (r) => (r.head_role === 'assistant' && !Number(r.head_tools)) || (r.head_role === 'tool' && /cancel|interrupt|abort|denied|rejected/i.test(r.head_raw || ''));
 const incoming = rows.map((r) => {
   const a = notes.get(r.id) || {};
   const archived = !!(a.archived || a.done || Number(r.hidden));
@@ -78,7 +84,10 @@ const incoming = rows.map((r) => {
     title: r.title || `Devin session ${String(r.id).slice(0, 8)}`, cwd: r.working_directory || null,
     model: r.model || null, lastActivity: iso(r.last_activity_at) || null, devinFolder: a.folder || null,
     state: archived ? 'done' : idleMin >= WAIT_MIN ? 'waiting' : 'idle', created: iso(r.created_at),
-    turn: archived ? undefined : r.head_role === 'assistant' && !Number(r.head_tools) ? 'me' : 'devin',
+    turn: archived ? undefined : yoursTurn(r) ? 'me' : 'devin',
   };
 });
 upsert('session', incoming, { closedStates: ['gone'], owns: (it) => it.tool === 'devin' });
+const nArch = incoming.filter((x) => x.state === 'done').length;
+console.log(`devin: ${incoming.length} sessions, ${nArch} archived (${notes.size} annotations), ${incoming.filter((x) => x.turn === 'me').length} on your turn`);
+if (incoming.length && !notes.size) console.warn('devin: no archive annotations found in the Desktop state; archived sessions will look open');

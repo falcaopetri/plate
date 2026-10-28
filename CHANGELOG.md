@@ -6,6 +6,20 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 7 — 2026-10-28: my tickets + their comments, Devin on your turn, r d / r g, Settings and log
+
+- **My tickets:** a new collector (`mine`, every 5 min) pulls the open issues and PRs I opened, am assigned to or was mentioned in, on any repo (no board needed), into the Inbox (or the workstream with that `repo:` anchor). A comment or review by someone else on them, newer than `mine_days` (default 7), is **Needs you** with a 💬 chip until you open the ticket from its card or tick ✓. Needs `gh` logged in; nothing new to authorize. `github_mine: off` turns it off.
+- **Devin on your turn = Needs you** even before the 2-minute idle; a cancelled/interrupted tool call counts as your turn too (matched on the tool result's text, not seen on a real run). The collector's line now says how many sessions are archived and how many annotations it found, and warns when it found none.
+- **`r d` / `r g` / `r a`:** sync Devin / GitHub / everything on the spot. Devin is also collected right after its `sessions.db` changes (`devin_watch: off` to disable).
+- **O que falta?** on any GitHub ticket starts a Devin session asking what is left to close it (`devin_close_prompt`, `devin_close_model`).
+- **⚙ Settings** edits `sources.md` from the UI; **Log** shows `.cache/plate.log` (requests that write or fail or are slow, collector durations, lock waits with who holds it).
+- Fixed: the review-requests collector crashed on a `repo:` anchor written as an object.
+
+**Setup**
+1. Restart the server.
+2. Optional, in Settings (or `sources.md`): `devin_close_prompt` (e.g. `/your-skill {url}`) and `devin_close_model` for **O que falta?**; without them it asks in plain words with the review model.
+3. If archived Devin sessions still show as "your turn" on a machine, open the Log after a Devin run: `devin: N sessions, M archived (K annotations)`. `K` = 0 means the Desktop's `state.vscdb` has no annotations under the key the collector looks for; send `sqlite3 "<Devin state.vscdb>" "select key from ItemTable where key like '%ession%'"`.
+
 ## 6 — 2026-10-27: repo anchors collect, stale Devin sessions, TaskNotes, people, readable transcript
 
 - **`repo:owner/name` anchors are a collection source:** Sync and the schedule pull each anchored repo's open issues and PRs into its workstream, with or without a board (the collector turns on by itself). A board item wins over the same url from the repo; items already held from those repos (including a pasted link such as a merged PR) are re-fetched so they stay current; closed history is not imported. Rules now also route closed/merged items.

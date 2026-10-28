@@ -185,9 +185,10 @@ for (const r of raw) {
   });
 }
 
-// A pasted link (`ghref`) for an item now on a board is replaced by the collected item, keeping its workstream.
-const all = readItems(), refs = new Map(all.filter((x) => x.source === 'ghref').map((x) => [x.url, x]));
-const absorbed = incoming.filter((x) => refs.has(x.url));
-for (const x of absorbed) x.workstream = refs.get(x.url).workstream ?? x.workstream;
-if (absorbed.length) writeItems(all.filter((x) => !(x.source === 'ghref' && absorbed.some((a) => a.url === x.url))));
+// A pasted link (`ghref`) or a my-tickets item (`mine`, collectors/mine.mjs) for an item now collected here is replaced by the
+// collected item, keeping its workstream (the next mine run puts its flags on the new one).
+const all = readItems(), refs = new Map(all.filter((x) => x.source === 'ghref' || x.source === 'mine').map((x) => [canon(x.url), x]));
+const absorbed = incoming.filter((x) => refs.has(canon(x.url)));
+for (const x of absorbed) x.workstream = refs.get(canon(x.url)).workstream ?? x.workstream;
+if (absorbed.length) writeItems(all.filter((x) => !((x.source === 'ghref' || x.source === 'mine') && absorbed.some((a) => canon(a.url) === canon(x.url)))));
 upsert('github', incoming, { closedStates: ['gone'] });
