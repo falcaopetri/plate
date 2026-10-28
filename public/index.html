@@ -139,8 +139,33 @@
   button.btn.ghost { background: none; color: var(--text-2); }
   .rootzone { padding: 6px 14px; border: 1px dashed var(--line-2); border-radius: 99px; color: var(--text-3); font-size: var(--fs-xs); letter-spacing: .06em; text-transform: uppercase; }
   .rootzone.over { border-color: var(--text); color: var(--text); background: var(--surface-2); }
-  .canvas-scroll { display: flex; overflow: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); padding: var(--s4); box-sizing: border-box; }
-  .canvas { position: relative; }
+  .canvas-scroll { position: relative; overflow: hidden; cursor: grab; touch-action: none; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); padding: var(--s4); box-sizing: border-box; }
+  .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+  .canvas-scroll.panning { cursor: grabbing; } .canvas-scroll.panning .wnode, .canvas-scroll.panning .tnode { pointer-events: none; }
+  .zoomctl { position: absolute; right: 12px; bottom: 12px; z-index: 3; display: flex; gap: 4px; cursor: default; }
+  .zoomctl button { min-width: 30px; height: 28px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 8px; background: rgb(14 24 22 / .85); color: var(--text-2); font: 600 var(--fs-sm) var(--font); cursor: pointer; backdrop-filter: blur(6px); }
+  .zoomctl button:hover { color: var(--text); background: var(--surface-3); }
+  .wtog { flex: none; padding: 0 6px; border: 1px solid var(--line-2); border-radius: 9px; background: none; color: var(--text-3); font: 600 10.5px/16px var(--font); cursor: pointer; }
+  .wtog:hover, .wtog.on { color: var(--text); border-color: var(--text-3); }
+  .tnode { position: absolute; transform: translate(-50%, -50%); max-width: 150px; padding: 4px 9px; border: 1px solid color-mix(in srgb, var(--b) 55%, transparent); border-radius: 99px; background: rgb(14 24 22 / .95); color: var(--text-2); font-size: var(--fs-xs); line-height: 1.3; text-decoration: none; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tnode:hover { color: var(--text); border-color: var(--b); } .tnode.need { border-color: var(--accent); color: var(--accent); }
+  .tnode.more { color: var(--text-3); border-style: dashed; }
+  .wnode.stale:not(.need) { opacity: .6; } .wst { flex: none; font-size: 10.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .canvas.nbhd .wnode:not(.nb) { opacity: .22; } .canvas.nbhd .edge:not(.nb) { opacity: .1; } .canvas.nbhd .tnode { opacity: .3; }
+  .canvas.nbhd .wnode, .canvas.nbhd .edge { transition: opacity .12s; }
+  .pal { position: fixed; inset: 0; z-index: 30; background: rgb(3 8 7 / .55); backdrop-filter: blur(3px); display: flex; justify-content: center; align-items: flex-start; padding-top: 14vh; }
+  .pal-box { width: min(560px, 92vw); border: 1px solid var(--line-2); border-radius: var(--r-lg); background: rgb(12 22 20 / .97); box-shadow: 0 24px 60px -20px #000; overflow: hidden; }
+  .pal-box input { width: 100%; box-sizing: border-box; padding: 14px 18px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); font: 500 var(--fs-lg) var(--font); outline: none; }
+  .pal-list { max-height: 50vh; overflow-y: auto; padding: 6px; }
+  .pal-row { display: flex; gap: 10px; align-items: baseline; padding: 8px 12px; border-radius: 9px; cursor: pointer; font-size: var(--fs-md); }
+  .pal-row.on { background: var(--surface-3); } .pal-row .k { flex: none; width: 54px; font: 500 var(--fs-xs) var(--mono); color: var(--text-3); text-transform: uppercase; }
+  .pal-row .t { flex: 1; min-width: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .pal-row .s { flex: none; max-width: 40%; color: var(--text-3); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pal-empty { padding: 18px; color: var(--text-3); text-align: center; }
+  .daynav .seg { display: inline-flex; gap: 2px; margin-left: auto; } .daynav .seg .btn.on { background: var(--surface-3); color: var(--text); }
+  .wnode.fresh { border-color: var(--live); box-shadow: 0 0 0 3px rgb(95 211 162 / .25), 0 0 26px -4px var(--live); z-index: 2; }
+  .wnode.fresh::before { content: "new"; position: absolute; top: -9px; left: 50%; transform: translateX(-50%); padding: 0 6px; border-radius: 8px; background: var(--live); color: #04140d; font: 700 9.5px/14px var(--font); letter-spacing: .06em; text-transform: uppercase; }
+  .wnode.fresh::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--live); pointer-events: none; animation: needpulse 1.6s ease-out infinite; }
+  .edge.tk { stroke: var(--b); stroke-width: 1.1; opacity: .5; }
   .canvas svg { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
   .edge { fill: none; stroke: var(--line-2); stroke-width: 1.6; }
   .edge.rel { stroke: var(--text-3); stroke-width: 1.3; stroke-dasharray: 4 5; opacity: .85; }
@@ -552,6 +577,13 @@ function toast(msg, undo, label = 'Undo') {
   document.body.append(t); setTimeout(() => t.remove(), undo ? 7000 : 3200);
 }
 const wsOf = (slug) => S.workstreams.find((w) => w.slug === slug);
+// Idle = an active workstream with something open and no event for `staleDays`. With no event of its own it counts from where the log starts.
+function idleInfo(w) {
+  if (w.state !== 'active' || !S.activity || !(wsStats(w.slug).n || wsTasks(w).length)) return null;
+  const base = S.activity.last[w.slug] || S.activity.since; if (!base) return null;
+  const days = Math.floor((Date.now() - Date.parse(base)) / 864e5);
+  return days >= S.staleDays ? { days, untracked: !S.activity.last[w.slug] } : null;
+}
 const wsStats = (slug) => { const m = S.items.filter((i) => i.workstream === slug && i.state !== 'done'); return { n: m.length, need: m.filter((i) => i.needsYou).length }; };
 
 // Radial layout: top-level workstreams on an elliptical ring around the center node; each subtree gets an
@@ -584,6 +616,31 @@ function layoutWs() {
   for (const p of pos.values()) { p.x += cx; p.y += cy; }
   return { pos, w: x1 - x0 + PAD, h: y1 - y0 + PAD, cx, cy };
 }
+// Tasks of a workstream for the map: open Todoist/TaskNotes items and open `- [ ]` to-dos from its body
+const wsTasks = (w) => [
+  ...S.items.filter((i) => i.workstream === w.slug && (i.source === 'todoist' || i.source === 'tasknotes') && i.state !== 'done' && i.state !== 'gone')
+    .sort((a, b) => (b.needsYou ? 1 : 0) - (a.needsYou ? 1 : 0)).map((i) => ({ text: nameOf(i), need: !!i.needsYou, url: SAFE_URL.test(i.url || '') ? i.url : null })),
+  ...(w.body || '').split('\n').map((l) => l.match(TODO_RE)).filter((m) => m && m[1] === ' ').map((m) => ({ text: m[2].trim(), need: false, url: null })),
+];
+let freshWs = null, freshT = null, freshShown = null; // a workstream just created from the map: pulsed and brought into view so it's easy to drag under a parent
+let tasksOpen = new Set(store.get('plate.tasksOpen', []));
+const MAX_LEAVES = 8;
+// leaves fan out from the node, away from the center; returns positioned leaves for the expanded workstreams
+function taskLeaves(L) {
+  const out = [];
+  for (const w of S.workstreams) {
+    if (!tasksOpen.has(w.slug)) continue;
+    const p = L.pos.get(w.slug); if (!p) continue;
+    const all = wsTasks(w), shown = all.slice(0, MAX_LEAVES), extra = all.length - shown.length;
+    const list = extra > 0 ? [...shown, { text: `+${extra} more`, more: true }] : shown;
+    const base = Math.atan2(p.y - L.cy, p.x - L.cx), span = Math.min(Math.PI * 1.4, 0.55 * list.length), R = 110 + Math.max(0, list.length - 5) * 14;
+    list.forEach((t, k) => {
+      const ang = list.length === 1 ? base : base - span / 2 + (span * k) / (list.length - 1);
+      out.push({ ...t, slug: w.slug, color: p.color, px: p.x, py: p.y, x: p.x + R * Math.cos(ang), y: p.y + R * Math.sin(ang) * 0.8 });
+    });
+  }
+  return out;
+}
 // Curves leave the parent along the line toward the child and arrive horizontally (side nodes) or vertically (top/bottom).
 const curve = (ax, ay, bx, by) => {
   const dx = bx - ax, dy = by - ay, side = Math.abs(dx) > Math.abs(dy) * 1.2;
@@ -595,7 +652,7 @@ function edgesSvg(L, heat = new Map()) {
   for (const w of S.workstreams) {
     const b = L.pos.get(w.slug); if (!b) continue;
     const a = L.pos.get(w.parent) || { x: L.cx, y: L.cy };
-    out += `<path class="edge br ${heat.has(w.slug) ? 'lit' : ''}" style="--b:${b.color}" d="${curve(a.x, a.y, b.x, b.y)}"/>`;
+    out += `<path class="edge br ${heat.has(w.slug) ? 'lit' : ''}" data-a="${esc(w.parent || '')}" data-b="${esc(w.slug)}" style="--b:${b.color}" d="${curve(a.x, a.y, b.x, b.y)}"/>`;
   }
   const done = new Set();
   for (const w of S.workstreams) for (const r of w.related) {
@@ -605,10 +662,72 @@ function edgesSvg(L, heat = new Map()) {
     done.add(key);
     const hl = selWs && (w.slug === selWs || r === selWs) ? ' hl' : '';
     const [qx, qy] = [L.cx + ((a.x + b.x) / 2 - L.cx) * 0.4, L.cy + ((a.y + b.y) / 2 - L.cy) * 0.4]; // bow toward the center
-    out += `<path class="edge rel${hl}" d="M${a.x} ${a.y} Q${qx} ${qy} ${b.x} ${b.y}"/>`;
+    out += `<path class="edge rel${hl}" data-a="${esc(w.slug)}" data-b="${esc(r)}" d="M${a.x} ${a.y} Q${qx} ${qy} ${b.x} ${b.y}"/>`;
   }
   return out;
 }
+// Hovering a node lights it, its parent, children and related ones; everything else fades (off in Today mode, which dims on its own)
+function wireNbhd() {
+  const cv = document.querySelector('.canvas'); if (!cv || todayOn) return;
+  const clear = () => { cv.classList.remove('nbhd'); cv.querySelectorAll('.nb').forEach((x) => x.classList.remove('nb')); };
+  cv.onmouseover = (e) => {
+    const n = e.target.closest('.wnode'); if (!n || document.querySelector('.dragging')) return clear();
+    if (n.dataset.slug === freshWs) { freshWs = null; n.classList.remove('fresh'); } // you found it
+    // the path up to the center (hovered + ancestors), its direct children and its related ones
+    const slug = n.dataset.slug, chain = new Set(), near = new Set([slug]);
+    for (let w = wsOf(slug); w && !chain.has(w.slug); w = wsOf(w.parent)) { chain.add(w.slug); near.add(w.slug); }
+    cv.querySelectorAll('.edge[data-a]').forEach((p) => {
+      const { a, b } = p.dataset, rel = p.classList.contains('rel');
+      if (rel ? (a === slug || b === slug) : (chain.has(b) || a === slug)) { near.add(a); near.add(b); p.classList.add('nb'); }
+    });
+    cv.querySelectorAll('.wnode').forEach((x) => x.classList.toggle('nb', near.has(x.dataset.slug)));
+    cv.classList.add('nbhd');
+  };
+  cv.onmouseleave = clear;
+  cv.onmouseout = (e) => { if (!e.relatedTarget?.closest?.('.wnode')) clear(); };
+}
+
+// ---------- Cmd/Ctrl+K: jump to a workstream or an item by name (accent-insensitive, every word must match) ----------
+const wsPath = (w) => { const out = []; for (let x = w, n = 0; x && n < 8; x = wsOf(x.parent), n++) out.unshift(x.name); return out.join(' › '); };
+function palResults(q) {
+  const terms = fold(q).split(/\s+/).filter(Boolean), ok = (hay) => terms.every((t) => hay.includes(t));
+  const ws = S.workstreams.map((w) => ({ k: 'ws', t: w.name, s: wsPath(w) === w.name ? '' : wsPath(w), hay: fold(wsPath(w)), slug: w.slug })).filter((r) => ok(r.hay));
+  const items = S.items.slice().sort((a, b) => (a.state === 'done') - (b.state === 'done')).map((i) => ({ k: i.kind || i.source, t: nameOf(i), s: wsOf(i.workstream)?.name || 'Inbox', hay: fold(`${nameOf(i)} ${i.label || ''} ${i.url || ''}`), item: i })).filter((r) => ok(r.hay));
+  return [...ws, ...items].slice(0, terms.length ? 14 : 10);
+}
+function pickPal(r) {
+  closePal(); view = 'ws';
+  if (r.k === 'ws') return setFocus(r.slug);
+  if (r.item.workstream) return setFocus(r.item.workstream);
+  focus = null; panelOpen = true; tscope = 'inbox'; tq = r.t; render();
+}
+const closePal = () => document.querySelector('.pal')?.remove();
+function openPal() {
+  if (document.querySelector('.pal')) return;
+  const el = document.createElement('div'); el.className = 'pal';
+  el.innerHTML = '<div class="pal-box"><input placeholder="Jump to a workstream or item…" autocomplete="off"><div class="pal-list"></div></div>';
+  document.body.append(el);
+  const inp = el.querySelector('input'), list = el.querySelector('.pal-list');
+  let res = [], at = 0;
+  const draw = () => {
+    res = palResults(inp.value); at = Math.min(at, Math.max(0, res.length - 1));
+    list.innerHTML = res.map((r, n) => `<div class="pal-row ${n === at ? 'on' : ''}" data-n="${n}"><span class="k">${esc(r.k)}</span><span class="t">${esc(r.t)}</span><span class="s">${esc(r.s)}</span></div>`).join('') || '<div class="pal-empty">Nothing matches.</div>';
+    list.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+  };
+  inp.oninput = () => { at = 0; draw(); };
+  inp.onkeydown = (e) => {
+    e.stopPropagation();
+    if (e.key === 'Escape') closePal();
+    else if (e.key === 'ArrowDown') { e.preventDefault(); at = Math.min(at + 1, res.length - 1); draw(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); at = Math.max(at - 1, 0); draw(); }
+    else if (e.key === 'Enter' && res[at]) pickPal(res[at]);
+  };
+  list.onclick = (e) => { const r = res[e.target.closest('.pal-row')?.dataset.n]; if (r) pickPal(r); };
+  el.onmousedown = (e) => { if (e.target === el) closePal(); };
+  draw(); inp.focus();
+}
+document.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && !e.altKey) { e.preventDefault(); openPal(); } });
+
 // ---------- workstream focus: click a node → full-area view of that one workstream ----------
 const SAFE_URL = /^(https?|msteams|devin|obsidian):\/\//i; // only link-out schemes become hrefs (devin:// opens the session in Devin Desktop)
 const MANUAL = ['teams', 'link', 'note', 'ghref'];
@@ -631,12 +750,26 @@ const togglePanel = () => { panelOpen = !panelOpen; store.set('plate.panel', pan
 // ---------- Today mode: what moved today (events.jsonl), as lit nodes + a timeline ----------
 let todayOn = store.get('plate.today', false);
 // replaying another day: null = today (S.events, live); otherwise that day's events, fetched from /api/events
-let viewDay = null, dayData = null;
-const curEvents = () => (viewDay && dayData?.day === viewDay ? dayData.events : viewDay ? [] : S.events);
+// span = how much the map and timeline cover: a day, the 7 days or the 30 days ending at the picked day (heat adds up over the window)
+let span = store.get('plate.span', 'day'), viewDay = null, dayData = null, loadingWin = false;
+const SPAN_DAYS = { day: 1, week: 7, month: 30 };
+const endDay = () => viewDay || S.today;
+const winReady = () => dayData?.span === span && dayData.to === endDay();
+const curEvents = () => span === 'day' ? (viewDay && dayData?.day === viewDay ? dayData.events : viewDay ? [] : S.events) : (winReady() ? dayData.events : []);
+async function loadWindow() {
+  const to = endDay();
+  if (span === 'day') { dayData = viewDay ? await (await fetch(`/api/events?day=${viewDay}`)).json() : null; return; }
+  loadingWin = true;
+  // span/to are set here, not read from the answer: a server that doesn't know from/to (not restarted) or an error must not make winReady() false forever (render → fetch → render…)
+  try { dayData = { events: [], ...(await (await fetch(`/api/events?from=${shiftDay(to, 1 - SPAN_DAYS[span])}&to=${to}`)).json()), span, to }; }
+  catch { dayData = { events: [], span, to }; }
+  finally { loadingWin = false; }
+}
+const setSpan = async (sp) => { span = sp; store.set('plate.span', sp); await loadWindow(); render(); };
 const shiftDay = (d, n) => { const t = new Date(`${d}T12:00:00`); t.setDate(t.getDate() + n); return t.toLocaleDateString('en-CA'); };
 async function goDay(day) {
   viewDay = !day || day >= S.today ? null : day;
-  dayData = viewDay ? await (await fetch(`/api/events?day=${viewDay}`)).json() : null;
+  await loadWindow();
   render();
 }
 const EVLABEL = { 'item.new': 'added', 'item.moved': 'moved in', 'item.gone': 'left', 'item.removed': 'removed', 'workstream.new': 'new workstream',
@@ -655,40 +788,50 @@ function todayHeat() {
   return by;
 }
 function timeline(L) {
-  const evs = [...curEvents()].sort((a, b) => b.ts.localeCompare(a.ts)), day = viewDay || S.today;
+  const all = [...curEvents()].sort((a, b) => b.ts.localeCompare(a.ts)), evs = all.slice(0, 300), day = endDay(), n = SPAN_DAYS[span];
+  const heading = span === 'day' ? (viewDay ? 'Replay' : 'Today') : `${span === 'week' ? 'Week' : 'Month'} to ${day}`;
   const row = (e) => {
     const w = wsOf(e.workstream), t = new Date(e.ts);
     return `<div class="ev" ${w ? `data-focus="${esc(w.slug)}" style="--b:${L.pos.get(w.slug)?.color}"` : ''} title="${esc(e.source || '')} · ${esc(e.type)}">
-      <time>${t.getHours()}:${pad(t.getMinutes())}</time><span class="what"><i>${esc(evLabel(e))}</i> ${esc(e.title || e.ref || '')}</span>
+      <time>${span === 'day' ? '' : `${pad(t.getMonth() + 1)}-${pad(t.getDate())}<br>`}${t.getHours()}:${pad(t.getMinutes())}</time><span class="what"><i>${esc(evLabel(e))}</i> ${esc(e.title || e.ref || '')}</span>
       <span class="where">${w ? `▸ ${esc(w.name)}` : e.workstream ? esc(e.workstream) : 'Inbox'}</span></div>`;
   };
   const withEv = dayData?.days ? Object.keys(dayData.days).sort() : [];
-  return `<aside class="tl"><h3>${viewDay ? 'Replay' : 'Today'} <span>· ${evs.length} event${evs.length === 1 ? '' : 's'}</span></h3>
-    <div class="daynav"><button class="btn" data-day="${shiftDay(day, -1)}" title="Previous day">←</button><input type="date" id="dayPick" value="${esc(day)}" max="${esc(S.today)}" title="Pick a day to replay"><button class="btn" data-day="${shiftDay(day, 1)}" title="Next day" ${viewDay ? '' : 'disabled'}>→</button>${viewDay ? '<button class="btn" data-day="">Today</button>' : ''}</div>
-    ${evs.map(row).join('') || `<p class="hint">${viewDay ? `Nothing was recorded on ${esc(day)}${withEv.length ? ` (days with events: ${esc(withEv.slice(-5).reverse().join(', '))})` : ''}.` : 'Nothing moved yet today.'}</p>`}</aside>`;
+  const unit = span === 'day' ? 'day' : span;
+  return `<aside class="tl"><h3>${heading} <span>· ${all.length} event${all.length === 1 ? '' : 's'}</span></h3>
+    <div class="daynav"><button class="btn" data-day="${shiftDay(day, -n)}" title="Previous ${unit}">←</button><input type="date" id="dayPick" value="${esc(day)}" max="${esc(S.today)}" title="${span === 'day' ? 'Pick a day to replay' : 'Last day of the window'}"><button class="btn" data-day="${shiftDay(day, n)}" title="Next ${unit}" ${viewDay ? '' : 'disabled'}>→</button>${viewDay ? '<button class="btn" data-day="">Today</button>' : ''}
+      <span class="seg">${['day', 'week', 'month'].map((k) => `<button class="btn ${span === k ? 'on' : ''}" data-span="${k}">${k === 'day' ? 'D' : k === 'week' ? 'W' : 'M'}</button>`).join('')}</span></div>
+    ${evs.map(row).join('') || `<p class="hint">${span !== 'day' && !winReady() ? 'Loading…' : span !== 'day' ? `Nothing was recorded in this ${span}${withEv.length ? ` (days with events: ${esc(withEv.slice(-5).reverse().join(', '))})` : ''}.` : viewDay ? `Nothing was recorded on ${esc(day)}${withEv.length ? ` (days with events: ${esc(withEv.slice(-5).reverse().join(', '))})` : ''}.` : 'Nothing moved yet today.'}</p>`}
+    ${all.length > evs.length ? `<p class="hint">Showing the latest ${evs.length} of ${all.length}.</p>` : ''}</aside>`;
 }
 
 // title + controls; drawn above the panel/map grid so the Inbox panel starts level with the canvas
-const wsBar = () => `<div class="ws-bar"><div class="page-h"><h2>Workstreams</h2><p>Click a node to focus on it · drag a node onto another to re-parent, onto the center to make it a root · dashed = related · paste a link or note to add it to the Inbox</p></div>
+const wsBar = () => `<div class="ws-bar"><div class="page-h"><h2>Workstreams</h2><p>Click a node to focus on it · scroll/pinch to zoom, drag the background to pan (double-click = fit) · ☑ n on a node fans out its tasks · drag a node onto another to re-parent, onto the center to make it a root · dashed = related · paste a link or note to add it to the Inbox</p></div>
       <button class="btn ${panelOpen ? 'on' : ''}" data-panel title="Inbox panel (i)">Inbox · ${S.items.filter(inInbox).length}</button>
+      <button class="btn" id="palBtn" title="Jump to a workstream or item (⌘K)">Search ⌘K</button>
       <button class="btn ${todayOn ? 'on' : ''}" id="todayBtn" title="Light up what moved today (t)">Today</button>
       <input id="newName" placeholder="New workstream…" size="18"><button class="btn" id="newRoot">+ Root</button>
 </div>`;
 function mindmap() {
-  const L = layoutWs(), heat = todayOn ? todayHeat() : new Map(), inNeed = S.items.filter((i) => i.needsYou && !i.workstream).length;
+  if (todayOn && span !== 'day' && !winReady() && !loadingWin) loadWindow().then(render); // first paint with a stored week/month span, or the day rolled over
+  const L = layoutWs(), leaves = taskLeaves(L), heat = todayOn ? todayHeat() : new Map(), inNeed = S.items.filter((i) => i.needsYou && !i.workstream).length;
   const nodes = S.workstreams.map((w) => {
-    const p = L.pos.get(w.slug), st = wsStats(w.slug), h = heat.get(w.slug);
-    return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''} ${h ? 'lit' : ''} ${esc(w.state)}" draggable="true" data-slug="${esc(w.slug)}"
-      style="left:${p.x}px;top:${p.y}px;--b:${p.color}${h ? `;--heat:${h.heat.toFixed(2)};--d:${Math.min(h.rank * 0.15, 3)}s` : ''}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${h ? ` · ${h.n} event${h.n > 1 ? 's' : ''} today` : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}">
-      <span class="wn">${esc(w.name)}</span>${st.need ? `<span class="wneed">${st.need}</span>` : st.n ? `<span class="wc">${st.n}</span>` : ''}</div>`;
+    const p = L.pos.get(w.slug), st = wsStats(w.slug), h = heat.get(w.slug), nt = wsTasks(w).length, idle = todayOn ? null : idleInfo(w);
+    return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''}  ${h ? 'lit' : ''} ${idle ? 'stale' : ''} ${w.slug === freshWs ? 'fresh' : ''} ${esc(w.state)}" draggable="true" data-slug="${esc(w.slug)}"
+      style="left:${p.x}px;top:${p.y}px;--b:${p.color}${h ? `;--heat:${h.heat.toFixed(2)};--d:${Math.min(h.rank * 0.15, 3)}s` : ''}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${h ? ` · ${h.n} event${h.n > 1 ? 's' : ''} today` : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}${idle ? ` · idle ${idle.untracked ? '≥' : ''}${idle.days}d` : ''}">
+      <span class="wn">${esc(w.name)}</span>${st.need ? `<span class="wneed">${st.need}</span>` : st.n ? `<span class="wc">${st.n}</span>` : ''}${idle ? `<span class="wst" title="No activity for ${idle.days} days${idle.untracked ? ' (since the log began)' : ''}">${idle.days}d</span>` : ''}${nt ? `<button class="wtog ${tasksOpen.has(w.slug) ? 'on' : ''}" data-tog="${esc(w.slug)}" title="Show its ${nt} open task${nt > 1 ? 's' : ''}">☑ ${nt}</button>` : ''}</div>`;
   }).join('');
   return `<div class="ws-main ${todayOn ? 'today' : ''}">
-    <div class="canvas-scroll"><div class="canvas ${todayOn ? 'today' : ''} ${todayAnim ? 'anim' : ''}" style="width:${L.w}px;height:${L.h}px"><svg width="${L.w}" height="${L.h}">${edgesSvg(L, heat)}</svg>
-      <div class="hub ${inNeed ? 'need' : ''}" id="rootzone" style="left:${L.cx}px;top:${L.cy}px" title="Drop a workstream here to make it top-level${inNeed ? ` · ${inNeed} in the Inbox need you` : ''}">On my plate${inNeed ? `<span class="wneed">${inNeed}</span>` : ''}</div>${nodes || '<div class="empty">No workstreams yet. Create one above.</div>'}</div></div>
+    <div class="canvas-scroll"><div class="canvas ${todayOn ? 'today' : ''} ${todayAnim ? 'anim' : ''}" style="width:${L.w}px;height:${L.h}px"><svg width="${L.w}" height="${L.h}">${edgesSvg(L, heat)}${leaves.map((t) => `<path class="edge tk" style="--b:${t.color}" d="M${t.px} ${t.py} L${t.x} ${t.y}"/>`).join('')}</svg>
+      <div class="hub ${inNeed ? 'need' : ''}" id="rootzone" style="left:${L.cx}px;top:${L.cy}px" title="Drop a workstream here to make it top-level${inNeed ? ` · ${inNeed} in the Inbox need you` : ''}">On my plate${inNeed ? `<span class="wneed">${inNeed}</span>` : ''}</div>${nodes || '<div class="empty">No workstreams yet. Create one above.</div>'}${leaves.map((t) => {
+        const st = `left:${t.x}px;top:${t.y}px;--b:${t.color}`, cls = `tnode ${t.need ? 'need' : ''} ${t.more ? 'more' : ''}`;
+        return t.url ? `<a class="${cls}" href="${esc(t.url)}" target="_blank" rel="noopener" style="${st}" title="${esc(t.text)}">${esc(t.text)}</a>` : `<div class="${cls}" data-focus="${esc(t.slug)}" style="${st}" title="${esc(t.text)}">${esc(t.text)}</div>`;
+      }).join('')}</div>
+      <div class="zoomctl"><button data-zoom="1.25" title="Zoom in">+</button><button data-zoom="0.8" title="Zoom out">−</button><button data-zoom="fit" title="Fit all (double-click the background)">Fit</button></div></div>
     ${todayOn ? timeline(L) : ''}</div>`;
 }
 let todayAnim = false;
-const toggleToday = () => { todayOn = !todayOn; store.set('plate.today', todayOn); todayAnim = todayOn; render(); todayAnim = false; };
+const toggleToday = async () => { todayOn = !todayOn; store.set('plate.today', todayOn); if (todayOn && span !== 'day') await loadWindow(); todayAnim = todayOn; render(); todayAnim = false; };
 document.addEventListener('keydown', (e) => { if (e.key === 't' && view === 'ws' && !focus && !e.metaKey && !e.ctrlKey && !e.altKey && !e.target.closest?.('input, select, textarea')) toggleToday(); });
 
 // action-first grouping of one workstream's items
@@ -760,7 +903,7 @@ function focusView(w) {
   const empty = !items.length ? '<div class="empty">Nothing in this workstream yet. Paste a link or note, or drag items here from the Board.</div>' : '';
   return `<div class="focus ${enter ? 'enter' : ''}">
     <header class="fhead"><h1>${esc(w.name)}</h1>
-      <div class="wrow"><button class="btn" id="meetBtn" title="New meeting note for this workstream (QuickAdd in Obsidian)">+ Meeting note</button><span class="chip">${open} open</span>${g.need.length ? `<span class="chip need">${g.need.length} need you</span>` : ''}<span class="chip dim">${esc(w.state)}</span></div>
+      <div class="wrow"><button class="btn" id="meetBtn" title="New meeting note for this workstream (QuickAdd in Obsidian)">+ Meeting note</button><span class="chip">${open} open</span>${g.need.length ? `<span class="chip need">${g.need.length} need you</span>` : ''}<span class="chip dim">${esc(w.state)}</span>${idleInfo(w) ? `<span class="chip dim" title="No event on this workstream for a while (sources.md: stale_days)">idle ${idleInfo(w).untracked ? '≥' : ''}${idleInfo(w).days}d</span>` : ''}</div>
       ${bodyHtml(w)}</header>
     ${peopleHtml(w)}
     ${chips('Inside', kids)}${chips('Related', [...rel].map(wsOf).filter(Boolean))}
@@ -788,7 +931,7 @@ function wireWs() {
   const create = async (parent) => {
     const name = $('#newName').value.trim(); if (!name) return $('#newName').focus();
     const r = await post('/api/ws/create', { name, parent });
-    if (r) { if (!parent) enter = true; await load(); }
+    if (r) { if (!parent) enter = true; freshWs = r.slug; freshShown = null; clearTimeout(freshT); freshT = setTimeout(() => { freshWs = null; document.querySelector('.wnode.fresh')?.classList.remove('fresh'); }, 8000); await load(); }
   };
   $('#newName').onkeydown = (e) => { if (e.key === 'Enter') create(focus || ''); };
   enter = false;
@@ -796,10 +939,20 @@ function wireWs() {
     $('#newRoot').onclick = () => create('');
     $('#todayBtn').onclick = toggleToday;
     document.querySelectorAll('.daynav [data-day]').forEach((b) => (b.onclick = () => goDay(b.dataset.day)));
+    document.querySelectorAll('.daynav [data-span]').forEach((b) => (b.onclick = () => setSpan(b.dataset.span)));
+    $('#palBtn').onclick = openPal;
+    wireNbhd();
     $('#dayPick')?.addEventListener('change', (e) => goDay(e.target.value));
     document.querySelector('[data-panel]').onclick = togglePanel;
     document.querySelectorAll('.tl [data-focus]').forEach((r) => (r.onclick = () => setFocus(r.dataset.focus)));
     // nodes: click = focus; drag = re-parent; also drop targets for item cards
+    document.querySelectorAll('[data-tog]').forEach((b) => (b.onclick = (e) => {
+      e.stopPropagation();
+      tasksOpen.has(b.dataset.tog) ? tasksOpen.delete(b.dataset.tog) : tasksOpen.add(b.dataset.tog);
+      store.set('plate.tasksOpen', [...tasksOpen]); render();
+    }));
+    document.querySelectorAll('.tnode[data-focus]').forEach((t) => (t.onclick = () => setFocus(t.dataset.focus)));
+    wireCam();
     document.querySelectorAll('.wnode').forEach((n) => {
       n.onclick = () => setFocus(n.dataset.slug);
       n.ondragstart = (e) => { e.dataTransfer.setData('application/x-plate-ws', n.dataset.slug); e.dataTransfer.setData('text/plain', ''); n.classList.add('dragging'); };
@@ -1027,7 +1180,41 @@ document.addEventListener('click', (e) => { const b = e.target.closest('[data-ct
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.querySelector('.ctx')) { e.stopImmediatePropagation(); closeCtx(); } }, true);
 
 // ---------- fit the Workstreams view to the window: the map scales down (zoom) instead of scrolling, panes end above the dock ----------
-const MIN_ZOOM = 0.55;
+// Pan/zoom camera on the canvas (transform, origin top-left). `cam` = null → fit all; kept across re-renders until Fit.
+const MIN_ZOOM = 0.15, MAX_ZOOM = 2.5, FIT_MIN = 0.4;
+let cam = null;
+const fitCam = (cs, cv) => {
+  const pad = 32, w = parseFloat(cv.style.width), h = parseFloat(cv.style.height);
+  const k = Math.max(FIT_MIN, Math.min(1, (cs.clientWidth - pad) / w, (cs.clientHeight - pad) / h)); // never fit smaller than legible; pan to the rest
+  return { k, x: (cs.clientWidth - w * k) / 2, y: (cs.clientHeight - h * k) / 2 };
+};
+const applyCam = (cv) => { cv.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.k})`; };
+function zoomAt(cs, factor, cx = cs.clientWidth / 2, cy = cs.clientHeight / 2) {
+  const k = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, cam.k * factor)), r = k / cam.k;
+  cam = { k, x: cx - (cx - cam.x) * r, y: cy - (cy - cam.y) * r };
+  applyCam(cs.querySelector('.canvas'));
+}
+function wireCam() {
+  const cs = document.querySelector('.canvas-scroll'); if (!cs) return;
+  const cv = cs.querySelector('.canvas');
+  cs.addEventListener('wheel', (e) => {
+    e.preventDefault(); if (!cam) return;
+    const b = cs.getBoundingClientRect(), dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+    zoomAt(cs, Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.0018)), e.clientX - b.left, e.clientY - b.top);
+  }, { passive: false });
+  cs.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || e.target.closest('.wnode, .hub, .tnode, .zoomctl, .empty') || !cam) return;
+    const sx = e.clientX, sy = e.clientY, c0 = { ...cam };
+    cs.setPointerCapture(e.pointerId); cs.classList.add('panning');
+    const move = (m) => { cam = { ...cam, x: c0.x + m.clientX - sx, y: c0.y + m.clientY - sy }; applyCam(cv); };
+    const up = () => { cs.classList.remove('panning'); cs.removeEventListener('pointermove', move); cs.removeEventListener('pointerup', up); cs.removeEventListener('pointercancel', up); };
+    cs.addEventListener('pointermove', move); cs.addEventListener('pointerup', up); cs.addEventListener('pointercancel', up);
+  });
+  cs.addEventListener('dblclick', (e) => { if (!e.target.closest('.wnode, .hub, .tnode, .zoomctl')) { cam = fitCam(cs, cv); applyCam(cv); } });
+  cs.querySelectorAll('[data-zoom]').forEach((b) => (b.onclick = () => {
+    if (b.dataset.zoom === 'fit') { cam = fitCam(cs, cv); applyCam(cv); } else zoomAt(cs, parseFloat(b.dataset.zoom));
+  }));
+}
 function fitView() {
   if (view !== 'ws') return;
   const bottom = parseFloat(getComputedStyle($('main')).paddingBottom) || 0;
@@ -1035,8 +1222,14 @@ function fitView() {
   const cs = document.querySelector('.canvas-scroll'), cv = cs?.querySelector('.canvas');
   if (cv) {
     cs.style.height = `${room(cs)}px`;
-    const pad = 2 * 16 + 2, w = parseFloat(cv.style.width), h = parseFloat(cv.style.height);
-    cv.style.zoom = Math.max(MIN_ZOOM, Math.min(1, (cs.clientWidth - pad) / w, (cs.clientHeight - pad) / h));
+    if (!cam) cam = fitCam(cs, cv);
+    const fresh = freshWs && freshShown !== freshWs && cv.querySelector('.wnode.fresh');
+    if (fresh) { // bring the new node to the middle of the map at a readable zoom, once
+      const k = Math.max(cam.k, 0.8), x = fresh.offsetLeft, y = fresh.offsetTop;
+      cam = { k, x: cs.clientWidth / 2 - x * k, y: cs.clientHeight / 2 - y * k };
+      freshShown = freshWs;
+    }
+    applyCam(cv);
   }
   for (const el of document.querySelectorAll('.ipanel, .tl')) el.style.maxHeight = `${room(el)}px`;
   const ip = document.querySelector('.ipanel'); if (ip && cs) ip.style.height = cs.style.height; // same box as the map beside it

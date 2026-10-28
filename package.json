@@ -8,6 +8,7 @@
     "node": ">=18"
   },
   "scripts": {
+    "prestart": "node scripts/free-port.mjs",
     "start": "node server.mjs",
     "collect:todoist": "node collectors/todoist.mjs",
     "collect:github": "node collectors/github.mjs",

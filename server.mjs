@@ -8,7 +8,7 @@ import { withLock, collectNow, startSchedule, status, busy } from './lib/schedul
 import { lookupByEmail } from './lib/directory.mjs';
 import { transcript } from './lib/devintranscript.mjs';
 import { startReview, runs } from './lib/devinrun.mjs';
-import { DATA_DIR, readItems, writeItems, readWorkstreams, readEvents, readSources, appendEvent, needsYou, today, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
+import { DATA_DIR, readItems, writeItems, readWorkstreams, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
 
 const PORT = Number(process.env.PORT) || 4173;
 const repo = path.dirname(fileURLToPath(import.meta.url));
@@ -38,18 +38,18 @@ async function handle(req, res, url) {
       const t = today();
       const items = readItems().filter((i) => i.state !== 'gone').map((i) => ({ ...i, needsYou: needsYou(i, t) }));
       // events: today's (local date), for the mindmap's Today mode; people: login -> e-mail for Teams chats
-      const events = readEvents().filter((e) => new Date(e.ts).toLocaleDateString('en-CA') === t), src = readSources();
+      const log = readEvents(), events = eventsBetween(log, t, t), src = readSources();
       const meeting = src.meeting_quickadd ? { choice: src.meeting_quickadd, vault: src.obsidian_vault || null, values: src.meeting_values } : null;
       const workstreams = readWorkstreams();
-      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams, canTask: tasknotesDir() !== null, contacts: readContacts(workstreams.flatMap((w) => w.people)), items, events, people: src.people, meeting, setup: setupPending(), collect: status, runs, busy, devinModel: src.devin_review_model || null });
+      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams, canTask: tasknotesDir() !== null, contacts: readContacts(workstreams.flatMap((w) => w.people)), items, events, activity: activitySummary(log), staleDays: Number(src.stale_days) || 3, people: src.people, meeting, setup: setupPending(), collect: status, runs, busy, devinModel: src.devin_review_model || null });
     }
     if (url.pathname === '/api/events') {
-      // one local day of the event log (Today mode's replay of past days) + the days that have any, newest first
-      const all = readEvents(), day = url.searchParams.get('day') || today();
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return json(res, 400, { error: 'day must be YYYY-MM-DD' });
-      const of = (e) => new Date(e.ts).toLocaleDateString('en-CA'), days = {};
-      for (const e of all) days[of(e)] = (days[of(e)] || 0) + 1;
-      return json(res, 200, { day, events: all.filter((e) => of(e) === day), days });
+      // one local day (`day`) or a window (`from`..`to`, inclusive) of the event log, for Today mode's replay + the days that have any
+      const all = readEvents(), q = url.searchParams, day = q.get('day') || today(), from = q.get('from') || day, to = q.get('to') || day;
+      if (![day, from, to].every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))) return json(res, 400, { error: 'day, from and to must be YYYY-MM-DD' });
+      const days = {};
+      for (const e of all) days[eventDay(e)] = (days[eventDay(e)] || 0) + 1;
+      return json(res, 200, { day, from, to, events: eventsBetween(all, from, to), days });
     }
     if (url.pathname === '/api/collect' && req.method === 'POST') {
       // runs outside the request's lock: each collector takes the lock itself

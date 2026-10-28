@@ -83,6 +83,7 @@ A session may carry `"github": "<item url>"`: a new session inherits that item's
 | `devin_review_dir` | folder where "Review no Devin" runs (the one with the repo clones) |
 | `devin_review_prompt` | override, `{url}` placeholder (default `/code-review {url}`) |
 | `devin_waiting_minutes` | a Devin session idle this long (and not archived) becomes `waiting` = Needs you (default 2; `0` = immediately) |
+| `stale_days` | an active workstream with something open and no event for this many days is dimmed on the map with an `Nd` badge (default 3; before the event log is that old it counts from where the log starts) |
 | `tasknotes_dir` | TaskNotes tasks folder (default `<data>/../TaskNotes/Tasks` if it exists; `off` disables); open tasks with a `due`/`scheduled` date ≤ today go to Needs you |
 | `people_dir` | folder of the people notes behind a workstream's `people:` (default `<data>/../../Atlas/People`); optional note frontmatter `role`, `email`, `teams`, `github`, `company` |
 | `people_directory: off` / `dscl_node` | directory lookup of people by e-mail through macOS `dscl` (on by default on a Mac; node default `/Search`) |
