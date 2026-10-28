@@ -4,7 +4,9 @@
   "description": "What's on my plate: file-backed cockpit (workstreams + items) with a thin localhost view.",
   "type": "module",
   "private": true,
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server.mjs",
     "collect:todoist": "node collectors/todoist.mjs",
@@ -12,6 +14,8 @@
     "collect:sessions": "node collectors/sessions.mjs",
     "collect:devin": "node collectors/devin.mjs",
     "collect:reviews": "node collectors/reviews.mjs",
-    "collect": "npm run collect:todoist && npm run collect:github && npm run collect:sessions && npm run collect:devin && npm run collect:reviews"
+    "collect": "npm run collect:todoist && npm run collect:github && npm run collect:sessions && npm run collect:devin && npm run collect:reviews",
+    "test": "node --test test/*.test.mjs",
+    "collect:tasknotes": "node collectors/tasknotes.mjs"
   }
 }

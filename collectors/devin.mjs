@@ -9,7 +9,8 @@
 // Needs `node:sqlite` (Node >= 22.5) or the `sqlite3` CLI on PATH.
 // Archiving is a Desktop annotation, not a column of sessions.db: keys
 // `devin.desktopShell.localSessionAnnotations.<org>` hold {"devin-acp/devin-cli/<id>": {archived, done, folder, parent}}.
-// Mapping: archived or done there -> state `done`; otherwise `idle` (no reliable running/waiting signal).
+// Mapping: archived or done there -> state `done`; idle for `devin_waiting_minutes` (default 2) -> `waiting` (= Needs you);
+// otherwise `idle`. `turn` (me|devin) = who the last message left the move to.
 // url = devin:// deep link that opens the session in Devin Desktop (see `link`).
 // Only items with tool `devin` are owned here, so `collect:sessions` dump items are left alone.
 import fs from 'node:fs';
@@ -60,15 +61,24 @@ const link = (r) => /cloud/i.test(r.backend_type || '')
   : LINK === 'acp' ? `devin://acp/session?sessionId=${encodeURIComponent(r.id)}&connectorId=devin-cli`
   : `devin://app/return/${Buffer.from(`/sessions/${encodeURIComponent(`acp/devin-cli/${r.id}`)}`).toString('base64url')}`;
 
+// A session needs the human when nobody has touched it for `devin_waiting_minutes` (sources.md, default 2: the prompt cache lasts 5 min, so a session untouched for 2 is one worth resuming): Devin is done
+// and waiting for an answer, or stalled. `turn` says whose move the last message left: `me` = Devin's final text (no tool call
+// pending), `devin` = it was mid-work. Archived/done sessions never wait.
+const WAIT_MIN = Number(readSources().devin_waiting_minutes ?? 2);
 const notes = await annotations();
-const rows = await query(db, 'SELECT id, title, working_directory, backend_type, model, created_at, last_activity_at, hidden FROM sessions');
+const rows = await query(db, `SELECT s.id, s.title, s.working_directory, s.backend_type, s.model, s.created_at, s.last_activity_at, s.hidden,
+  json_extract(n.chat_message, '$.role') AS head_role, json_array_length(json_extract(n.chat_message, '$.tool_calls')) AS head_tools
+  FROM sessions s LEFT JOIN message_nodes n ON n.session_id = s.id AND n.node_id = s.main_chain_id`);
 const incoming = rows.map((r) => {
   const a = notes.get(r.id) || {};
+  const archived = !!(a.archived || a.done || Number(r.hidden));
+  const idleMin = (Date.now() - (r.last_activity_at < 1e12 ? r.last_activity_at * 1000 : r.last_activity_at)) / 6e4;
   return {
     id: `session:${r.id}`, source: 'session', kind: 'session', tool: 'devin', url: link(r),
     title: r.title || `Devin session ${String(r.id).slice(0, 8)}`, cwd: r.working_directory || null,
     model: r.model || null, lastActivity: iso(r.last_activity_at) || null, devinFolder: a.folder || null,
-    state: a.archived || a.done || Number(r.hidden) ? 'done' : 'idle', created: iso(r.created_at),
+    state: archived ? 'done' : idleMin >= WAIT_MIN ? 'waiting' : 'idle', created: iso(r.created_at),
+    turn: archived ? undefined : r.head_role === 'assistant' && !Number(r.head_tools) ? 'me' : 'devin',
   };
 });
 upsert('session', incoming, { closedStates: ['gone'], owns: (it) => it.tool === 'devin' });

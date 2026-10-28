@@ -77,16 +77,21 @@ A session may carry `"github": "<item url>"`: a new session inherits that item's
 |---|---|
 | `github_projects: [owner/N, …]` | GitHub Projects boards to collect (needs `gh auth refresh -s read:project`) |
 | `github_reviews: off` | turns off the review-requests collector (on by default) |
+| `<collector>_every_minutes` | polling interval per collector (`devin` 1, `github` 10, `reviews` 10, `tasknotes` 5, `todoist` 15 by default), read each tick |
 | `collect: off` | turns off all automatic collection (timers); **Sync now** still runs the enabled collectors by hand |
 | `devin_review_model` | default `--model` for "Review no Devin" (e.g. `opus`); the box next to the button overrides it |
 | `devin_review_dir` | folder where "Review no Devin" runs (the one with the repo clones) |
 | `devin_review_prompt` | override, `{url}` placeholder (default `/code-review {url}`) |
+| `devin_waiting_minutes` | a Devin session idle this long (and not archived) becomes `waiting` = Needs you (default 2; `0` = immediately) |
+| `tasknotes_dir` | TaskNotes tasks folder (default `<data>/../TaskNotes/Tasks` if it exists; `off` disables); open tasks with a `due`/`scheduled` date ≤ today go to Needs you |
+| `people_dir` | folder of the people notes behind a workstream's `people:` (default `<data>/../../Atlas/People`); optional note frontmatter `role`, `email`, `teams`, `github`, `company` |
+| `people_directory: off` / `dscl_node` | directory lookup of people by e-mail through macOS `dscl` (on by default on a Mac; node default `/Search`) |
 | `devin_link: acp` | Devin Desktop older than 3.11 (default `shell`) |
 | `people:` block list `- <github login>: <e-mail>` | pre-fills Teams chats about a ticket |
 | `obsidian_vault`, `meeting_quickadd` | vault name and QuickAdd choice for "+ Meeting note" |
 | `meeting_values:` block list `- <variable>: <text>` | fills the choice's `{{VALUE:<variable>}}`; placeholders `{workstream}` `{project}` `{slug}` `{date}` |
 
-Per workstream (`workstreams/<slug>.md`): `github: [repo:owner/name, issue:owner/repo#N]` routes new GitHub items there; `project:` (vault note name for meeting notes), `color:` (branch color). Environment: `PLATE_DATA_DIR`, `PORT`, `TODOIST_API_TOKEN`, `PLATE_EVERY_<COLLECTOR>` (minutes), `PLATE_NO_SCHEDULE=1`.
+Per workstream (`workstreams/<slug>.md`): `github: [repo:owner/name, issue:owner/repo#N]`: a `repo:` anchor is also a **collection source** (its open issues and PRs are pulled with or without a board; known closed ones stay current) and routes new GitHub items there; `people: ["[[Name]]"]` (mini-CRM); `project:` (vault note name for meeting notes), `color:` (branch color). Environment: `PLATE_DATA_DIR`, `PORT`, `TODOIST_API_TOKEN`, `PLATE_EVERY_<COLLECTOR>` (minutes), `PLATE_NO_SCHEDULE=1`, `PLATE_GH_BIN` (tests). `npm test` runs the suite (stub `gh`, scratch data dir).
 
 **Upgrading:** `CHANGELOG.md` lists, per change, the setup a running machine needs after a pull.
 

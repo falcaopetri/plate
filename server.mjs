@@ -5,9 +5,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ticketContext } from './lib/ghcontext.mjs';
 import { withLock, collectNow, startSchedule, status, busy } from './lib/schedule.mjs';
+import { lookupByEmail } from './lib/directory.mjs';
 import { transcript } from './lib/devintranscript.mjs';
 import { startReview, runs } from './lib/devinrun.mjs';
-import { DATA_DIR, readItems, writeItems, readWorkstreams, readEvents, readSources, appendEvent, needsYou, today, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, BadRequest } from './lib/store.mjs';
+import { DATA_DIR, readItems, writeItems, readWorkstreams, readEvents, readSources, appendEvent, needsYou, today, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
 
 const PORT = Number(process.env.PORT) || 4173;
 const repo = path.dirname(fileURLToPath(import.meta.url));
@@ -39,7 +40,16 @@ async function handle(req, res, url) {
       // events: today's (local date), for the mindmap's Today mode; people: login -> e-mail for Teams chats
       const events = readEvents().filter((e) => new Date(e.ts).toLocaleDateString('en-CA') === t), src = readSources();
       const meeting = src.meeting_quickadd ? { choice: src.meeting_quickadd, vault: src.obsidian_vault || null, values: src.meeting_values } : null;
-      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams: readWorkstreams(), items, events, people: src.people, meeting, setup: setupPending(), collect: status, runs, busy, devinModel: src.devin_review_model || null });
+      const workstreams = readWorkstreams();
+      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams, canTask: tasknotesDir() !== null, contacts: readContacts(workstreams.flatMap((w) => w.people)), items, events, people: src.people, meeting, setup: setupPending(), collect: status, runs, busy, devinModel: src.devin_review_model || null });
+    }
+    if (url.pathname === '/api/events') {
+      // one local day of the event log (Today mode's replay of past days) + the days that have any, newest first
+      const all = readEvents(), day = url.searchParams.get('day') || today();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return json(res, 400, { error: 'day must be YYYY-MM-DD' });
+      const of = (e) => new Date(e.ts).toLocaleDateString('en-CA'), days = {};
+      for (const e of all) days[of(e)] = (days[of(e)] || 0) + 1;
+      return json(res, 200, { day, events: all.filter((e) => of(e) === day), days });
     }
     if (url.pathname === '/api/collect' && req.method === 'POST') {
       // runs outside the request's lock: each collector takes the lock itself
@@ -101,6 +111,32 @@ async function handle(req, res, url) {
       if (dup) return json(res, 200, { id: dup.id, existing: true, workstream: dup.workstream });
       return json(res, 200, { id: addManualItem(b) });
     }
+    if (url.pathname === '/api/tasks/create' && req.method === 'POST') {
+      const file = createTask(JSON.parse(await readBody(req)));
+      setTimeout(() => collectNow(['tasknotes']).catch(() => {}), 0); // the task shows up once the collector has read it
+      return json(res, 200, { ok: true, file });
+    }
+    if (url.pathname === '/api/people/create' && req.method === 'POST') {
+      // by e-mail: the directory (dscl) fills name, role, department, company and photo; whatever it can't, the form values cover
+      const b = JSON.parse(await readBody(req));
+      const { dir, fields } = await fromDirectory(b.email, b.name);
+      const { photoBuf, name: dirName, ...props } = fields;
+      const name = createPerson({ ...props, role: b.role || props.role, email: b.email, teams: b.teams, name: b.name || dirName });
+      if (photoBuf) patchPerson(name, { photo: `[[${saveAttachment(name, photoBuf)}]]` });
+      if (b.workstream) { const w = readWorkstreams().find((x) => x.slug === b.workstream); if (w) updateWorkstream(w.slug, { people: [...w.people, name] }); }
+      return json(res, 200, { ok: true, name, directory: dir });
+    }
+    if (url.pathname === '/api/people/sync' && req.method === 'POST') {
+      // re-read one person from the directory into their note's properties (by the e-mail already on the note)
+      const { name } = JSON.parse(await readBody(req)), c = readContacts([name])[name];
+      if (!c?.note) throw new BadRequest('no note for this person');
+      if (!c.email) throw new BadRequest('add an email property to the note first');
+      const { dir, fields } = await fromDirectory(c.email, name);
+      if (dir !== 'ok') throw new BadRequest(dir);
+      const { photoBuf, name: _n, ...props } = fields;
+      if (photoBuf) props.photo = `[[${saveAttachment(name, photoBuf)}]]`;
+      return json(res, 200, { ok: true, updated: patchPerson(name, props) });
+    }
     if (url.pathname === '/api/ws/todo' && req.method === 'POST') {
       const { slug, n, text, done } = JSON.parse(await readBody(req));
       setTodo(slug, n, text, !!done);
@@ -122,11 +158,23 @@ async function handle(req, res, url) {
     if (url.pathname === '/api/ws/update' && req.method === 'POST') {
       const { slug, ...patch } = JSON.parse(await readBody(req));
       updateWorkstream(slug, patch);
-      return json(res, 200, { ok: true, routed: 'github' in patch ? applyRules() : 0 }); // new anchors claim matching Inbox items
+      // new anchors claim matching Inbox items now, and a `repo:` anchor starts pulling that repo's open issues/PRs
+      if ('github' in patch) setTimeout(() => collectNow(['github']).then(() => withLock(() => applyRules(), 'rules')).catch(() => {}), 0);
+      return json(res, 200, { ok: true, routed: 'github' in patch ? applyRules() : 0 });
     }
     const file = path.join(pub, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname).replace(/^(\.\.[/\\])+/, ''));
     if (!file.startsWith(pub) || !fs.existsSync(file)) { res.writeHead(404); return res.end('not found'); }
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
     res.end(fs.readFileSync(file));
   }
+}
+
+// directory fields for an e-mail: dir = 'ok' | why it is not available (never throws, so creating a person works without it)
+async function fromDirectory(email, name) {
+  if (!email) return { dir: 'no email given', fields: {} };
+  try {
+    const d = await lookupByEmail(email);
+    if (!d) return { dir: 'not found in the directory', fields: {} };
+    return { dir: 'ok', fields: { name: d.name, role: d.role, department: d.department, company: d.company, directory_synced: today(), photoBuf: d.photo } };
+  } catch (e) { return { dir: e.message, fields: {} }; }
 }

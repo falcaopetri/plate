@@ -6,6 +6,26 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 6 — 2026-10-27: repo anchors collect, stale Devin sessions, TaskNotes, people, readable transcript
+
+- **`repo:owner/name` anchors are a collection source:** Sync and the schedule pull each anchored repo's open issues and PRs into its workstream, with or without a board (the collector turns on by itself). A board item wins over the same url from the repo; items already held from those repos (including a pasted link such as a merged PR) are re-fetched so they stay current; closed history is not imported. Rules now also route closed/merged items.
+- **Devin sessions waiting on you:** idle for `devin_waiting_minutes` (default 2, the prompt-cache window is 5 min) and not archived → `waiting` (Needs you), with a "your turn" chip when Devin's last message ended its turn. The tab title shows the Needs-you count; click the Needs-you tile once to allow desktop notifications.
+- **Archived sessions** disappear from the workstream view and its counts.
+- **Review no Devin** also shows on draft PRs.
+- **TaskNotes:** open tasks of the plugin's folder arrive as items; due/scheduled ≤ today = Needs you.
+- **Mini-CRM:** a People row on each workstream (`people:` → notes in `people_dir`, with role, e-mail and a Teams chat link).
+- **Transcript drawer** renders markdown, newest first (latest three open, older folded).
+- **Create from the UI:** a dated task (writes a TaskNote file into the tasks folder; workstream → `projects:`) and a new person (writes a note in `people_dir`, links it to the workstream).
+- **People from the directory (macOS, `dscl`):** creating a person by e-mail fills the note's properties (`role`, `department`, `company`, `email`, `photo`, `directory_synced`) from the Mac's directory (`/Search`), and ↻ on a person re-reads them. Teams chat opens from the e-mail (`teams` property overrides). **Untested against a real directory** (stub only): on the work Mac, try "new person" with a colleague's e-mail; if fields come back empty, send `dscl /Search -read /Users/<their record> | head -60` so the attribute names can be mapped.
+- **Replay of past days:** in Today mode (`t`) the timeline has ← date → and a date picker (`/api/events?day=YYYY-MM-DD`); it reads `events.jsonl`, so only days the Plate was running (collectors or UI) have events.
+- **Schedule:** Devin every 1 min, GitHub every 10 min (`<collector>_every_minutes` in `sources.md`, e.g. `github_every_minutes: 10`; read each tick).
+- `npm test` (stub `gh`, scratch data dir).
+
+**Setup**
+1. Restart the server.
+2. Optional: `devin_waiting_minutes: 2`, `tasknotes_dir: <folder>` (or `off`), `people_dir: <folder>` in `sources.md`. Where the data lives in `x/Plate`, the defaults already find `x/TaskNotes/Tasks` and `Atlas/People`.
+3. Work machine (untested there): check the TaskNotes folder and the people notes' frontmatter (`email`, `teams`) match that vault.
+
 ## 5 — 2026-10-27: routing rules on existing items, snooze, rename/label, Devin model + transcript, write-lock diagnostics
 
 - **Routing rules apply to items already on the plate:** an Inbox item whose repo matches a workstream's `repo:` anchor moves there (and an Inbox session anchored to a classified PR follows the PR). Runs after every collector, on Sync now, when a workstream's anchors change, and from the Inbox's **Apply rules** button.
