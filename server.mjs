@@ -50,7 +50,7 @@ async function handle(req, res, url) {
       const log = readEvents(), events = eventsBetween(log, t, t), src = readSources();
       const meeting = src.meeting_quickadd ? { choice: src.meeting_quickadd, vault: src.obsidian_vault || null, values: src.meeting_values } : null;
       const workstreams = readWorkstreams();
-      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams, canTask: tasknotesDir() !== null, contacts: readContacts(workstreams.flatMap((w) => w.people)), items, events, top3: readTop3(t), top3Prev: readTop3Prev(t), activity: activitySummary(log), staleDays: Number(src.stale_days) || 3, people: src.people, meeting, setup: setupPending(), collect: status, runs, busy, devinModel: src.devin_review_model || null });
+      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams, canTask: tasknotesDir() !== null, contacts: readContacts(workstreams.flatMap((w) => w.people)), items, events, top3: readTop3(t), top3Prev: readTop3Prev(t), activity: activitySummary(log), staleDays: Number(src.stale_days) || 3, doneDays: Number(src.done_days) || 7, people: src.people, meeting, setup: setupPending(), collect: status, runs, busy, devinModel: src.devin_review_model || null });
     }
     if (url.pathname === '/api/events') {
       // one local day (`day`) or a window (`from`..`to`, inclusive) of the event log, for Today mode's replay + the days that have any
@@ -90,8 +90,9 @@ async function handle(req, res, url) {
     }
     if (url.pathname === '/api/top3' && req.method === 'POST') {
       // body: {type: 'ws' | 'item', ref, on}; pins or unpins for today (max 3), answers today's pins
-      const { type, ref, on = true } = JSON.parse(await readBody(req));
-      return json(res, 200, { top3: setTop3(today(), type, ref, !!on) });
+      // `done: true|false` instead of `on` marks the pin as met (or reopens it) and keeps its slot
+      const { type, ref, on = true, done } = JSON.parse(await readBody(req));
+      return json(res, 200, { top3: setTop3(today(), type, ref, !!on, done === undefined ? undefined : !!done) });
     }
     if (url.pathname === '/api/dismiss' && req.method === 'POST') {
       // body: {ids, dismissed}; hides items from the Inbox (any source; collectors keep the flag) or brings them back

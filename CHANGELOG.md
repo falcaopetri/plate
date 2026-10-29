@@ -6,6 +6,22 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 9 — 2026-10-29: Devin run kept when the CLI dies after the session exists, toasts in the corner, bell, nesting, Top 3 ✓, `github_query`
+
+- **A Devin review/check no longer shows "failed" when the session was created**: if the CLI exits non-zero (a tool call rejected by a pre-hook, say) after the session exists, the run is `done` with a "session kept" note, and the session is still anchored and renamed (`Review: <title>`). Finding the session now compares folders by real path and falls back to the only session born in the run window. The alias lives in Plate only: the Devin CLI has no way to rename a session.
+- **Toasts** are neutral and stack bottom-right; only errors are red (starting a session used to show a red toast).
+- **Bell (🔔 in the top bar)** logs what starts needing you: a session waiting, a review request, a new comment on my ticket, a finished Devin run. Per browser, last 40; a count on the bell, nothing pops up. For machines where browser notifications are blocked.
+- **Nesting in a workstream:** a Devin session hangs under its PR, a PR under the issue it closes (same workstream), with a connector line. Needs-you on a child lifts the whole stack into "Needs you / next".
+- **"Teams → @author"** on a PR after a Devin review (or any anchored session): opens a Teams chat to its author with a draft message (needs the login in `people:`). Board items now carry the PR `author`.
+- **Top 3 ✓:** each pin has a ✓ ("I did this"; ↺ reopens). Stored as `done: true` in the pin.
+- **`github_query`** (sources.md, Settings): a Projects filter sent with every board query, e.g. `-label:Stale`, instead of pulling the whole board.
+- **`done_days`** (default 7): finished items older than this leave "Recently done".
+
+**Setup**
+1. Restart the server (the new `author` field fills on the next GitHub sync).
+2. Optional: `github_query: "-label:Stale"` in `<data>/sources.md` (or in ⚙).
+3. Work machine: `people:` needs the PR authors' logins → e-mails for the Teams button (same map as the ticket drawer).
+
 ## 8 — 2026-10-29: archived Devin sessions (new format), no more "server busy", session tied to the PR at once, Today lights the path to the root
 
 - **Archived Devin sessions** are recognised in the Desktop's current format (`windsurf.acp.session/archivedSessions`, a list of `acp/devin-cli/<id>`) as well as the legacy `localSessionAnnotations`: they are `done` and leave Needs you even when the last message left the turn to you.

@@ -40,8 +40,8 @@ for (const w of wsAll) for (const a of w.github) if (typeof a === 'string' && a.
 
 // ---------- live: GraphQL ----------
 const PARENTS = 'parent { url parent { url parent { url parent { url } } } }'; // 4 levels of epics
-const ISSUE_PR = `... on Issue { id url number title state repository { nameWithOwner } assignees(first: 10) { nodes { login } } ${PARENTS} }
-  ... on PullRequest { id url number title state isDraft repository { nameWithOwner } assignees(first: 10) { nodes { login } }
+const ISSUE_PR = `... on Issue { id url number title state author { login } repository { nameWithOwner } assignees(first: 10) { nodes { login } } ${PARENTS} }
+  ... on PullRequest { id url number title state isDraft author { login } repository { nameWithOwner } assignees(first: 10) { nodes { login } }
     closingIssuesReferences(first: 5) { nodes { url ${PARENTS} } } }`;
 const ITEMS = `items(first: 100, after: $cursor, query: $q) {
   pageInfo { hasNextPage endCursor }
@@ -66,7 +66,7 @@ const gql = (query, vars) => {
 const chain = (n) => { const out = []; for (let p = n?.parent; p; p = p.parent) out.push(p.url); return out; };
 
 function fetchBoard(owner, number) {
-  const q = arg('query') || '';
+  const q = arg('query') || readSources().github_query || '';
   let kind = 'organization', cursor = null, nodes = [];
   for (;;) {
     const query = `query($owner: String!, $number: Int!, $cursor: String, $q: String) { ${kind}(login: $owner) { projectV2(number: $number) { ${ITEMS} } } }`;
@@ -120,7 +120,7 @@ function fromContent(c, fv, id) {
   const closes = isPr ? c.closingIssuesReferences.nodes : [];
   return {
     id, kind: isPr ? 'pr' : isIssue ? 'issue' : 'draft', url: c.url || null, title: c.title, repo: c.repository?.nameWithOwner || null,
-    number: c.number ?? null, status, iteration, assignees: c.assignees?.nodes.map((a) => a.login), closed: /^(closed|merged)$/i.test(c.state || ''), ghState: c.state ? c.state.toLowerCase() : null,
+    number: c.number ?? null, author: c.author?.login || undefined, status, iteration, assignees: c.assignees?.nodes.map((a) => a.login), closed: /^(closed|merged)$/i.test(c.state || ''), ghState: c.state ? c.state.toLowerCase() : null,
     parent: isIssue ? c.parent?.url || null : undefined, closes: isPr ? closes.map((x) => x.url) : undefined,
     lineage: isIssue ? chain(c) : closes.flatMap((x) => [x.url, ...chain(x)]), // the epics this item could belong to, nearest first
   };
@@ -179,7 +179,7 @@ for (const r of raw) {
   const epic = [r.url, ...r.lineage].find((u) => epicWs.has(u));
   incoming.push({
     id: `github:${r.id}`, source: 'github', kind: r.kind, url: r.url, title: r.title, repo: r.repo, number: r.number,
-    status: r.status, iteration: r.iteration, assignees: r.assignees, parent: r.parent, closes: r.closes, ghState: r.ghState,
+    status: r.status, iteration: r.iteration, author: r.author, assignees: r.assignees, parent: r.parent, closes: r.closes, ghState: r.ghState,
     state: DONE.test(r.status || '') || r.closed ? 'done' : 'open',
     workstream: (epic && epicWs.get(epic)) ?? repoWs.get(String(r.repo).toLowerCase()) ?? undefined,
   });

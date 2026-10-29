@@ -10,7 +10,7 @@ const q = val('query'), out = (data) => console.log(JSON.stringify({ data }));
 if (q.includes('viewer {')) { // collectors/mine.mjs: fx.mine = { me, author: [...], assignee: [...], mention: [...] } keyed by the search qualifier
   const k = ['author', 'assignee', 'mentions'].find((w) => val('q').includes(`${w}:@me`));
   out({ viewer: { login: fx.mine.me || 'me' }, search: { pageInfo: { hasNextPage: false }, nodes: fx.mine[k === 'mentions' ? 'mention' : k] || [] } });
-} else if (q.includes('projectV2')) out({ organization: { projectV2: { items: { pageInfo: { hasNextPage: false }, nodes: (fx.board || []).map((c, n) => ({ id: `PVTI_${n}`, fieldValues: { nodes: [{ name: c.status || 'In progress', field: { name: 'Status' } }] }, content: c })) } } } });
+} else if (q.includes('projectV2')) { if (process.env.STUB_GH_LOG) fs.appendFileSync(process.env.STUB_GH_LOG, `${val('q')}\n`); out({ organization: { projectV2: { items: { pageInfo: { hasNextPage: false }, nodes: (fx.board || []).map((c, n) => ({ id: `PVTI_${n}`, fieldValues: { nodes: [{ name: c.status || 'In progress', field: { name: 'Status' } }] }, content: c })) } } } }); }
 else if (q.includes('search(')) out({ search: { pageInfo: { hasNextPage: false }, nodes: fx.repos[val('q').replace(/^repo:|\s.*$/g, '')] || [] } });
 else if (q.includes('resource(')) out(Object.fromEntries([...q.matchAll(/(r\d+): resource\(url: ("[^"]+")\)/g)].map(([, a, u]) => [a, fx.known[JSON.parse(u)] ?? null])));
 else { console.error('stub gh: unexpected query'); process.exit(1); }

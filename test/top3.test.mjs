@@ -35,3 +35,12 @@ test('prev = the latest earlier day that ended with pins', () => {
   store.setTop3('2026-10-30', 'ws', 'b', true); store.setTop3('2026-10-30', 'ws', 'b', false); // emptied: skipped
   assert.equal(store.readTop3Prev('2026-10-31').day, '2026-10-28');
 });
+
+test('a pin can be marked done and reopened without losing its slot', () => {
+  store.setTop3('2026-10-30', 'ws', 'a', true);
+  store.setTop3('2026-10-30', 'item', 'x', true);
+  assert.deepEqual(store.setTop3('2026-10-30', 'ws', 'a', true, true), [{ type: 'ws', ref: 'a', done: true }, { type: 'item', ref: 'x' }]);
+  assert.equal(store.readTop3('2026-10-30')[0].done, true);
+  assert.deepEqual(store.setTop3('2026-10-30', 'ws', 'a', true, false)[0], { type: 'ws', ref: 'a' });
+  assert.throws(() => store.setTop3('2026-10-30', 'item', 'y', true, true), /not pinned/);
+});

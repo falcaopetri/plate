@@ -20,9 +20,9 @@ function setup({ sources = '', items = [], fixture }) {
   fs.writeFileSync(path.join(dir, 'items.jsonl'), items.map((i) => JSON.stringify(i)).join('\n') + (items.length ? '\n' : ''));
   fs.writeFileSync(path.join(dir, 'events.jsonl'), '');
   fs.writeFileSync(path.join(dir, 'fx.json'), JSON.stringify(fixture));
-  const run = () => execFileSync('node', ['collectors/github.mjs'], { cwd: root, encoding: 'utf8', env: { ...process.env, PLATE_DATA_DIR: dir, PLATE_GH_BIN: path.join(root, 'test/gh-stub.mjs'), STUB_GH: path.join(dir, 'fx.json') } });
+  const run = () => execFileSync('node', ['collectors/github.mjs'], { cwd: root, encoding: 'utf8', env: { ...process.env, PLATE_DATA_DIR: dir, PLATE_GH_BIN: path.join(root, 'test/gh-stub.mjs'), STUB_GH: path.join(dir, 'fx.json'), STUB_GH_LOG: path.join(dir, 'gh.log') } });
   const read = () => fs.readFileSync(path.join(dir, 'items.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
-  return { run, read };
+  return { run, read, dir };
 }
 
 test('no board: open issues and PRs of an anchored repo land in its workstream', () => {
@@ -62,4 +62,11 @@ test('known closed items stay current; closed history is not imported', () => {
   assert.ok(!items.some((i) => i.url === U(99)), 'no closed history imported');
   t.run();
   assert.equal(t.read().find((i) => i.id === 'github:I_5').state, 'done', 'still done (not gone) on the next run');
+});
+
+test('github_query in sources.md is sent as the board filter, and the PR author is kept', () => {
+  const t = setup({ sources: 'github_projects: [o/1]\ngithub_query: "-label:Stale"', fixture: { board: [{ ...pr(2), author: { login: 'ana' } }], repos: {}, known: {} } });
+  t.run();
+  assert.match(fs.readFileSync(path.join(t.dir, 'gh.log'), 'utf8'), /^-label:Stale$/m);
+  assert.equal(t.read().find((i) => i.number === 2).author, 'ana');
 });

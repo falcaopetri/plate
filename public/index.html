@@ -172,7 +172,7 @@
   .t3 .tx { min-width: 0; } .t3 .tt { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .t3 .ts { display: block; font-size: var(--fs-xs); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .t3.done .tt { text-decoration: line-through; color: var(--text-3); } .t3.done .n { background: var(--live); }
-  .t3 .x { position: absolute; right: 6px; top: 4px; border: 0; background: none; color: var(--text-3); cursor: pointer; visibility: hidden; } .t3:hover .x { visibility: visible; } .t3 .x:hover { color: var(--text); }
+  .t3 .x { position: absolute; right: 6px; top: 4px; border: 0; background: none; color: var(--text-3); cursor: pointer; visibility: hidden; } .t3:hover .x { visibility: visible; } .t3 .x:hover { color: var(--text); } .t3 .x[data-t3done] { right: 26px; } .t3.done .x[data-t3done] { visibility: visible; color: var(--live); }
   .t3.free { border-style: dashed; background: none; color: var(--text-3); font-size: var(--fs-sm); cursor: default; } .t3.free .n { background: none; border: 1px dashed var(--live); color: var(--live); } .t3.free:hover { background: none; }
   .t3.ghost { border-style: dashed; border-color: var(--line-2); background: none; opacity: .75; } .t3.ghost .n { background: none; border: 1px dashed var(--text-3); color: var(--text-3); }
   .t3.ghost .tt { font-weight: 500; color: var(--text-2); font-style: italic; } .t3.ghost:hover { opacity: 1; border-color: var(--live); } .t3.ghost .plus { flex: none; margin-left: auto; color: var(--live); font-size: var(--fs-xs); white-space: nowrap; }
@@ -204,7 +204,10 @@
   .addteams { display: grid; gap: 6px; margin-top: var(--s3); }
   .addteams summary { cursor: pointer; color: var(--text-3); font-size: var(--fs-xs); letter-spacing: .1em; text-transform: uppercase; }
   .hint { color: var(--text-3); font-size: var(--fs-sm); margin: var(--s3) 0 0; }
-  .toast { position: fixed; top: var(--s4); left: 50%; transform: translateX(-50%); z-index: 20; padding: 8px 16px; border-radius: 99px; background: var(--late); color: #2a0a10; font-size: var(--fs-sm); font-weight: 600; }
+  #toasts { position: fixed; right: var(--s5); bottom: var(--s5); z-index: 40; display: flex; flex-direction: column; gap: var(--s2); align-items: flex-end; pointer-events: none; }
+  .toast { pointer-events: auto; display: flex; gap: 14px; align-items: center; max-width: min(420px, 90vw); padding: 10px 16px; border-radius: var(--r-md); background: rgb(14 24 22 / .96); color: var(--text); border: 1px solid var(--line-2); box-shadow: 0 10px 40px rgb(0 0 0 / .5); font-size: var(--fs-sm); animation: toastin .2s ease-out; }
+  .toast.err { background: var(--late); color: #2a0a10; border-color: transparent; font-weight: 600; }
+  @keyframes toastin { from { opacity: 0; transform: translateY(8px); } }
 
 
   /* ---------- workstream focus ---------- */
@@ -235,6 +238,9 @@
   .cact select { padding: 2px 6px; font-size: var(--fs-xs); max-width: 110px; }
   .cact button { background: none; border: 0; color: var(--text-3); cursor: pointer; } .cact button:hover { color: var(--late); }
   .igrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: var(--s3); }
+  .nest { display: flex; flex-direction: column; min-width: 0; } .nest > .card { margin-bottom: 0; }
+  .nest .kids { display: flex; flex-direction: column; gap: var(--s2); margin: var(--s2) 0 0 var(--s4); padding-left: var(--s3); border-left: 2px solid var(--line-2); }
+  .nest .kids .card { margin: 0; }
   .igrid .card { margin: 0; } .igrid .none { grid-column: 1 / -1; }
   .subs { display: flex; flex-wrap: wrap; gap: var(--s2); }
   .sub-ws { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 8px 14px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
@@ -248,8 +254,7 @@
   .rels { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   a.btn { text-decoration: none; display: inline-block; font: var(--fs-sm) var(--font); color: var(--text); background: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 6px 12px; }
   button.btn.danger { color: var(--late); }
-  .toast.ok { display: flex; gap: 14px; align-items: center; background: rgb(14 24 22 / .96); color: var(--text); border: 1px solid var(--line-2); box-shadow: 0 10px 40px rgb(0 0 0 / .5); z-index: 30; }
-  .toast.ok button { font: inherit; font-weight: 600; background: none; border: 0; color: var(--accent); cursor: pointer; }
+  .toast button { font: inherit; font-weight: 600; background: none; border: 0; color: var(--accent); cursor: pointer; }
 
   /* ---------- Inbox side panel (Workstreams view): triage list, drag rows onto the map ---------- */
   .wsx.with-panel { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: var(--s4); align-items: start; }
@@ -367,6 +372,13 @@
   .ctxbtn { margin-left: auto; font: 500 var(--fs-xs) var(--mono); letter-spacing: 0; text-transform: none; color: var(--text-3); background: none; border: 0; border-radius: 6px; padding: 1px 5px; cursor: pointer; }
   .ctxbtn:hover { color: var(--text); background: var(--surface-3); }
   .syncbtn { font: 500 var(--fs-xs) var(--font); color: var(--text-3); background: none; border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; cursor: pointer; white-space: nowrap; }
+  #bell { position: relative; } #bell i { position: absolute; top: -5px; right: -5px; min-width: 16px; padding: 0 4px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font: 700 10px/16px var(--font); text-align: center; font-style: normal; }
+  #notes { position: fixed; top: 64px; right: var(--s6); z-index: 35; width: min(380px, 92vw); max-height: 60vh; overflow: auto; border: 1px solid var(--line-2); border-radius: var(--r-md); background: rgb(14 24 22 / .97); box-shadow: 0 16px 50px rgb(0 0 0 / .55); backdrop-filter: blur(14px); }
+  #notes header { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); font-size: var(--fs-xs); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+  #notes header button { margin-left: auto; font: inherit; text-transform: none; letter-spacing: 0; background: none; border: 0; color: var(--text-2); cursor: pointer; } #notes header button + button { margin-left: 0; }
+  #notes .nrow { display: block; width: 100%; text-align: left; padding: var(--s3) var(--s4); background: none; border: 0; border-bottom: 1px solid var(--line); color: var(--text-2); font: var(--fs-sm) var(--font); cursor: pointer; }
+  #notes .nrow:hover { background: var(--surface-2); } #notes .nrow.new { color: var(--text); } #notes .nrow.new::before { content: "●"; color: var(--accent); margin-right: 8px; font-size: 9px; vertical-align: 1px; }
+  #notes .nrow small { display: block; color: var(--text-3); font-size: var(--fs-xs); margin-top: 2px; } #notes .nempty { padding: var(--s4); color: var(--text-3); font-size: var(--fs-sm); }
   .syncbtn:hover { color: var(--text); border-color: var(--line-2); } .syncbtn.bad { color: var(--late); border-color: rgb(240 112 127 / .4); }
   .ibtn { font: 600 var(--fs-xs) var(--font); color: var(--text-3); background: none; border: 1px solid transparent; border-radius: 99px; padding: 1px 7px; cursor: pointer; }
   .ibtn:hover { color: var(--text); border-color: var(--line-2); }
@@ -406,9 +418,11 @@
   <div class="clock" id="clock"></div>
   <div class="date" id="date"></div>
   <div id="sync"></div>
+  <button class="syncbtn" id="bell" title="Notifications: what started needing you">🔔<i id="bellN" hidden></i></button>
   <button class="syncbtn" id="gear" title="Settings (sources.md) and log">⚙</button>
   <div class="stats" id="stats"></div>
 </header>
+<div id="notes" hidden></div>
 <main id="main"></main>
 <nav class="dock">
   <button data-v="ws"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5H5v5M12 11.5h7v5"/></svg>Workstreams</button>
@@ -451,15 +465,39 @@ function tick() {
   $('#date').innerHTML = `<b>${d.toLocaleDateString('en-US', { weekday: 'long' })}</b>${d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
 }
 tick(); setInterval(tick, 20000);
-// the tab title carries the Needs-you count, and (once the browser allows it) a desktop notification fires when a Devin session starts waiting
-let waitingSeen = null;
-function tabAlert(need) {
-  document.title = need ? `(${need}) Plate` : 'Plate';
-  const waiting = new Set(S.items.filter((i) => i.source === 'session' && i.needsYou).map((i) => i.id));
-  if (waitingSeen) for (const i of S.items) if (waiting.has(i.id) && !waitingSeen.has(i.id) && window.Notification?.permission === 'granted') new Notification('A session needs you', { body: nameOf(i) });
-  waitingSeen = waiting;
+// the tab title carries the Needs-you count
+function tabAlert(need) { document.title = need ? `(${need}) Plate` : 'Plate'; }
+// ---------- notifications: corporate browsers block desktop notifications, so what starts needing you is also logged in the bell (per browser, last 40).
+// Nothing pops up: a count on the bell, a list on click. The browser notification still fires when the user allowed it.
+let notes = store.get('plate.notes', []), noteSeen = null;
+function collectNotes() {
+  const found = new Map(), live = (i) => i.state !== 'done' && i.state !== 'gone';
+  for (const i of S.items) {
+    if (!live(i)) continue;
+    if (i.source === 'session' && i.needsYou) found.set(`wait:${i.id}`, { text: `Session needs you: ${nameOf(i)}`, item: i.id });
+    if (i.reviewMe) found.set(`rev:${i.id}`, { text: `Review requested: ${nameOf(i)}`, item: i.id });
+    if (newAct(i)) found.set(`act:${i.id}:${i.activity.at}`, { text: `@${i.activity.by} ${i.activity.what || 'commented'} on ${nameOf(i)}`, item: i.id });
+  }
+  for (const [u, r] of Object.entries(S.runs || {})) if (r.state !== 'running' && r.ended) {
+    const url = u.replace(/^close:/, ''), it = S.items.find((x) => (x.url || '').replace(/[#?].*$/, '') === url);
+    found.set(`run:${u}:${r.ended}`, { text: `Devin ${u.startsWith('close:') ? 'check' : 'review'} ${r.state === 'failed' ? 'failed' : r.warn ? 'ended early, session kept' : 'done'}${it ? `: ${nameOf(it)}` : ''}`, item: it?.id, url });
+  }
+  if (noteSeen) for (const [k, v] of found) if (!noteSeen.has(k)) {
+    notes.unshift({ ...v, at: new Date().toISOString(), read: false });
+    if (window.Notification?.permission === 'granted') new Notification('Plate', { body: v.text });
+  }
+  noteSeen = new Set(found.keys());
+  notes = notes.slice(0, 40); store.set('plate.notes', notes); bellBadge();
 }
+function bellBadge() { const n = notes.filter((x) => !x.read).length; $('#bellN').textContent = n; $('#bellN').hidden = !n; if (!$('#notes').hidden) drawNotes(); }
+function drawNotes() {
+  $('#notes').innerHTML = `<header>Notifications<button data-nread>mark all read</button><button data-nclear>clear</button></header>`
+    + (notes.length ? notes.map((x, n) => `<button class="nrow ${x.read ? '' : 'new'}" data-note="${n}">${esc(x.text)}<small>${esc(ago(x.at))}</small></button>`).join('') : '<div class="nempty">Nothing yet. Sessions that start waiting, review requests, new comments on your tickets and finished Devin runs land here.</div>');
+}
+function toggleNotes(on) { const el = $('#notes'); el.hidden = on === undefined ? !el.hidden : !on; if (!el.hidden) drawNotes(); }
+let NESTED = new Set(); // ids of sessions drawn nested under their PR/issue card in the focus view (their chips on the parent are redundant then)
 function render() {
+  NESTED = new Set();
   document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.v === view));
   $('#vname').textContent = VNAME[view];
   const need = S.items.filter((i) => i.needsYou).length, inbox = S.items.filter(inInbox).length;
@@ -468,6 +506,7 @@ function render() {
   $('#pip').textContent = need; $('#pip').hidden = !need;
   syncBadge();
   tabAlert(need);
+  collectNotes();
   panelScroll = document.querySelector('.ipanel')?.scrollTop ?? panelScroll; // selecting re-renders; keep the list where it was
   $('#main').innerHTML = top3Strip() + { ws, needs }[view]();
   document.querySelector('.tri-act')?.remove();
@@ -528,7 +567,7 @@ const card = (i, drag = true, extra = '') => {
   return `<div class="card k-${esc(k)} ${ghState(i)} ${i.state === 'done' ? 'done' : ''} ${i.needsYou ? 'need' : ''}" data-pin="item:${esc(i.id)}" ${drag ? `draggable="true" data-id="${esc(i.id)}"` : ''}>
   <div class="kind">${GLYPH[k] || ''}${label}${isPinned('item', i.id) ? '<span class="pinstar" title="In today\'s top 3">★</span>' : ''}${i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context: parent, sub-issues, PRs">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : `<span class="ref">${esc(i.repo)}#${esc(i.number)}</span>`) : ''}</div>
   <a class="ttl" ${SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"` : ''} ${/^https?:/i.test(i.url || '') ? 'target="_blank" rel="noopener"' : ''}>${esc(nameOf(i))}</a>
-  <div class="chips">${i.label ? `<span class="chip" title="Label">${esc(i.label)}</span>` : ''}${meta(i)}${i.kind === 'draft' || isPull(i) || (i.kind === 'issue' && GH_TICKET.test(i.url || '')) ? devinBits(i.url) : ''}${extra}${snoozeBits(i)}<button class="ibtn" data-edit="${esc(i.id)}" title="Rename / label">✎</button></div></div>`;
+  <div class="chips">${i.label ? `<span class="chip" title="Label">${esc(i.label)}</span>` : ''}${meta(i)}${i.kind === 'draft' || isPull(i) || (i.kind === 'issue' && GH_TICKET.test(i.url || '')) ? devinBits(i.url) : ''}${teamsAuthor(i)}${extra}${snoozeBits(i)}<button class="ibtn" data-edit="${esc(i.id)}" title="Rename / label">✎</button></div></div>`;
 };
 const chip = (t, c = '') => t ? `<span class="chip ${c}">${esc(t)}</span>` : '';
 // a PR by its url, so a draft (kind `draft` on a pasted link) gets the Devin review button too
@@ -537,11 +576,19 @@ const isPull = (i) => /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+/i.tes
 const devinBits = (url) => {
   if (!GH_TICKET.test(url || '')) return '';
   const pr = url.replace(/[#?].*$/, ''), r = S.runs?.[pr], c = S.runs?.[`close:${pr}`], pull = /\/pull\//.test(pr);
-  const runChip = (x, what) => x ? `<span class="chip ${x.state === 'failed' ? 'late' : 'dim'}" title="${esc(`${x.dir}\n${x.model ? `model: ${x.model}\n` : ''}${x.msg || ''}`)}">${{ running: `Devin ${what}…`, done: `Devin ${what} done`, failed: `Devin ${what} failed${x.msg ? `: ${x.msg.slice(0, 70)}` : ''}` }[x.state]}</span>` : '';
-  const sess = S.items.filter((i) => i.tool === 'devin' && i.anchor === pr && i.state !== 'done').map((i) => `<a class="chip" href="${esc(i.url)}" title="Open the session in Devin">▸ ${esc(nameOf(i).slice(0, 40))}</a><button class="chip dim" data-tr="${esc(i.id.replace(/^session:/, ''))}" title="Read the conversation here">transcript</button>`).join('');
+  const runChip = (x, what) => x ? `<span class="chip ${x.state === 'failed' ? 'late' : 'dim'}" title="${esc(`${x.dir}\n${x.model ? `model: ${x.model}\n` : ''}${x.msg || ''}`)}">${{ running: `Devin ${what}…`, done: x.warn ? `Devin ${what} ended early · session kept` : `Devin ${what} done`, failed: `Devin ${what} failed${x.msg ? `: ${x.msg.slice(0, 70)}` : ''}` }[x.state]}</span>` : '';
+  const sess = S.items.filter((i) => i.tool === 'devin' && i.anchor === pr && i.state !== 'done' && !NESTED.has(i.id)).map((i) => `<a class="chip" href="${esc(i.url)}" title="Open the session in Devin">▸ ${esc(nameOf(i).slice(0, 40))}</a><button class="chip dim" data-tr="${esc(i.id.replace(/^session:/, ''))}" title="Read the conversation here">transcript</button>`).join('');
   const busy = r?.state === 'running' || c?.state === 'running';
   const model = busy ? '' : `<input class="devmodel" list="devmodels" placeholder="${esc(S.devinModel || 'model')}" value="${esc(devModel())}" title="Model (devin --model). Empty = the configured one (${esc(S.devinModel || 'Devin default')})">`;
   return `${runChip(r, 'review')}${runChip(c, 'check')}${sess}${model}${pull && r?.state !== 'running' ? `<button class="devrev" data-review="${esc(pr)}" title="Run the Devin review skill on this PR">Review no Devin</button>` : ''}${c?.state === 'running' ? '' : `<button class="devrev" data-close="${esc(pr)}" title="Start a Devin session that says what is left to close this ticket (devin_close_prompt / devin_close_model)">O que falta?</button>`}`;
+};
+// after a review: a draft Teams message to the PR's author (deep link, nothing is sent until the user does; needs `people:` for the login)
+const teamsAuthor = (i) => {
+  if (!isPull(i) || !i.author || i.mineWhy?.includes('author')) return '';
+  const pr = i.url.replace(/[#?].*$/, ''), email = (S.people || {})[i.author];
+  if (!email || !(S.runs?.[pr]?.state === 'done' || S.items.some((x) => x.tool === 'devin' && x.anchor === pr))) return '';
+  const q = `users=${encodeURIComponent(email)}&message=${encodeURIComponent(`Oi! Fiz o review do seu PR "${i.title}": ${pr}`)}`;
+  return `<a class="chip dim" href="msteams://teams.microsoft.com/l/chat/0/0?${q}" title="Open a Teams chat with @${esc(i.author)} with a draft message about the review (nothing is sent)">Teams → @${esc(i.author)}</a>`;
 };
 const devModel = () => { try { return localStorage.getItem('plate.devmodel') || ''; } catch { return ''; } };
 const base = (p) => String(p || '').split(/[\\/]/).filter(Boolean).pop() || '';
@@ -595,11 +642,11 @@ const post = async (url, body) => {
   try {
     const r = await fetch(url, { method: 'POST', body: JSON.stringify(body), signal: AbortSignal.timeout(20000) });
     const j = await r.json();
-    if (!r.ok) { toast(j.error || 'failed'); return null; }
+    if (!r.ok) { toastErr(j.error || 'failed'); return null; }
     return j;
   } catch (e) {
     const b = S.busy?.what ? ` (server busy with: ${S.busy.what}, since ${new Date(S.busy.since).toLocaleTimeString()})` : '';
-    toast(e.name === 'TimeoutError' ? `The server did not answer in 20s${b}. Check the terminal running plate.` : `Request failed: ${e.message}`);
+    toastErr(e.name === 'TimeoutError' ? `The server did not answer in 20s${b}. Check the terminal running plate.` : `Request failed: ${e.message}`);
     return null;
   }
 };
@@ -616,12 +663,15 @@ const isSnoozed = (i) => !!i.snoozedUntil && Date.parse(i.snoozedUntil) > Date.n
 const snoozeBits = (i) => isSnoozed(i)
   ? `<span class="chip dim" title="Needs you again then">snoozed → ${esc(new Date(i.snoozedUntil).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' }))}</span><button class="ibtn" data-unsnooze="${esc(i.id)}" title="Bring back now">↺</button>`
   : i.needsYou ? `<select class="snz" data-snooze="${esc(i.id)}" title="Hide from Needs you until later"><option value="">⏰ Snooze</option>${SNOOZE.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>` : '';
-function toast(msg, undo, label = 'Undo') {
-  document.querySelectorAll('.toast').forEach((t) => t.remove());
-  const t = document.createElement('div'); t.className = 'toast' + (undo ? ' ok' : ''); t.textContent = msg;
+// bottom-right stack (max 3): neutral by default, red only for `err`; an error stays longer
+function toast(msg, undo, label = 'Undo', kind = '') {
+  let box = $('#toasts'); if (!box) { box = document.createElement('div'); box.id = 'toasts'; document.body.append(box); }
+  while (box.children.length >= 3) box.firstChild.remove();
+  const t = document.createElement('div'); t.className = 'toast' + (kind ? ` ${kind}` : ''); t.textContent = msg;
   if (undo) { const b = document.createElement('button'); b.textContent = label; b.onclick = () => { t.remove(); undo(); }; t.append(b); }
-  document.body.append(t); setTimeout(() => t.remove(), undo ? 7000 : 3200);
+  box.append(t); setTimeout(() => t.remove(), undo ? 7000 : kind === 'err' ? 8000 : 4500);
 }
+const toastErr = (msg) => toast(msg, null, 'Undo', 'err');
 const wsOf = (slug) => S.workstreams.find((w) => w.slug === slug);
 // Idle = an active workstream with something open and no event for `staleDays`. With no event of its own it counts from where the log starts.
 function idleInfo(w) {
@@ -715,19 +765,19 @@ function edgesSvg(L, heat = new Map()) {
 // ---------- today's top 3: pinned items/workstreams (right-click anything → pin); one file line per day, so tomorrow starts empty ----------
 const isPinned = (type, ref) => (S.top3 || []).some((p) => p.type === type && p.ref === ref);
 function pinInfo(p) {
-  if (p.type === 'ws') { const w = wsOf(p.ref); return { t: w ? w.name : `(removed) ${p.ref}`, sub: w ? 'Workstream' : '', done: w?.state === 'done' }; }
+  if (p.type === 'ws') { const w = wsOf(p.ref); return { t: w ? w.name : `(removed) ${p.ref}`, sub: w ? 'Workstream' : '', done: !!p.done || w?.state === 'done' }; }
   const i = S.items.find((x) => x.id === p.ref);
-  return i ? { t: nameOf(i), sub: [i.kind || i.source, wsOf(i.workstream)?.name || 'Inbox'].join(' · '), done: i.state === 'done' } : { t: '(gone)', sub: '', done: true };
+  return i ? { t: nameOf(i), sub: [i.kind || i.source, wsOf(i.workstream)?.name || 'Inbox'].join(' · '), done: p.done || i.state === 'done' } : { t: '(gone)', sub: '', done: true };
 }
 // carry-over offer: while slots are free, the last day that had pins shows its still-open, not-yet-pinned ones as faded cards; a click pins one for today
 const prevPins = () => S.top3Prev ? S.top3Prev.pins.filter((p) => { const f = pinInfo(p); return !f.done && f.sub !== '' && !isPinned(p.type, p.ref); }).slice(0, 3 - (S.top3 || []).length) : [];
 const dayLabel = (d) => d === shiftDay(S.today, -1) ? 'yesterday' : new Date(`${d}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 function top3Strip() {
   const pins = S.top3 || [], free = 3 - pins.length, prev = prevPins();
-  const slots = pins.map((p, n) => { const f = pinInfo(p); return `<div class="t3 ${f.done ? 'done' : ''}" data-pin="${esc(p.type)}:${esc(p.ref)}" data-open="${n}" title="${esc(f.t)}"><span class="n">${n + 1}</span><span class="tx"><span class="tt">${esc(f.t)}</span><span class="ts">${esc(f.sub)}</span></span><button class="x" data-unpin="${n}" title="Unpin">✕</button></div>`; });
+  const slots = pins.map((p, n) => { const f = pinInfo(p); return `<div class="t3 ${f.done ? 'done' : ''}" data-pin="${esc(p.type)}:${esc(p.ref)}" data-open="${n}" title="${esc(f.t)}"><span class="n">${f.done ? '✓' : n + 1}</span><span class="tx"><span class="tt">${esc(f.t)}</span><span class="ts">${esc(f.sub)}</span></span><button class="x" data-t3done="${n}" title="${p.done ? 'Reopen' : 'Done: I did this'}">${p.done ? '↺' : '✓'}</button><button class="x" data-unpin="${n}" title="Unpin">✕</button></div>`; });
   prev.forEach((p, n) => { const f = pinInfo(p); slots.push(`<div class="t3 ghost" data-pin="${esc(p.type)}:${esc(p.ref)}" data-carry="${n}" title="Pin for today: ${esc(f.t)}"><span class="n">${n + 1}</span><span class="tx"><span class="tt">${esc(f.t)}</span><span class="ts">${esc(f.sub)}</span></span><span class="plus">＋ today</span></div>`); });
   for (let n = pins.length + prev.length; n < 3; n++) slots.push(`<div class="t3 free"><span class="n">${n + 1}</span>Free slot · right-click a node or card to pin</div>`);
-  return `<div class="top3"><span class="t3lbl">Today's focus <b>${pins.length}/3</b>${prev.length ? ` · from ${esc(dayLabel(S.top3Prev.day))}<button class="carry" data-carryall>carry all</button>` : free ? ` · ${free} free` : ''}</span>${slots.join('')}</div>`;
+  return `<div class="top3"><span class="t3lbl">Today's focus <b>${pins.filter((p) => pinInfo(p).done).length ? `${pins.filter((p) => pinInfo(p).done).length}✓ · ` : ''}${pins.length}/3</b>${prev.length ? ` · from ${esc(dayLabel(S.top3Prev.day))}<button class="carry" data-carryall>carry all</button>` : free ? ` · ${free} free` : ''}</span>${slots.join('')}</div>`;
 }
 function openPin(p) {
   if (p.type === 'ws') { view = 'ws'; return setFocus(p.ref); }
@@ -738,7 +788,9 @@ function openPin(p) {
 }
 async function carry(list) { for (const p of list.filter(Boolean)) if (!(await post('/api/top3', { type: p.type, ref: p.ref, on: true }))) break; load(); }
 async function setPin(type, ref, on) { if (await post('/api/top3', { type, ref, on })) load(); }
-document.addEventListener('click', (e) => {
+document.addEventListener('click', async (e) => {
+  const dn = e.target.closest('[data-t3done]');
+  if (dn) { e.stopPropagation(); const p = S.top3[Number(dn.dataset.t3done)]; if (p && await post('/api/top3', { type: p.type, ref: p.ref, done: !p.done })) load(); return; }
   const x = e.target.closest('[data-unpin]');
   if (x) { e.stopPropagation(); const p = S.top3[Number(x.dataset.unpin)]; if (p) setPin(p.type, p.ref, false); return; }
   const t = e.target.closest('.t3[data-open]'); if (t) openPin(S.top3[Number(t.dataset.open)]);
@@ -935,11 +987,27 @@ let todayAnim = false;
 const toggleToday = async () => { todayOn = !todayOn; store.set('plate.today', todayOn); if (todayOn && span !== 'day') await loadWindow(); todayAnim = todayOn; render(); todayAnim = false; };
 document.addEventListener('keydown', (e) => { if (e.key === 't' && view === 'ws' && !focus && !e.metaKey && !e.ctrlKey && !e.altKey && !e.target.closest?.('input, select, textarea')) toggleToday(); });
 
+// issue -> PR -> session: a PR hangs under the issue it closes, a Devin session under the PR/issue it is anchored to (only when both
+// are in the same workstream; otherwise the chips and the "↳" link keep showing the relation)
+function nestOf(items) {
+  const norm = (u) => String(u || '').replace(/[#?].*$/, ''), byUrl = new Map(items.filter((i) => i.url).map((i) => [norm(i.url), i]));
+  const parent = new Map(), kids = new Map();
+  for (const i of items) {
+    const p = i.tool === 'devin' && i.anchor ? byUrl.get(norm(i.anchor)) : isPull(i) && Array.isArray(i.closes) ? i.closes.map((u) => byUrl.get(norm(u))).find((x) => x && !isPull(x)) : null;
+    if (!p || p === i || parent.get(p.id) === i) continue;
+    parent.set(i.id, p); kids.set(p.id, [...(kids.get(p.id) || []), i]);
+  }
+  return { parent, kids };
+}
 // action-first grouping of one workstream's items
-function groupItems(items) {
+function groupItems(items, kids = new Map(), doneDays = 0) {
   const g = { need: [], prog: [], soon: [], talk: [], done: [] };
+  const live = (x) => x.state !== 'done' && x.state !== 'gone';
+  const needsDeep = (i, d = 0) => (i.needsYou && live(i)) || (d < 3 && (kids.get(i.id) || []).some((k) => needsDeep(k, d + 1)));
   for (const i of items) {
     const review = i.kind === 'pr' && i.state === 'open' && /review/i.test(i.status || '');
+    if ((i.state === 'done' || i.state === 'gone') && doneDays && i.source !== 'session' && Date.parse(i.updated || 0) < Date.now() - doneDays * 864e5 && !(kids.get(i.id) || []).some(live)) continue; // finished long ago: out of "Recently done"
+    if (live(i) && needsDeep(i)) { g.need.push(i); continue; }
     if (i.source === 'session' && (i.state === 'done' || i.state === 'gone')) continue; // archived in Devin: out of sight
     if (i.state === 'done' || i.state === 'gone') g.done.push(i);
     else if (i.needsYou || review) g.need.push(i);
@@ -992,14 +1060,19 @@ function peopleHtml(w) {
   return `<div class="subrow people"><span>People</span>${w.people.map(card).join('')}<input id="personNew" list="personList" placeholder="+ person (Enter)"><details class="newperson"><summary>new person</summary><input id="npEmail" placeholder="E-mail (the directory fills the rest)"><input id="npName" placeholder="Name (if not in the directory)"><input id="npRole" placeholder="Role"><input id="npTeams" placeholder="Teams e-mail (if different)"><button class="btn" id="npAdd">Create note + add</button></details><datalist id="personList">${[...new Set(S.workstreams.flatMap((x) => x.people))].map((n) => `<option value="${esc(n)}">`).join('')}</datalist></div>`;
 }
 function focusView(w) {
-  const items = S.items.filter((i) => i.workstream === w.slug), g = groupItems(items);
+  const items = S.items.filter((i) => i.workstream === w.slug), { parent, kids: nested } = nestOf(items);
+  NESTED = new Set([...parent.keys()].filter((id) => items.find((x) => x.id === id)?.tool === 'devin'));
+  const g = groupItems(items.filter((i) => !parent.has(i.id)), nested, S.doneDays);
   const open = items.filter((i) => i.state !== 'done').length;
   const opt = (v, t, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(t)}</option>`;
   const others = S.workstreams.filter((x) => x.slug !== w.slug);
   const kids = S.workstreams.filter((x) => x.parent === w.slug);
   const rel = new Set([...w.related, ...S.workstreams.filter((x) => x.related.includes(w.slug)).map((x) => x.slug)]);
   const mv = (i) => `<span class="cact"><select data-mv="${esc(i.id)}" title="Move to…"><option value="">Move to…</option><option value="__inbox">Inbox</option>${S.workstreams.filter((x) => x.slug !== w.slug).map((x) => `<option value="${esc(x.slug)}">${esc(x.name)}</option>`).join('')}</select>${MANUAL.includes(i.source) ? `<button data-rm="${esc(i.id)}" title="Remove">✕</button>` : ''}</span>`;
-  const section = (cls, title, hint, list) => list.length ? `<section class="fsec ${cls}"><h3>${title}<span>${list.length}</span></h3>${hint ? `<p>${hint}</p>` : ''}<div class="igrid">${list.map((i) => card(i, true, mv(i))).join('')}</div></section>` : '';
+  // a card with the cards that hang off it (PR under its issue, session under its PR), indented behind a connector line
+  const tree = (i, d = 0) => { const k = d < 3 ? (nested.get(i.id) || []).filter((x) => x.state !== 'gone' && !(x.source === 'session' && x.state === 'done')) : [];
+    return k.length ? `<div class="nest">${card(i, true, mv(i))}<div class="kids">${k.map((x) => tree(x, d + 1)).join('')}</div></div>` : card(i, true, mv(i)); };
+  const section = (cls, title, hint, list) => list.length ? `<section class="fsec ${cls}"><h3>${title}<span>${list.length}</span></h3>${hint ? `<p>${hint}</p>` : ''}<div class="igrid">${list.map((i) => tree(i)).join('')}</div></section>` : '';
   const chips = (title, list) => list.length ? `<div class="subrow"><span>${title}</span>${list.map((x) => { const st = wsStats(x.slug); return `<button class="sub-ws ${st.need ? 'need' : ''}" data-focus="${esc(x.slug)}"><b>${esc(x.name)}</b><span>${st.n} items${st.need ? ` · ${st.need} needs you` : ''}</span></button>`; }).join('')}</div>` : '';
   const empty = !items.length ? '<div class="empty">Nothing in this workstream yet. Paste a link or note, or drag items here from the Board.</div>' : '';
   return `<div class="focus ${enter ? 'enter' : ''}">
@@ -1012,7 +1085,7 @@ function focusView(w) {
     ${section('', 'In progress', 'Running sessions and open issues and PRs.', g.prog)}
     ${section('', 'Coming up', 'Tasks with a later date.', g.soon)}
     ${section('', 'Conversations & notes', '', g.talk)}
-    ${g.done.length ? `<details class="fdone"><summary>Recently done · ${g.done.length}</summary><div class="igrid">${g.done.map((i) => card(i, true, mv(i))).join('')}</div></details>` : ''}
+    ${g.done.length ? `<details class="fdone"><summary>Recently done · ${g.done.length}</summary><div class="igrid">${g.done.map((i) => tree(i)).join('')}</div></details>` : ''}
     ${empty}
     <details class="props" ${propsOpen ? 'open' : ''}><summary>Edit workstream</summary><div class="f">
       <label>Name</label><input id="fName" value="${esc(w.name)}">
@@ -1198,6 +1271,16 @@ function ctxHtml(c) {
     ${sec(`Siblings under ${c.ancestors.length ? '#' + c.ancestors.at(-1).number : 'parent'}`, c.siblings)}
     ${!c.ancestors.length && !subs.length && !c.siblings.length && !c.blockedBy.length && !c.blocking.length && !(c.prs || []).length && !c.via ? '<p class="hint">No parent, sub-issues, dependencies or linked PRs.</p>' : ''}`;
 }
+// bell: open/close, open a note's target, mark read, clear
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#bell')) return toggleNotes();
+  const row = e.target.closest('[data-note]');
+  if (row) { const x = notes[+row.dataset.note]; x.read = true; store.set('plate.notes', notes); bellBadge(); toggleNotes(false);
+    if (x.item && S.items.some((i) => i.id === x.item)) openPin({ type: 'item', ref: x.item }); else if (x.url && /^https?:\/\//i.test(x.url)) window.open(x.url, '_blank', 'noopener'); return; }
+  if (e.target.closest('[data-nread]')) { notes.forEach((x) => (x.read = true)); store.set('plate.notes', notes); return bellBadge(); }
+  if (e.target.closest('[data-nclear]')) { notes = []; store.set('plate.notes', notes); return bellBadge(); }
+  if (!e.target.closest('#notes')) toggleNotes(false);
+});
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('[data-review], [data-close]'); if (!b) return;
   const closing = !!b.dataset.close;
