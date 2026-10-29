@@ -6,6 +6,18 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 8 — 2026-10-29: archived Devin sessions (new format), no more "server busy", session tied to the PR at once, Today lights the path to the root
+
+- **Archived Devin sessions** are recognised in the Desktop's current format (`windsurf.acp.session/archivedSessions`, a list of `acp/devin-cli/<id>`) as well as the legacy `localSessionAnnotations`: they are `done` and leave Needs you even when the last message left the turn to you.
+- **Server busy:** the GitHub / mine / reviews / Todoist collectors no longer hold the write lock while they wait on the network, so drags and edits don't queue behind them.
+- **Review / "O que falta?"** ties the new Devin session to the PR (and its workstream) as soon as it appears, not when the run ends.
+- **Today mode** also lights each touched workstream's parents up to the root.
+- **`/plate-changelog`** (Devin project skill): in Devin opened on this repo, it applies the pending CHANGELOG entries.
+
+**Setup**
+1. Restart the server.
+2. Optional: if archived sessions still show on a machine, the Log line `devin: N sessions, M archived` must have `M` > 0; otherwise send `sqlite3 "<Devin state.vscdb>" "select key from ItemTable where key like '%rchived%' or key like '%ession%'"`.
+
 ## 7 — 2026-10-28: my tickets + their comments, Devin on your turn, r d / r g, Settings and log
 
 - **My tickets:** a new collector (`mine`, every 5 min) pulls the open issues and PRs I opened, am assigned to or was mentioned in, on any repo (no board needed), into the Inbox (or the workstream with that `repo:` anchor). A comment or review by someone else on them, newer than `mine_days` (default 7), is **Needs you** with a 💬 chip until you open the ticket from its card or tick ✓. Needs `gh` logged in; nothing new to authorize. `github_mine: off` turns it off.

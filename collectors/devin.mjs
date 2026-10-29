@@ -8,7 +8,8 @@
 // Reads both SQLite DBs read-only instead of `devin list`, which only lists one cwd and caps at 50 rows.
 // Needs `node:sqlite` (Node >= 22.5) or the `sqlite3` CLI on PATH.
 // Archiving is a Desktop annotation, not a column of sessions.db: keys
-// `devin.desktopShell.localSessionAnnotations.<org>` hold {"devin-acp/devin-cli/<id>": {archived, done, folder, parent}}.
+// `devin.desktopShell.localSessionAnnotations.<org>` held {"devin-acp/devin-cli/<id>": {archived, done, folder, parent}} (legacy);
+// current Desktops keep a JSON array of "acp/devin-cli/<id>" under `windsurf.acp.session/archivedSessions`.
 // Mapping: archived or done there -> state `done`; idle for `devin_waiting_minutes` (default 2) -> `waiting` (= Needs you);
 // otherwise `idle`. `turn` (me|devin) = who the last message left the move to.
 // url = devin:// deep link that opens the session in Devin Desktop (see `link`).
@@ -38,15 +39,26 @@ async function query(file, sql) {
   }
 }
 
-// session id -> {archived, done, folder}; empty when Desktop was never installed on this machine
-async function annotations() {
-  if (!fs.existsSync(stateDb)) { console.warn(`devin: no Desktop state at ${stateDb}; archived sessions can't be told apart`); return new Map(); }
-  // any key naming the annotations (the prefix has differed between Desktop generations), so an older Desktop's archive flags still count
-  const rows = await query(stateDb, "SELECT value FROM ItemTable WHERE key LIKE '%ocalSessionAnnotations%'");
+// session id -> {archived, done, folder}; empty when Desktop was never installed on this machine. Two formats, both read:
+//   current: ItemTable key `windsurf.acp.session/archivedSessions` = JSON array of refs like "acp/devin-cli/<id>"
+//   legacy:  any key naming `localSessionAnnotations` = {"devin-acp/devin-cli/<id>": {archived, done, folder, parent}}
+// Absent, unreadable or malformed data only means "nothing archived": it must never stop the collection.
+const ARCHIVED_KEY = 'windsurf.acp.session/archivedSessions';
+async function annotations(file = stateDb) {
   const out = new Map();
+  if (!fs.existsSync(file)) { console.warn(`devin: no Desktop state at ${file}; archived sessions can't be told apart`); return out; }
+  let rows;
+  try {
+    // LIKE for the legacy key (the prefix has differed between Desktop generations), so an older Desktop's archive flags still count
+    rows = await query(file, `SELECT key, value FROM ItemTable WHERE key = '${ARCHIVED_KEY}' OR key LIKE '%ocalSessionAnnotations%'`);
+  } catch (e) { console.warn(`devin: can't read the Desktop state (${String(e.message).split('\n')[0]}); archived sessions can't be told apart`); return out; }
   for (const r of rows) {
     let o; try { o = JSON.parse(String(r.value)); } catch { continue; }
-    for (const [k, v] of Object.entries(o || {})) out.set(k.split('/').pop(), v);
+    if (r.key === ARCHIVED_KEY) {
+      for (const ref of Array.isArray(o) ? o : []) if (typeof ref === 'string' && ref) out.set(ref.split('/').pop(), { ...out.get(ref.split('/').pop()), archived: true });
+    } else if (o && typeof o === 'object' && !Array.isArray(o)) {
+      for (const [k, v] of Object.entries(o)) out.set(k.split('/').pop(), { ...v });
+    }
   }
   return out;
 }

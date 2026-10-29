@@ -879,6 +879,13 @@ function todayHeat() {
   }
   const max = Math.max(1, ...[...by.values()].map((v) => v.n));
   for (const v of by.values()) v.heat = 0.35 + (0.65 * v.n) / max;
+  // the path up to the root lights too (dimmer, n = 0, lit right after the child), so a leaf touched today shows where it hangs
+  for (const [slug, v] of [...by]) {
+    for (let p = wsOf(slug)?.parent, hop = 0; p && wsOf(p) && hop < 20; p = wsOf(p).parent, hop++) {
+      if (!by.has(p)) by.set(p, { n: 0, rank: v.rank, heat: 0.3, path: true });
+      else if (by.get(p).path) by.get(p).rank = Math.min(by.get(p).rank, v.rank);
+    }
+  }
   return by;
 }
 function timeline(L) {
@@ -912,7 +919,7 @@ function mindmap() {
   const nodes = S.workstreams.map((w) => {
     const p = L.pos.get(w.slug), st = wsStats(w.slug), h = heat.get(w.slug), nt = wsTasks(w).length, idle = todayOn ? null : idleInfo(w);
     return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''}  ${h ? 'lit' : ''} ${idle ? 'stale' : ''} ${w.slug === freshWs ? 'fresh' : ''} ${esc(w.state)}" draggable="true" data-slug="${esc(w.slug)}" data-pin="ws:${esc(w.slug)}"
-      style="left:${p.x}px;top:${p.y}px;--b:${p.color}${h ? `;--heat:${h.heat.toFixed(2)};--d:${Math.min(h.rank * 0.15, 3)}s` : ''}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${h ? ` · ${h.n} event${h.n > 1 ? 's' : ''} today` : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}${idle ? ` · idle ${idle.untracked ? '≥' : ''}${idle.days}d` : ''}">
+      style="left:${p.x}px;top:${p.y}px;--b:${p.color}${h ? `;--heat:${h.heat.toFixed(2)};--d:${Math.min(h.rank * 0.15, 3)}s` : ''}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${h?.n ? ` · ${h.n} event${h.n > 1 ? 's' : ''} today` : h ? ' · on the path to something that moved today' : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}${idle ? ` · idle ${idle.untracked ? '≥' : ''}${idle.days}d` : ''}">
       ${isPinned('ws', w.slug) ? '<span class="pinstar" title="In today\'s top 3">★</span>' : ''}<span class="wn">${esc(w.name)}</span>${st.need ? `<span class="wneed">${st.need}</span>` : st.n ? `<span class="wc">${st.n}</span>` : ''}${idle ? `<span class="wst" title="No activity for ${idle.days} days${idle.untracked ? ' (since the log began)' : ''}">${idle.days}d</span>` : ''}${nt ? `<button class="wtog ${tasksOpen.has(w.slug) ? 'on' : ''}" data-tog="${esc(w.slug)}" title="Show its ${nt} open task${nt > 1 ? 's' : ''}">☑ ${nt}</button>` : ''}</div>`;
   }).join('');
   return `<div class="ws-main ${todayOn ? 'today' : ''}">
