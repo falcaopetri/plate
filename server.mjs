@@ -7,9 +7,9 @@ import { ticketContext } from './lib/ghcontext.mjs';
 import { withLock, collectNow, startSchedule, status, busy } from './lib/schedule.mjs';
 import { lookupByEmail } from './lib/directory.mjs';
 import { transcript } from './lib/devintranscript.mjs';
-import { startReview, startClose, runs } from './lib/devinrun.mjs';
+import { startReview, startClose, startSetup, runs } from './lib/devinrun.mjs';
 import { log, tail } from './lib/log.mjs';
-import { DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, readSettings, patchSources, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
+import { readRequests, addRequest, toggleRequest, DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, readSettings, patchSources, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
 
 const PORT = Number(process.env.PORT) || 4173;
 const repo = path.dirname(fileURLToPath(import.meta.url));
@@ -50,7 +50,7 @@ async function handle(req, res, url) {
       const log = readEvents(), events = eventsBetween(log, t, t), src = readSources();
       const meeting = src.meeting_quickadd ? { choice: src.meeting_quickadd, vault: src.obsidian_vault || null, values: src.meeting_values } : null;
       const workstreams = readWorkstreams();
-      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams, canTask: tasknotesDir() !== null, contacts: readContacts(workstreams.flatMap((w) => w.people)), items, events, top3: readTop3(t), top3Prev: readTop3Prev(t), activity: activitySummary(log), staleDays: Number(src.stale_days) || 3, doneDays: Number(src.done_days) || 7, people: src.people, meeting, setup: setupPending(), collect: status, runs, busy, devinModel: src.devin_review_model || null });
+      return json(res, 200, { dataDir: DATA_DIR, today: t, workstreams, canTask: tasknotesDir() !== null, contacts: readContacts(workstreams.flatMap((w) => w.people)), items, events, top3: readTop3(t), top3Prev: readTop3Prev(t), activity: activitySummary(log), staleDays: Number(src.stale_days) || 3, doneDays: Number(src.done_days) || 7, people: src.people, meeting, setup: setupPending(), setupAgent: src.setup_agent === 'devin' ? 'devin' : 'claude', collect: status, runs, busy, devinModel: src.devin_review_model || null });
     }
     if (url.pathname === '/api/events') {
       // one local day (`day`) or a window (`from`..`to`, inclusive) of the event log, for Today mode's replay + the days that have any
@@ -114,6 +114,10 @@ async function handle(req, res, url) {
     if (url.pathname === '/api/rules/apply' && req.method === 'POST') return json(res, 200, { ok: true, routed: applyRules() });
     if (url.pathname === '/api/devin/review' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startReview(b.url, b.model)); }
     if (url.pathname === '/api/devin/close' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startClose(b.url, b.model)); }
+    if (url.pathname === '/api/setup/apply' && req.method === 'POST') return json(res, 200, startSetup(setupPending()));
+    if (url.pathname === '/api/requests' && req.method === 'POST') return json(res, 200, { ok: true, request: addRequest(JSON.parse(await readBody(req))) });
+    if (url.pathname === '/api/requests/done' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); toggleRequest(b.index, !!b.done); return json(res, 200, { ok: true }); }
+    if (url.pathname === '/api/requests') return json(res, 200, { requests: readRequests() });
     if (url.pathname === '/api/settings' && req.method === 'POST') { const patch = JSON.parse(await readBody(req)); log.info(`settings: ${Object.keys(patch).join(', ')}`); return json(res, 200, patchSources(patch)); }
     if (url.pathname === '/api/settings') return json(res, 200, readSettings());
     if (url.pathname === '/api/log') return json(res, 200, { lines: tail(Number(url.searchParams.get('n')) || 200) });

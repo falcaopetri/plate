@@ -6,6 +6,15 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 10 — 2026-11-01: Submit button (requests.md) and a clickable "Setup pending"
+
+- **✎ Submit** in the top bar: bug / feature requests about Plate itself go into `requests.md` in the data folder (open entries `- [ ]`, ticked `[x]`). The agent that maintains Plate reads that file instead of an e-mail, so nothing needs to leave the work machine by mail (send a photo of the note).
+- **Setup pending is a button.** It opens a session that applies the pending CHANGELOG entries: Claude Code (`claude://` link running `/plate-changelog`, a new `.claude/skills/` copy of the Devin skill; default) or Devin (headless `devin -p /plate-changelog` in this repo, then a button to open the session in the Desktop). Picked by the new `setup_agent` key.
+
+**Setup**
+1. Restart the server.
+2. Work machine: `setup_agent: devin` in `<data>/sources.md` (or ⚙ → Devin). Personal Mac: nothing (default `claude`).
+
 ## 9 — 2026-10-29: Devin run kept when the CLI dies after the session exists, toasts in the corner, bell, nesting, Top 3 ✓, `github_query`
 
 - **A Devin review/check no longer shows "failed" when the session was created**: if the CLI exits non-zero (a tool call rejected by a pre-hook, say) after the session exists, the run is `done` with a "session kept" note, and the session is still anchored and renamed (`Review: <title>`). Finding the session now compares folders by real path and falls back to the only session born in the run window. The alias lives in Plate only: the Devin CLI has no way to rename a session.

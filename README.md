@@ -95,6 +95,7 @@ A session may carry `"github": "<item url>"`: a new session inherits that item's
 | `tasknotes_dir` | TaskNotes tasks folder (default `<data>/../TaskNotes/Tasks` if it exists; `off` disables); open tasks with a `due`/`scheduled` date ≤ today go to Needs you |
 | `people_dir` | folder of the people notes behind a workstream's `people:` (default `<data>/../../Atlas/People`); optional note frontmatter `role`, `email`, `teams`, `github`, `company` |
 | `people_directory: off` / `dscl_node` | directory lookup of people by e-mail through macOS `dscl` (on by default on a Mac; node default `/Search`) |
+| `setup_agent` | Who the **Setup pending** badge opens to apply the CHANGELOG: `claude` (default; Claude Code app via `claude://code/new` on this repo with the prompt filled in) or `devin` (headless `devin -p /plate-changelog` in this repo; the session appears in Devin Desktop and Plate offers its link). Set `devin` on the work machine |
 | `devin_link: acp` | Devin Desktop older than 3.11 (default `shell`) |
 | `people:` block list `- <github login>: <e-mail>` | pre-fills Teams chats about a ticket |
 | `obsidian_vault`, `meeting_quickadd` | vault name and QuickAdd choice for "+ Meeting note" |
@@ -105,3 +106,6 @@ Per workstream (`workstreams/<slug>.md`): `github: [repo:owner/name, issue:owner
 **Upgrading:** `CHANGELOG.md` lists, per change, the setup a running machine needs after a pull.
 
 Agents and contributors: see `AGENTS.md`.
+
+## Submit (bug / feature requests)
+The **✎ Submit** button in the top bar appends a bug or feature request about Plate itself to `requests.md` in the data folder (`- [ ] YYYY-MM-DD HH:MM · bug|feature · text`). The drawer lists the open ones and lets you tick them. It is the channel that replaces e-mailing requests from work: the agent that maintains Plate reads the open entries and ticks them when implemented.

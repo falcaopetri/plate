@@ -419,6 +419,7 @@
   <div class="date" id="date"></div>
   <div id="sync"></div>
   <button class="syncbtn" id="bell" title="Notifications: what started needing you">🔔<i id="bellN" hidden></i></button>
+  <button class="syncbtn" id="fback" title="Submit a bug or feature request about Plate (requests.md)">✎ Submit</button>
   <button class="syncbtn" id="gear" title="Settings (sources.md) and log">⚙</button>
   <div class="stats" id="stats"></div>
 </header>
@@ -451,9 +452,24 @@ document.addEventListener('visibilitychange', refresh);
 function syncBadge() {
   const c = S.collect || {}, names = Object.keys(c);
   const latest = names.map((n) => c[n].at).sort().pop(), bad = names.filter((n) => !c[n].ok);
-  const su = S.setup ? `<span class="syncbtn bad" title="CHANGELOG.md has entries this machine hasn't applied (${S.setup.seen ? `last applied: ${S.setup.seen}` : 'no .plate-changelog-seen yet'}). Ask your agent to apply them; see AGENTS.md, After every pull.">Setup pending · changelog #${S.setup.seen + 1 === S.setup.latest ? S.setup.latest : `${S.setup.seen + 1}–${S.setup.latest}`}</span> ` : '';
+  const su = S.setup ? `<button class="syncbtn bad" id="setupbtn" title="CHANGELOG.md has entries this machine hasn't applied (${S.setup.seen ? `last applied: ${S.setup.seen}` : 'no .plate-changelog-seen yet'}). Click to open ${S.setupAgent === 'devin' ? 'a Devin' : 'a Claude Code'} session that applies them (setup_agent in Settings).">Setup pending · changelog #${S.setup.seen + 1 === S.setup.latest ? S.setup.latest : `${S.setup.seen + 1}–${S.setup.latest}`}</button> ` : '';
   $('#sync').innerHTML = su + `<button class="syncbtn ${bad.length ? 'bad' : ''}" title="${esc('Keys: r d = Devin · r g = GitHub · r a = all\n' + names.map((n) => `${n}: ${c[n].ok ? 'ok' : 'FAILED'} · ${c[n].msg} · ${new Date(c[n].at).toLocaleTimeString()}`).join('\n') || 'No collector has run yet')}">${bad.length ? `⚠ ${esc(bad.join(', '))} failed` : latest ? `Synced ${ago(latest)}` : 'Not synced'} · Sync now</button>`;
-  $('#sync button').onclick = async () => { $('#sync button').textContent = 'Syncing…'; await fetch('/api/collect', { method: 'POST' }); setTimeout(refresh, 4000); setTimeout(refresh, 15000); };
+  if ($('#setupbtn')) $('#setupbtn').onclick = startSetup;
+  $('#sync button:not(#setupbtn)').onclick = async () => { $('#sync button:not(#setupbtn)').textContent = 'Syncing…'; await fetch('/api/collect', { method: 'POST' }); setTimeout(refresh, 4000); setTimeout(refresh, 15000); };
+}
+// "Setup pending": the server opens the agent's session (Claude Code: a claude:// link we open here; Devin: a headless run whose
+// session we open once it exists)
+async function startSetup() {
+  const r = await post('/api/setup/apply', {}); if (!r) return;
+  if (r.agent === 'claude') { toast(`Claude Code: changelog ${r.range}`, () => window.open(r.url), 'Open again'); return void window.open(r.url); }
+  toast('Devin session starting…');
+  for (let n = 0; n < 40; n++) {
+    await new Promise((ok) => setTimeout(ok, 1500)); await load();
+    const run = S.runs?.setup, it = run?.session && S.items.find((x) => x.id === run.session);
+    if (it && SAFE_URL.test(it.url || '')) return void toast('Devin session ready', () => window.open(it.url), 'Open');
+    if (run?.state === 'failed') return toastErr(`Devin setup failed: ${run.msg}`);
+  }
+  toastErr('Devin did not create the session in time; see the Log tab');
 }
 const VNAME = { ws: 'Workstreams', needs: 'Needs you' };
 const pad = (n) => String(n).padStart(2, '0');
@@ -479,6 +495,7 @@ function collectNotes() {
     if (newAct(i)) found.set(`act:${i.id}:${i.activity.at}`, { text: `@${i.activity.by} ${i.activity.what || 'commented'} on ${nameOf(i)}`, item: i.id });
   }
   for (const [u, r] of Object.entries(S.runs || {})) if (r.state !== 'running' && r.ended) {
+    if (u === 'setup') { found.set(`run:setup:${r.ended}`, { text: `Devin setup ${r.state === 'failed' ? 'failed' : 'done'}${r.session ? `: ${nameOf(S.items.find((x) => x.id === r.session) || {})}` : ''}`, item: r.session }); continue; }
     const url = u.replace(/^close:/, ''), it = S.items.find((x) => (x.url || '').replace(/[#?].*$/, '') === url);
     found.set(`run:${u}:${r.ended}`, { text: `Devin ${u.startsWith('close:') ? 'check' : 'review'} ${r.state === 'failed' ? 'failed' : r.warn ? 'ended early, session kept' : 'done'}${it ? `: ${nameOf(it)}` : ''}`, item: it?.id, url });
   }
@@ -1373,6 +1390,28 @@ async function openSettings(tab = 'settings') {
   });
 }
 $('#gear').onclick = () => openSettings();
+// Submit = bug/feature requests about Plate itself, appended to <data>/requests.md (the `plate` skill reads the open ones)
+async function openRequests() {
+  closeCtx(false);
+  const scrim = document.createElement('div'); scrim.className = 'ctx-scrim'; scrim.onclick = () => closeCtx();
+  const d = document.createElement('aside'); d.className = 'ctx';
+  document.body.append(scrim, d);
+  const j = await (await fetch('/api/requests')).json(), all = j.requests, open = all.filter((r) => !r.done);
+  const row = (r) => `<div class="setrow"><label><input type="checkbox" data-req="${r.index}" ${r.done ? 'checked' : ''}> <span class="chip ${r.kind === 'bug' ? 'late' : 'dim'}">${r.kind}</span> <span class="chip dim">${esc(r.at)}</span></label><p class="hint" style="white-space:pre-wrap">${esc(r.text)}</p></div>`;
+  d.innerHTML = `<div class="ctx-top"><span></span><button class="btn" data-x>Close</button></div><h2>Submit a request</h2>
+    <p class="hint">Goes into <code>requests.md</code> in the data folder (${open.length} open). Your agent reads the open ones and implements them; no e-mail needed.</p>
+    <div class="setrow"><select id="reqKind"><option value="feature">Feature request</option><option value="bug">Bug</option></select></div>
+    <div class="setrow"><textarea id="reqText" rows="5" placeholder="What should Plate do (or what broke)?" style="width:100%;font:var(--fs-sm) var(--font);color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:6px 10px"></textarea></div>
+    <button class="btn on" id="reqGo">Submit</button>
+    <h3 class="setgrp">Open</h3>${open.map(row).join('') || '<p class="hint">Nothing open.</p>'}
+    <h3 class="setgrp">Done</h3>${all.filter((r) => r.done).reverse().slice(0, 10).map(row).join('') || '<p class="hint">Nothing done yet.</p>'}`;
+  d.querySelector('[data-x]').onclick = () => closeCtx();
+  const go = async () => { const text = $('#reqText').value.trim(); if (!text) return; if (await post('/api/requests', { kind: $('#reqKind').value, text })) { toast('Request saved'); openRequests(); } };
+  $('#reqGo').onclick = go; $('#reqText').onkeydown = (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') go(); };
+  d.querySelectorAll('[data-req]').forEach((c) => { c.onchange = async () => { if (await post('/api/requests/done', { index: Number(c.dataset.req), done: c.checked })) openRequests(); }; });
+  $('#reqText').focus();
+}
+$('#fback').onclick = openRequests;
 async function openTranscript(id) {
   closeCtx(false);
   const scrim = document.createElement('div'); scrim.className = 'ctx-scrim'; scrim.onclick = () => closeCtx();
