@@ -345,6 +345,7 @@
   .setrow { margin: var(--s3) 0; } .setrow label { display: block; font-size: var(--fs-xs); color: var(--text-2); margin-bottom: 4px; }
   .setrow input, .setrow select { width: 100%; font: var(--fs-sm) var(--font); color: var(--text); background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 6px 10px; } .setrow select option { color: #111; }
   .setgrp { margin: var(--s4) 0 0; font-size: var(--fs-sm); color: var(--text-2); } .setonly { display: block; margin: var(--s3) 0; font-size: var(--fs-xs); color: var(--text-2); } .setonly input { width: auto; margin-right: 6px; } .setrow[hidden], .setgrp[hidden] { display: none; }
+  .qr { flex: none; width: 150px; background: #fff; border-radius: var(--r-sm); line-height: 0; } .qr svg { width: 100%; height: auto; display: block; }
   .setrow .hint { margin: 4px 0 0; } .btn.on { border-color: var(--text-3); color: var(--text); }
   .logbox { font: var(--fs-xs) var(--mono); color: var(--text-2); white-space: pre-wrap; word-break: break-word; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); padding: var(--s3); max-height: 70vh; overflow-y: auto; }
   .ctx { position: fixed; top: 0; right: 0; bottom: 0; z-index: 26; width: min(560px, 100vw); overflow-y: auto; padding: var(--s5); border-left: 1px solid var(--line-2);
@@ -371,6 +372,26 @@
   .tk .add:hover { color: var(--text); border-color: var(--text-3); }
   .ctxbtn { margin-left: auto; font: 500 var(--fs-xs) var(--mono); letter-spacing: 0; text-transform: none; color: var(--text-3); background: none; border: 0; border-radius: 6px; padding: 1px 5px; cursor: pointer; }
   .ctxbtn:hover { color: var(--text); background: var(--surface-3); }
+  .hbtns { display: flex; gap: var(--s2); }
+  .iconbtn { position: relative; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; color: var(--text-3); background: var(--surface); border: 1px solid var(--line); border-radius: 50%; cursor: pointer; }
+  .iconbtn:hover, .iconbtn.on { color: var(--text); border-color: var(--line-2); background: var(--surface-2); }
+  #bell i { position: absolute; top: -4px; right: -4px; min-width: 16px; padding: 0 4px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font: 700 10px/16px var(--font); text-align: center; font-style: normal; }
+  #moreDot { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--late); }
+  #setupbar { display: flex; align-items: center; gap: var(--s3); margin: 0 var(--s6); padding: 6px var(--s4); border: 1px solid var(--accent-line); border-radius: var(--r-md); background: var(--accent-soft); color: var(--accent); font-size: var(--fs-sm); } #setupbar[hidden] { display: none; }
+  #setupbar span { flex: 1; min-width: 0; } #setupbar .btn { color: var(--accent); border-color: var(--accent-line); background: none; }
+  #menu { position: fixed; top: 64px; right: var(--s6); z-index: 35; width: min(260px, 92vw); padding: 6px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: rgb(14 24 22 / .97); box-shadow: 0 16px 50px rgb(0 0 0 / .55); backdrop-filter: blur(14px); } #menu[hidden] { display: none; }
+  #menu .mstat { padding: 6px 10px 8px; color: var(--text-3); font-size: var(--fs-xs); border-bottom: 1px solid var(--line); margin-bottom: 4px; } #menu .mstat.bad { color: var(--late); }
+  #menu .mrow { display: flex; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: var(--fs-sm) var(--font); text-align: left; cursor: pointer; }
+  #menu .mrow:hover { background: var(--surface-3); } #menu .mrow kbd { margin-left: auto; color: var(--text-3); font: 500 var(--fs-xs) var(--mono); }
+  .sets { position: fixed; inset: 0; z-index: 26; display: grid; grid-template-columns: 220px minmax(0, 1fr); background: var(--bg); background-image: radial-gradient(ellipse at 20% -10%, var(--bg-glow-1), transparent 55%); }
+  .sets nav { display: flex; flex-direction: column; gap: 2px; padding: var(--s5) var(--s4); border-right: 1px solid var(--line); overflow-y: auto; }
+  .sets nav h2 { margin: 0 var(--s2) var(--s3); font-size: var(--fs-lg); } .sets nav input { width: 100%; box-sizing: border-box; margin-bottom: var(--s3); }
+  .sets nav .nv { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 10px; border: 0; border-radius: 8px; background: none; color: var(--text-2); font: var(--fs-sm) var(--font); text-align: left; cursor: pointer; }
+  .sets nav .nv:hover { background: var(--surface-2); } .sets nav .nv.on { background: var(--surface-3); color: var(--text); } .sets nav .nv small { color: var(--accent); font-size: var(--fs-xs); }
+  .sets nav .sp { flex: 1; } .sets nav .setonly { display: flex; align-items: center; gap: 8px; margin: var(--s3) var(--s2) 0; } .sets nav .setonly input { width: auto; margin: 0; }
+  .sets .body { overflow-y: auto; padding: var(--s5) var(--s6) var(--s6); } .sets .inner { max-width: 720px; margin: 0 auto; }
+  .sets .body > .inner > header { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s4); } .sets .body h2 { margin: 0; font-size: var(--fs-xl); } .sets .body header .btn { margin-left: auto; }
+  @media (max-width: 760px) { .sets { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); } .sets nav { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--line); padding: var(--s3); } .sets nav h2 { display: none; } .sets nav input { width: 100%; } .sets .body { padding: var(--s4); } #setupbar, #menu { margin: 0 var(--s4); } #menu { right: var(--s4); margin: 0; } }
   .syncbtn { font: 500 var(--fs-xs) var(--font); color: var(--text-3); background: none; border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; cursor: pointer; white-space: nowrap; }
   #bell { position: relative; } #bell i { position: absolute; top: -5px; right: -5px; min-width: 16px; padding: 0 4px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font: 700 10px/16px var(--font); text-align: center; font-style: normal; }
   #notes { position: fixed; top: 64px; right: var(--s6); z-index: 35; width: min(380px, 92vw); max-height: 60vh; overflow: auto; border: 1px solid var(--line-2); border-radius: var(--r-md); background: rgb(14 24 22 / .97); box-shadow: 0 16px 50px rgb(0 0 0 / .55); backdrop-filter: blur(14px); }
@@ -417,20 +438,31 @@
   <div class="brand">Plate <span>/ <span id="vname">Board</span></span></div>
   <div class="clock" id="clock"></div>
   <div class="date" id="date"></div>
-  <div id="sync"></div>
-  <button class="syncbtn" id="bell" title="Notifications: what started needing you">🔔<i id="bellN" hidden></i></button>
-  <button class="syncbtn" id="fback" title="Submit a bug or feature request about Plate (requests.md)">✎ Submit</button>
-  <button class="syncbtn" id="gear" title="Settings (sources.md) and log">⚙</button>
   <div class="stats" id="stats"></div>
+  <div class="hbtns">
+  <button class="iconbtn" id="bell" title="Notifications: what started needing you"><svg class="i" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><i id="bellN" hidden></i></button>
+  <button class="iconbtn" id="moreBtn" title="Sync, Submit a request, Settings, Log"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg><b id="moreDot" hidden></b></button>
+  </div>
 </header>
+<div id="setupbar" hidden></div>
 <div id="notes" hidden></div>
+<div id="menu" hidden></div>
 <main id="main"></main>
 <nav class="dock">
   <button data-v="ws"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5H5v5M12 11.5h7v5"/></svg>Workstreams</button>
   <button data-v="needs"><svg class="i" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Needs you<span class="pip" id="pip"></span></button>
 </nav>
 <datalist id="devmodels"><option value="opus"><option value="sonnet"><option value="claude-sonnet-4"><option value="claude-opus-4.6"><option value="codex"></datalist>
+<script src="vendor/qrcode.js"></script>
 <script>
+// Opened from another device with ?t=<token> (lan: on): keep the token and send it with every request (the cookie alone is not
+// reliable in phone in-app browsers), then drop it from the address bar. On the Mac there is no token and nothing changes.
+(() => {
+  const t = new URLSearchParams(location.search).get('t');
+  try { if (t) { localStorage.setItem('plate.t', t); history.replaceState(null, '', location.pathname + location.hash); } } catch {}
+  const f = window.fetch.bind(window);
+  window.fetch = (u, o = {}) => { let k = null; try { k = localStorage.getItem('plate.t'); } catch {} return k ? f(u, { ...o, headers: { ...(o.headers || {}), 'X-Plate-Token': k } }) : f(u, o); };
+})();
 let S, view = 'ws', selWs = null, panelScroll = 0;
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -452,11 +484,33 @@ document.addEventListener('visibilitychange', refresh);
 function syncBadge() {
   const c = S.collect || {}, names = Object.keys(c);
   const latest = names.map((n) => c[n].at).sort().pop(), bad = names.filter((n) => !c[n].ok);
-  const su = S.setup ? `<button class="syncbtn bad" id="setupbtn" title="CHANGELOG.md has entries this machine hasn't applied (${S.setup.seen ? `last applied: ${S.setup.seen}` : 'no .plate-changelog-seen yet'}). Click to open ${S.setupAgent === 'devin' ? 'a Devin' : 'a Claude Code'} session that applies them (setup_agent in Settings).">Setup pending · changelog #${S.setup.seen + 1 === S.setup.latest ? S.setup.latest : `${S.setup.seen + 1}–${S.setup.latest}`}</button> ` : '';
-  $('#sync').innerHTML = su + `<button class="syncbtn ${bad.length ? 'bad' : ''}" title="${esc('Keys: r d = Devin · r g = GitHub · r a = all\n' + names.map((n) => `${n}: ${c[n].ok ? 'ok' : 'FAILED'} · ${c[n].msg} · ${new Date(c[n].at).toLocaleTimeString()}`).join('\n') || 'No collector has run yet')}">${bad.length ? `⚠ ${esc(bad.join(', '))} failed` : latest ? `Synced ${ago(latest)}` : 'Not synced'} · Sync now</button>`;
-  if ($('#setupbtn')) $('#setupbtn').onclick = startSetup;
-  $('#sync button:not(#setupbtn)').onclick = async () => { $('#sync button:not(#setupbtn)').textContent = 'Syncing…'; await fetch('/api/collect', { method: 'POST' }); setTimeout(refresh, 4000); setTimeout(refresh, 15000); };
+  const bar = $('#setupbar'); bar.hidden = !S.setup;
+  if (S.setup) {
+    const r = S.setup.seen + 1 === S.setup.latest ? `#${S.setup.latest}` : `#${S.setup.seen + 1}–${S.setup.latest}`;
+    bar.innerHTML = `<span>Setup pending: CHANGELOG ${r} hasn't been applied on this machine.</span><button class="btn" id="setupbtn" title="Opens ${S.setupAgent === 'devin' ? 'a Devin' : 'a Claude Code'} session that applies it (setup_agent in Settings)">Apply with ${S.setupAgent === 'devin' ? 'Devin' : 'Claude Code'}</button>`;
+    $('#setupbtn').onclick = startSetup;
+  }
+  $('#moreDot').hidden = !bad.length;
+  syncText = { bad: bad.length > 0, text: bad.length ? `⚠ ${bad.join(', ')} failed` : latest ? `Synced ${ago(latest)}` : 'Not synced yet', tip: names.map((n) => `${n}: ${c[n].ok ? 'ok' : 'FAILED'} · ${c[n].msg} · ${new Date(c[n].at).toLocaleTimeString()}`).join('\n') };
+  if (!$('#menu').hidden) drawMenu();
 }
+let syncText = { bad: false, text: '', tip: '' };
+// the ⋯ menu: everything that used to be a loose button in the top bar
+const MENU = [['sync', 'Sync now', 'r a'], ['submit', 'Submit a request', ''], ['settings', 'Settings', ''], ['log', 'Server log', ''], ['search', 'Search…', '⌘K']];
+function drawMenu() {
+  $('#menu').innerHTML = `<div class="mstat ${syncText.bad ? 'bad' : ''}" title="${esc(syncText.tip)}">${esc(syncText.text)}</div>` + MENU.map(([k, t, h]) => `<button class="mrow" data-m="${k}">${t}${h ? `<kbd>${h}</kbd>` : ''}</button>`).join('');
+}
+function toggleMenu(on) { const el = $('#menu'); el.hidden = on === undefined ? !el.hidden : !on; $('#moreBtn').classList.toggle('on', !el.hidden); if (!el.hidden) { toggleNotes(false); drawMenu(); } }
+async function runMenu(k) {
+  toggleMenu(false);
+  if (k === 'sync') { toast('Syncing…'); await fetch('/api/collect', { method: 'POST' }); setTimeout(refresh, 4000); setTimeout(refresh, 15000); }
+  else if (k === 'submit') openRequests(); else if (k === 'settings') openSettings(); else if (k === 'log') openSettings('log'); else if (k === 'search') openPal();
+}
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#moreBtn')) return toggleMenu();
+  const m = e.target.closest('#menu [data-m]'); if (m) return runMenu(m.dataset.m);
+  if (!e.target.closest('#menu')) toggleMenu(false);
+});
 // "Setup pending": the server opens the agent's session (Claude Code: a claude:// link we open here; Devin: a headless run whose
 // session we open once it exists)
 async function startSetup() {
@@ -511,7 +565,7 @@ function drawNotes() {
   $('#notes').innerHTML = `<header>Notifications<button data-nread>mark all read</button><button data-nclear>clear</button></header>`
     + (notes.length ? notes.map((x, n) => `<button class="nrow ${x.read ? '' : 'new'}" data-note="${n}">${esc(x.text)}<small>${esc(ago(x.at))}</small></button>`).join('') : '<div class="nempty">Nothing yet. Sessions that start waiting, review requests, new comments on your tickets and finished Devin runs land here.</div>');
 }
-function toggleNotes(on) { const el = $('#notes'); el.hidden = on === undefined ? !el.hidden : !on; if (!el.hidden) drawNotes(); }
+function toggleNotes(on) { const el = $('#notes'); el.hidden = on === undefined ? !el.hidden : !on; if (!el.hidden) { drawNotes(); if (typeof toggleMenu === 'function' && !$('#menu').hidden) toggleMenu(false); } }
 let NESTED = new Set(); // ids of sessions drawn nested under their PR/issue card in the focus view (their chips on the parent are redundant then)
 function render() {
   NESTED = new Set();
@@ -856,10 +910,13 @@ function palResults(q) {
   const terms = fold(q).split(/\s+/).filter(Boolean), ok = (hay) => terms.every((t) => hay.includes(t));
   const ws = S.workstreams.map((w) => ({ k: 'ws', t: w.name, s: wsPath(w) === w.name ? '' : wsPath(w), hay: fold(wsPath(w)), slug: w.slug })).filter((r) => ok(r.hay));
   const items = S.items.slice().sort((a, b) => (a.state === 'done') - (b.state === 'done')).map((i) => ({ k: i.kind || i.source, t: nameOf(i), s: wsOf(i.workstream)?.name || 'Inbox', hay: fold(`${nameOf(i)} ${i.label || ''} ${i.url || ''}`), item: i })).filter((r) => ok(r.hay));
-  return [...ws, ...items].slice(0, terms.length ? 14 : 10);
+  const cmds = MENU.filter(([k]) => k !== 'search').map(([k, t]) => ({ k: 'cmd', t, s: '', hay: fold(t + ' ' + k), cmd: k })).filter((r) => terms.length && ok(r.hay));
+  return [...cmds, ...ws, ...items].slice(0, terms.length ? 14 : 10);
 }
 function pickPal(r) {
-  closePal(); view = 'ws';
+  closePal();
+  if (r.cmd) return runMenu(r.cmd);
+  view = 'ws';
   if (r.k === 'ws') return setFocus(r.slug);
   if (r.item.workstream) return setFocus(r.item.workstream);
   focus = null; panelOpen = true; tscope = 'inbox'; tq = r.t; render();
@@ -868,7 +925,7 @@ const closePal = () => document.querySelector('.pal')?.remove();
 function openPal() {
   if (document.querySelector('.pal')) return;
   const el = document.createElement('div'); el.className = 'pal';
-  el.innerHTML = '<div class="pal-box"><input placeholder="Jump to a workstream or item…" autocomplete="off"><div class="pal-list"></div></div>';
+  el.innerHTML = '<div class="pal-box"><input placeholder="Jump to a workstream or item, or type settings, sync, submit…" autocomplete="off"><div class="pal-list"></div></div>';
   document.body.append(el);
   const inp = el.querySelector('input'), list = el.querySelector('.pal-list');
   let res = [], at = 0;
@@ -1260,7 +1317,7 @@ function wireTeamsChat(d) {
   sync();
 }
 function closeCtx(reset = true) {
-  document.querySelectorAll('.ctx, .ctx-scrim').forEach((x) => x.remove());
+  document.querySelectorAll('.ctx, .ctx-scrim, .sets').forEach((x) => x.remove());
   if (reset) ctxStack = [];
 }
 function ctxHtml(c) {
@@ -1347,21 +1404,15 @@ function md(src) {
   close();
   return out.join('').replace(/\u0000(\d+)\u0000/g, (_, n) => code[n]);
 }
-// Settings = sources.md as a form (scalar keys and flat lists; people/meeting_values stay in the file) + the server log
-async function openSettings(tab = 'settings') {
-  closeCtx(false);
-  const scrim = document.createElement('div'); scrim.className = 'ctx-scrim'; scrim.onclick = () => closeCtx();
-  const d = document.createElement('aside'); d.className = 'ctx';
-  document.body.append(scrim, d);
-  const top = (t) => `<div class="ctx-top"><span><button class="btn ${t === 'settings' ? 'on' : ''}" data-tab="settings">Settings</button> <button class="btn ${t === 'log' ? 'on' : ''}" data-tab="log">Log</button></span><button class="btn" data-x>Close</button></div>`;
-  const wire = () => { d.querySelector('[data-x]').onclick = () => closeCtx(); d.querySelectorAll('[data-tab]').forEach((b) => { b.onclick = () => openSettings(b.dataset.tab); }); };
-  if (tab === 'log') {
-    const j = await (await fetch('/api/log?n=300')).json();
-    d.innerHTML = `${top('log')}<h2>Server log</h2><p class="hint">Last ${j.lines.length} lines of <code>.cache/plate.log</code>. Writes, errors, slow reads, collector runs and lock waits; the 20 s polls are not logged. <button class="btn" data-refresh>Refresh</button></p><pre class="logbox">${esc(j.lines.join('\n')) || '(empty)'}</pre>`;
-    wire(); d.querySelector('[data-refresh]').onclick = () => openSettings('log');
-    const box = d.querySelector('.logbox'); box.scrollTop = box.scrollHeight;
-    return;
-  }
+// Settings = sources.md as a form (scalar keys and flat lists; people/meeting_values stay in the file) + the server log.
+// A full page: groups on the left, search across every key, and only what you changed by default.
+let setGroup = null;
+async function openSettings(tab = 'settings', grp) {
+  closeCtx(false); document.querySelector('.sets')?.remove();
+  if (grp) setGroup = grp;
+  const page = document.createElement('div'); page.className = 'sets';
+  document.body.append(page);
+  const close = () => page.remove();
   const j = await (await fetch('/api/settings')).json();
   // sources.md only holds overrides, so each row shows the default it falls back to and whether you changed it
   const set = (f) => (Array.isArray(j.values[f.key]) ? j.values[f.key].length > 0 : j.values[f.key] !== '');
@@ -1369,27 +1420,70 @@ async function openSettings(tab = 'settings') {
     const v = j.values[f.key], id = `set_${f.key}`, custom = set(f);
     const input = f.type.startsWith('enum:') ? `<select id="${id}" data-key="${f.key}">${f.type.slice(5).split('|').map((o) => `<option value="${o}" ${o === v ? 'selected' : ''}>${o || `default (${esc(f.def)})`}</option>`).join('')}</select>`
       : `<input id="${id}" data-key="${f.key}" ${f.type === 'number' ? 'type="number" min="1"' : ''} value="${esc(Array.isArray(v) ? v.join(', ') : v)}" placeholder="${esc(f.def)}">`;
-    return `<div class="setrow ${custom ? 'custom' : ''}" data-custom="${custom ? 1 : 0}"><label for="${id}"><code>${f.key}</code> <span class="chip ${custom ? 'need' : 'dim'}">${custom ? 'custom' : 'default'}</span>${custom ? `<button class="ibtn" data-reset="${f.key}" title="Back to the default (${esc(f.def)})">↺ default</button>` : ''}</label>${input}<p class="hint">${esc(f.help)} · default: <b>${esc(f.def)}</b></p></div>`;
+    return `<div class="setrow ${custom ? 'custom' : ''}"><label for="${id}"><code>${f.key}</code> <span class="chip ${custom ? 'need' : 'dim'}">${custom ? 'custom' : 'default'}</span>${custom ? `<button class="ibtn" data-reset="${f.key}" title="Back to the default (${esc(f.def)})">↺ default</button>` : ''}</label>${input}<p class="hint">${esc(f.help)} · default: <b>${esc(f.def)}</b></p></div>`;
   };
   const map = (o) => Object.entries(o || {}).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(' · ') || 'none';
   const groups = [...new Set(j.schema.map((f) => f.group))];
-  const nCustom = j.schema.filter(set).length;
-  d.innerHTML = `${top('settings')}<h2>Settings</h2><p class="hint">Every key Plate reads, with its default. <code>sources.md</code> keeps only what you changed (<b>${nCustom}</b> of ${j.schema.length} now): <code>${esc(j.file)}</code>. Saved as you leave a field; empty or ↺ = back to the default. Intervals and <code>collect</code> are read at every tick, the rest at the next use.</p>
-    <label class="setonly"><input type="checkbox" id="onlyCustom" ${store.get('plate.setOnly', false) ? 'checked' : ''}> Only what I changed</label>
-    ${groups.map((g) => `<h3 class="setgrp">${esc(g)}</h3>${j.schema.filter((f) => f.group === g).map(field).join('')}`).join('')}
-    <div class="setrow"><label><code>people</code> · <code>meeting_values</code></label><p class="hint">Mappings, edited in the file. people: ${map(j.people)} · meeting_values: ${map(j.meeting_values)}</p></div>`;
-  const applyOnly = () => { const on = $('#onlyCustom').checked; store.set('plate.setOnly', on); d.querySelectorAll('.setrow[data-custom="0"]').forEach((r) => { r.hidden = on; }); d.querySelectorAll('.setgrp').forEach((h) => { let n = h.nextElementSibling, any = false; while (n && !n.classList.contains('setgrp')) { if (!n.hidden) any = true; n = n.nextElementSibling; } h.hidden = !any; }); };
-  $('#onlyCustom').onchange = applyOnly; applyOnly();
-  d.querySelectorAll('[data-reset]').forEach((b) => { b.onclick = async () => { if (await post('/api/settings', { [b.dataset.reset]: '' })) { toast(`${b.dataset.reset}: default again`); load(); openSettings('settings'); } }; });
-  wire();
-  d.querySelectorAll('[data-key]').forEach((el) => {
-    el.onchange = async () => {
-      const r = await post('/api/settings', { [el.dataset.key]: el.value });
-      if (r) { toast(`${el.dataset.key} saved`); load(); } else openSettings('settings');
-    };
-  });
+  const nChanged = (g) => j.schema.filter((f) => f.group === g && set(f)).length;
+  if (tab !== 'log' && !groups.includes(setGroup)) setGroup = groups.find(nChanged) || groups[0];
+  const only = store.get('plate.setOnly2', true);
+  let q = '';
+  const lanBlock = async () => {
+    const lan = await (await fetch('/api/lan')).json();
+    if (!lan.urls.length) return `<p class="hint">Phone access is off. Set <code>lan</code> to on (untick "Only what I changed" to see it) and restart the server; a QR code with the link shows up here.</p>`;
+    const qr = (u) => { try { const c = qrcode(0, 'M'); c.addData(u); c.make(); return `<span class="qr" title="Scan with the phone camera">${c.createSvgTag({ cellSize: 4, margin: 4, scalable: true })}</span>`; } catch { return ''; } };
+    return `<div class="hint">📱 Scan with the phone (the link carries the access token, keep it private).${lan.urls.map((u) => `<div style="display:flex;gap:var(--s3);align-items:center;margin-top:var(--s2)">${qr(u)}<code style="word-break:break-all">${esc(u)}</code></div>`).join('')}</div>`;
+  };
+  const nav = () => `<nav><h2>Settings</h2><input id="setq" placeholder="Search keys…" value="${esc(q)}" autocomplete="off">`
+    + groups.map((g) => `<button class="nv ${!q && tab !== 'log' && g === setGroup ? 'on' : ''}" data-g="${esc(g)}">${esc(g)}${nChanged(g) ? `<small>${nChanged(g)}</small>` : ''}</button>`).join('')
+    + `<button class="nv ${tab === 'log' ? 'on' : ''}" data-log>Server log</button><span class="sp"></span>`
+    + `<label class="setonly"><input type="checkbox" id="onlyCustom" ${only ? 'checked' : ''}> Only what I changed</label></nav>`;
+  const rows = (list) => {
+    const shown = only ? list.filter(set) : list;
+    return shown.map(field).join('') || `<p class="hint">${only && list.length ? `Nothing changed here (${list.length} keys at their default). Untick "Only what I changed" to see them.` : 'No keys.'}</p>`;
+  };
+  const content = async () => {
+    if (tab === 'log') {
+      const l = await (await fetch('/api/log?n=300')).json();
+      return `<header><h2>Server log</h2><button class="btn" data-refresh>Refresh</button><button class="btn" data-x>Close</button></header><p class="hint">Last ${l.lines.length} lines of <code>.cache/plate.log</code>. Writes, errors, slow reads, collector runs and lock waits; the 20 s polls are not logged.</p><pre class="logbox">${esc(l.lines.join('\n')) || '(empty)'}</pre>`;
+    }
+    const head = (t) => `<header><h2>${esc(t)}</h2><button class="btn" data-x>Close</button></header>`;
+    if (q) {
+      const terms = q.toLowerCase().split(/\s+/).filter(Boolean), hit = j.schema.filter((f) => terms.every((t) => `${f.key} ${f.help} ${f.group}`.toLowerCase().includes(t)));
+      return head(`${hit.length} key${hit.length === 1 ? '' : 's'} match`) + (hit.map(field).join('') || '<p class="hint">Nothing matches.</p>');
+    }
+    return head(setGroup) + `<p class="hint">Saved as you leave a field; empty or ↺ = back to the default. <code>sources.md</code> keeps only what you changed (<b>${j.schema.filter(set).length}</b> of ${j.schema.length} keys): <code>${esc(j.file)}</code>. Intervals and <code>collect</code> are read at every tick; <code>lan</code> and the other server keys need a restart.</p>`
+      + (setGroup === 'Network' ? await lanBlock() : '') + rows(j.schema.filter((f) => f.group === setGroup))
+      + (setGroup === 'Vault & people' ? `<div class="setrow"><label><code>people</code> · <code>meeting_values</code></label><p class="hint">Mappings, edited in the file. people: ${map(j.people)} · meeting_values: ${map(j.meeting_values)}</p></div>` : '');
+  };
+  const draw = async (keepSearch) => {
+    page.innerHTML = `${nav()}<div class="body"><div class="inner"></div></div>`;
+    page.querySelector('.inner').innerHTML = await content();
+    wire(keepSearch);
+  };
+  const wire = (keepSearch) => {
+    page.querySelectorAll('[data-x]').forEach((b) => { b.onclick = close; });
+    page.querySelectorAll('[data-g]').forEach((b) => { b.onclick = () => { setGroup = b.dataset.g; q = ''; tab = 'settings'; draw(); }; });
+    page.querySelector('[data-log]').onclick = () => { tab = 'log'; q = ''; draw(); };
+    page.querySelector('[data-refresh]')?.addEventListener('click', () => draw());
+    const box = page.querySelector('.logbox'); if (box) box.scrollTop = box.scrollHeight;
+    const si = page.querySelector('#setq');
+    si.oninput = () => { q = si.value.trim(); tab = 'settings'; page.querySelector('.inner').innerHTML = ''; content().then((h) => { page.querySelector('.inner').innerHTML = h; wireFields(); page.querySelectorAll('[data-x]').forEach((b) => { b.onclick = close; }); }); };
+    if (keepSearch) { si.focus(); si.setSelectionRange(si.value.length, si.value.length); }
+    page.querySelector('#onlyCustom').onchange = (e) => { store.set('plate.setOnly2', e.target.checked); openSettings(tab); };
+    wireFields();
+  };
+  const wireFields = () => {
+    page.querySelectorAll('[data-reset]').forEach((b) => { b.onclick = async () => { if (await post('/api/settings', { [b.dataset.reset]: '' })) { toast(`${b.dataset.reset}: default again`); load(); openSettings(tab); } }; });
+    page.querySelectorAll('[data-key]').forEach((el) => {
+      el.onchange = async () => {
+        const r = await post('/api/settings', { [el.dataset.key]: el.value });
+        if (r) { toast(`${el.dataset.key} saved`); load(); } else openSettings(tab);
+      };
+    });
+  };
+  await draw();
 }
-$('#gear').onclick = () => openSettings();
 // Submit = bug/feature requests about Plate itself, appended to <data>/requests.md (the `plate` skill reads the open ones)
 async function openRequests() {
   closeCtx(false);
@@ -1411,7 +1505,7 @@ async function openRequests() {
   d.querySelectorAll('[data-req]').forEach((c) => { c.onchange = async () => { if (await post('/api/requests/done', { index: Number(c.dataset.req), done: c.checked })) openRequests(); }; });
   $('#reqText').focus();
 }
-$('#fback').onclick = openRequests;
+
 async function openTranscript(id) {
   closeCtx(false);
   const scrim = document.createElement('div'); scrim.className = 'ctx-scrim'; scrim.onclick = () => closeCtx();
@@ -1448,7 +1542,7 @@ document.addEventListener('change', async (e) => {
   if (await post('/api/item/update', { id: s.dataset.snooze, snoozedUntil: snoozeAt(s.value) })) load();
 });
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-ctx]'); if (b) { e.preventDefault(); e.stopPropagation(); openCtx(b.dataset.ctx); } }, true);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.querySelector('.ctx')) { e.stopImmediatePropagation(); closeCtx(); } }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (document.querySelector('.ctx') || document.querySelector('.sets'))) { e.stopImmediatePropagation(); closeCtx(); } }, true);
 
 // ---------- fit the Workstreams view to the window: the map scales down (zoom) instead of scrolling, panes end above the dock ----------
 // Pan/zoom camera on the canvas (transform, origin top-left). `cam` = null → fit all; kept across re-renders until Fit.

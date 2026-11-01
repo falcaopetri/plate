@@ -9,9 +9,11 @@ import { lookupByEmail } from './lib/directory.mjs';
 import { transcript } from './lib/devintranscript.mjs';
 import { startReview, startClose, startSetup, runs } from './lib/devinrun.mjs';
 import { log, tail } from './lib/log.mjs';
+import { check as lanCheck, whyDenied, isLocal, lanToken, lanUrls, COOKIE } from './lib/lan.mjs';
 import { readRequests, addRequest, toggleRequest, DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, readSettings, patchSources, createWorkstream, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
 
 const PORT = Number(process.env.PORT) || 4173;
+const LAN = readSources().lan === 'on'; // read at startup: changing it needs a restart
 const repo = path.dirname(fileURLToPath(import.meta.url));
 // newest CHANGELOG entry this machine hasn't applied (`.plate-changelog-seen`), so the header can say setup is pending
 const setupPending = () => {
@@ -27,6 +29,11 @@ const readBody = (req) => new Promise((ok) => { let b = ''; req.on('data', (c) =
 
 http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost'), t0 = Date.now();
+  if (LAN) { // other devices need the token (lib/lan.mjs); this machine never does
+    const g = lanCheck(req, url);
+    if (g === 'login') { log.info(`lan: login from ${req.socket.remoteAddress}`); res.setHeader('Set-Cookie', `${COOKIE}=${lanToken()}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Strict`); }
+    if (g === 'deny') { log.warn(`lan: refused ${req.method} ${url.pathname} from ${req.socket.remoteAddress}: ${whyDenied(req, url)}`); res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Plate: open the link with ?t=<token> (see the server log or Settings on the Mac).'); }
+  }
   // one line per write, per error and per slow read; the 20s /api/state polls would drown the rest
   res.on('finish', () => {
     const ms = Date.now() - t0, quiet = req.method === 'GET' && res.statusCode < 400 && ms < 1000;
@@ -39,7 +46,7 @@ http.createServer(async (req, res) => {
     if (!(e instanceof BadRequest)) log.error(`${req.method} ${url.pathname}: ${e.stack || e}`);
     json(res, e instanceof BadRequest ? 400 : 500, { error: e instanceof BadRequest ? e.message : String(e) });
   }
-}).listen(PORT, '127.0.0.1', () => { log.info(`plate on http://localhost:${PORT}  (data: ${DATA_DIR})`); startSchedule(); });
+}).listen(PORT, LAN ? '0.0.0.0' : '127.0.0.1', () => { log.info(`plate on http://localhost:${PORT}  (data: ${DATA_DIR})`); if (LAN) log.info(`lan: on, other devices open ${lanUrls(PORT).join(' or ') || '(no network interface found)'}`); startSchedule(); });
 
 async function handle(req, res, url) {
   {
@@ -119,6 +126,7 @@ async function handle(req, res, url) {
     if (url.pathname === '/api/requests/done' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); toggleRequest(b.index, !!b.done); return json(res, 200, { ok: true }); }
     if (url.pathname === '/api/requests') return json(res, 200, { requests: readRequests() });
     if (url.pathname === '/api/settings' && req.method === 'POST') { const patch = JSON.parse(await readBody(req)); log.info(`settings: ${Object.keys(patch).join(', ')}`); return json(res, 200, patchSources(patch)); }
+    if (url.pathname === '/api/lan') return json(res, 200, { on: LAN, urls: LAN && isLocal(req.socket.remoteAddress) ? lanUrls(PORT) : [] });
     if (url.pathname === '/api/settings') return json(res, 200, readSettings());
     if (url.pathname === '/api/log') return json(res, 200, { lines: tail(Number(url.searchParams.get('n')) || 200) });
     if (url.pathname === '/api/devin/transcript') return json(res, 200, await transcript(url.searchParams.get('id')));

@@ -6,6 +6,15 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 11 — 2026-11-01: Plate from a phone on the local network (`lan`)
+
+- New `lan: on` key (⚙ → Network): the server also listens on the local network, and devices other than this machine need the access token (printed in the server log and in ⚙: `http://<ip>:4173/?t=<token>`, open it once). Off by default.
+
+- UI: the top bar is now just state + 🔔 + ⋯ (Sync, Submit, Settings, Log, Search live in the ⋯ menu and in ⌘K); "Setup pending" is a banner; Settings is a full page with groups, search and "Only what I changed" on by default; the QR code for the phone is under Settings → Network.
+
+**Setup**
+1. Nothing is required. On macOS the firewall blocks the phone unless Plate has its own node: `scripts/private-node.sh` and the `sudo` line it prints (allows that copy only). To use it: `lan: on`, restart, open the link from the log on the phone. Keep it off on the work machine and on shared networks.
+
 ## 10 — 2026-11-01: Submit button (requests.md) and a clickable "Setup pending"
 
 - **✎ Submit** in the top bar: bug / feature requests about Plate itself go into `requests.md` in the data folder (open entries `- [ ]`, ticked `[x]`). The agent that maintains Plate reads that file instead of an e-mail, so nothing needs to leave the work machine by mail (send a photo of the note).
