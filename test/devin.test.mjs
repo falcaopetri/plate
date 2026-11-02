@@ -106,4 +106,11 @@ test('CLI session stopped on a permission prompt: last message has tool calls + 
   const by = collect(ctx);
   assert.equal(by[X].asking, true); assert.equal(by[X].state, 'waiting'); assert.equal(by[X].turn, 'me');
   assert.equal(by[Y].asking, undefined);
+  // answered or denied: a tool result node is saved, so the next run must drop the flag (upsert keeps unassigned fields)
+  const w = new DatabaseSync(path.join(ctx.dir, 'sessions.db'));
+  w.prepare('INSERT INTO message_nodes VALUES (?,?,?)').run(X, 'n3', JSON.stringify({ role: 'tool', content: 'Canceled due to user interrupt (tool_call_id: c1)' }));
+  w.prepare('UPDATE sessions SET main_chain_id = ? WHERE id = ?').run('n3', X); // the row catches up once the turn is saved
+  w.close();
+  const again = collect(ctx);
+  assert.equal(again[X].asking, undefined); assert.equal(again[X].turn, 'me');
 });

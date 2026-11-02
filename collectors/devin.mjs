@@ -134,7 +134,7 @@ const incoming = rows.map((r) => {
     title: r.title || `Devin session ${String(r.id).slice(0, 8)}`, cwd: r.working_directory || null,
     model: r.model || null, lastActivity: iso(r.last_activity_at) || null, devinFolder: a.folder || null,
     state: archived ? 'done' : asking || idleMin >= WAIT_MIN ? 'waiting' : 'idle', created: iso(r.created_at),
-    turn: archived ? undefined : asking || yoursTurn(r) ? 'me' : 'devin', ...(asking && !archived ? { asking: true } : {}),
+    turn: archived ? undefined : asking || yoursTurn(r) ? 'me' : 'devin', asking: asking && !archived ? true : undefined, // always assigned: upsert keeps fields a run doesn't set
   };
 });
 // Desktop-only sessions (Cascade provider, never in sessions.db): listed from the cache; no deep link is known for them
@@ -146,7 +146,7 @@ for (const x of live.values()) {
     id: `session:${x.id}`, source: 'session', kind: 'session', tool: 'devin', url: null, title: x.title || `Cascade session ${x.id.slice(0, 8)}`,
     cwd: x.workspaceDirs?.[0] || null, model: null, lastActivity: x.updatedAt ? new Date(x.updatedAt).toISOString() : null, devinFolder: null,
     state: archived ? 'done' : x.isWaiting ? 'waiting' : 'idle', created: x._meta?.['cognition.ai/createdAt'] || x.updatedAt || undefined,
-    turn: archived ? undefined : x.isWaiting ? 'me' : 'devin', ...(x.isWaiting && !archived ? { asking: true } : {}), provider: x.providerId,
+    turn: archived ? undefined : x.isWaiting ? 'me' : 'devin', asking: x.isWaiting && !archived ? true : undefined, provider: x.providerId,
   });
 }
 upsert('session', incoming, { closedStates: ['gone'], owns: (it) => it.tool === 'devin' });
