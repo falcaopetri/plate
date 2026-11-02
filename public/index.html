@@ -496,7 +496,7 @@ function syncBadge() {
 }
 let syncText = { bad: false, text: '', tip: '' };
 // the ⋯ menu: everything that used to be a loose button in the top bar
-const MENU = [['sync', 'Sync now', 'r a'], ['submit', 'Submit a request', ''], ['settings', 'Settings', ''], ['log', 'Server log', ''], ['search', 'Search…', '⌘K']];
+const MENU = [['sync', 'Sync now', 'r a'], ['submit', 'Submit a request', ''], ['note', 'Make a note a workstream…', ''], ['settings', 'Settings', ''], ['log', 'Server log', ''], ['search', 'Search…', '⌘K']];
 function drawMenu() {
   $('#menu').innerHTML = `<div class="mstat ${syncText.bad ? 'bad' : ''}" title="${esc(syncText.tip)}">${esc(syncText.text)}</div>` + MENU.map(([k, t, h]) => `<button class="mrow" data-m="${k}">${t}${h ? `<kbd>${h}</kbd>` : ''}</button>`).join('');
 }
@@ -504,7 +504,7 @@ function toggleMenu(on) { const el = $('#menu'); el.hidden = on === undefined ? 
 async function runMenu(k) {
   toggleMenu(false);
   if (k === 'sync') { toast('Syncing…'); await fetch('/api/collect', { method: 'POST' }); setTimeout(refresh, 4000); setTimeout(refresh, 15000); }
-  else if (k === 'submit') openRequests(); else if (k === 'settings') openSettings(); else if (k === 'log') openSettings('log'); else if (k === 'search') openPal();
+  else if (k === 'note') openNotePal(); else if (k === 'submit') openRequests(); else if (k === 'settings') openSettings(); else if (k === 'log') openSettings('log'); else if (k === 'search') openPal();
 }
 document.addEventListener('click', (e) => {
   if (e.target.closest('#moreBtn')) return toggleMenu();
@@ -946,6 +946,42 @@ function openPal() {
   el.onmousedown = (e) => { if (e.target === el) closePal(); };
   draw(); inp.focus();
 }
+// Any vault note can be a workstream: it keeps living where it is, the workstream just points at it (`note:`), and its text and to-dos are the note's.
+// The new one goes under the focused workstream (else it becomes a root).
+function openNotePal() {
+  if (document.querySelector('.pal')) return;
+  const el = document.createElement('div'); el.className = 'pal';
+  el.innerHTML = '<div class="pal-box"><input placeholder="Vault note to make a workstream (part of its name)…" autocomplete="off"><div class="pal-list"></div></div>';
+  document.body.append(el);
+  const inp = el.querySelector('input'), list = el.querySelector('.pal-list');
+  let res = [], at = 0, seq = 0;
+  const draw = () => {
+    list.innerHTML = res.map((n, i) => `<div class="pal-row ${i === at ? 'on' : ''}" data-n="${i}"><span class="k">note</span><span class="t">${esc(n)}</span></div>`).join('') || `<div class="pal-empty">${inp.value.trim() ? 'No note matches.' : 'Type part of a note name.'}</div>`;
+    list.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+  };
+  const pick = async (name) => {
+    if (!name) return;
+    const r = await post('/api/ws/from-note', { note: name, parent: focus || '' }); if (!r) return;
+    closePal(); freshWs = r.slug; freshShown = null; clearTimeout(freshT); freshT = setTimeout(() => { freshWs = null; document.querySelector('.wnode.fresh')?.classList.remove('fresh'); }, 8000);
+    toast(r.existing ? `“${name}” was already a workstream` : `“${name}” is now a workstream`);
+    await load(); setFocus(r.slug);
+  };
+  inp.oninput = async () => {
+    const mine = ++seq, q = inp.value.trim(); if (!q) { res = []; return draw(); }
+    const j = await (await fetch(`/api/notes?q=${encodeURIComponent(q)}`)).json().catch(() => null);
+    if (mine === seq) { res = j?.notes || []; at = 0; draw(); }
+  };
+  inp.onkeydown = (e) => {
+    e.stopPropagation();
+    if (e.key === 'Escape') closePal();
+    else if (e.key === 'ArrowDown') { e.preventDefault(); at = Math.min(at + 1, res.length - 1); draw(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); at = Math.max(at - 1, 0); draw(); }
+    else if (e.key === 'Enter') pick(res[at]);
+  };
+  list.onclick = (e) => { const n = e.target.closest('.pal-row')?.dataset.n; if (n != null) pick(res[n]); };
+  el.onmousedown = (e) => { if (e.target === el) closePal(); };
+  draw(); inp.focus();
+}
 document.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && !e.altKey) { e.preventDefault(); openPal(); } });
 
 // ---------- workstream focus: click a node → full-area view of that one workstream ----------
@@ -1151,7 +1187,7 @@ function focusView(w) {
   const empty = !items.length ? '<div class="empty">Nothing in this workstream yet. Paste a link or note, or drag items here from the Board.</div>' : '';
   return `<div class="focus ${enter ? 'enter' : ''}">
     <header class="fhead" data-pin="ws:${esc(w.slug)}"><h1>${esc(w.name)}</h1>
-      <div class="wrow"><button class="btn" id="meetBtn" title="New meeting note for this workstream (QuickAdd in Obsidian)">+ Meeting note</button><span class="chip">${open} open</span>${g.need.length ? `<span class="chip need">${g.need.length} need you</span>` : ''}<span class="chip dim">${esc(w.state)}</span>${idleInfo(w) ? `<span class="chip dim" title="No event on this workstream for a while (sources.md: stale_days)">idle ${idleInfo(w).untracked ? '≥' : ''}${idleInfo(w).days}d</span>` : ''}</div>
+      <div class="wrow">${w.note ? (w.noteMissing ? `<span class="chip late" title="No note with this name in the vault">note “${esc(w.note)}” not found</span>` : `<a class="btn" href="obsidian://open?vault=${encodeURIComponent(S.vault || '')}&file=${encodeURIComponent(w.note)}" title="Open the note this workstream is built on">Open note</a>`) : ''}<button class="btn" id="meetBtn" title="New meeting note for this workstream (QuickAdd in Obsidian)">+ Meeting note</button><span class="chip">${open} open</span>${g.need.length ? `<span class="chip need">${g.need.length} need you</span>` : ''}<span class="chip dim">${esc(w.state)}</span>${idleInfo(w) ? `<span class="chip dim" title="No event on this workstream for a while (sources.md: stale_days)">idle ${idleInfo(w).untracked ? '≥' : ''}${idleInfo(w).days}d</span>` : ''}</div>
       ${bodyHtml(w)}</header>
     ${peopleHtml(w)}
     ${chips('Inside', kids)}${chips('Related', [...rel].map(wsOf).filter(Boolean))}
@@ -1167,6 +1203,7 @@ function focusView(w) {
       <label>Parent</label><select id="fParent">${opt('', '— root —', w.parent || '')}${others.map((x) => opt(x.slug, x.name, w.parent || '')).join('')}</select>
       <label>Related</label><div class="rels">${[...rel].map((r) => `<span class="chip x" data-unrel="${esc(r)}" title="Remove link">${esc(wsOf(r)?.name || r)} ✕</span>`).join('')}
         <select id="fRelAdd"><option value="">+ link…</option>${others.filter((x) => !rel.has(x.slug)).map((x) => opt(x.slug, x.name, '')).join('')}</select></div>
+      <label>Note</label><input id="fNote" value="${esc(w.note || '')}" placeholder="vault note name (its text and to-dos become this workstream's)">
       <label>GitHub</label><input id="fGh" value="${esc(w.github.join(', '))}" placeholder="repo:owner/name, issue:owner/repo#12">
       <span></span><span class="hint" style="margin:0">Routing rules: new GitHub items from a <code>repo:</code> (or under an <code>issue:</code> epic) land here instead of the Inbox. Items already on the plate stay put.</span>
       <label>Sub-workstream</label><div class="rels"><input id="newName" placeholder="New child…"><button class="btn" id="newChild">Add</button></div>
@@ -1262,6 +1299,7 @@ function wireWs() {
   $('#fState').onchange = (e) => save(slug, { state: e.target.value });
   $('#fParent').onchange = (e) => save(slug, { parent: e.target.value });
   $('#fGh').onchange = (e) => save(slug, { github: e.target.value.split(',') });
+  $('#fNote').onchange = (e) => save(slug, { note: e.target.value });
   $('#tAdd').onclick = async () => {
     const url = $('#tUrl').value.trim(); if (!url) return $('#tUrl').focus();
     if (await post('/api/items/add-teams', { label: $('#tLabel').value, url, workstream: slug })) load();
@@ -1567,14 +1605,39 @@ function wireCam() {
     const b = cs.getBoundingClientRect(), dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
     zoomAt(cs, Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.0018)), e.clientX - b.left, e.clientY - b.top);
   }, { passive: false });
+  // Pointer gestures: one pointer pans (a finger may start on a node: a tap still opens it, the pan starts after 8px), two pinch-zoom.
+  // The mouse only pans from the background, as before.
+  const ptrs = new Map(); let g = null;
+  const rel = (p) => { const b = cs.getBoundingClientRect(); return { x: p.x - b.left, y: p.y - b.top }; };
+  const mid = () => { const [a, b] = [...ptrs.values()]; return b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) || 1 } : { ...a, d: 0 }; };
+  const grab = (id) => { try { cs.setPointerCapture(id); } catch {} cs.classList.add('panning'); };
+  const begin = (moved) => { g = { c0: { ...cam }, m0: mid(), n: ptrs.size, moved, touch: g?.touch }; };
+  const end = (e) => {
+    if (!ptrs.delete(e.pointerId)) return;
+    if (ptrs.size) return begin(true);
+    g = null; cs.classList.remove('panning');
+  };
   cs.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || e.target.closest('.wnode, .hub, .tnode, .zoomctl, .empty') || !cam) return;
-    const sx = e.clientX, sy = e.clientY, c0 = { ...cam };
-    cs.setPointerCapture(e.pointerId); cs.classList.add('panning');
-    const move = (m) => { cam = { ...cam, x: c0.x + m.clientX - sx, y: c0.y + m.clientY - sy }; applyCam(cv); };
-    const up = () => { cs.classList.remove('panning'); cs.removeEventListener('pointermove', move); cs.removeEventListener('pointerup', up); cs.removeEventListener('pointercancel', up); };
-    cs.addEventListener('pointermove', move); cs.addEventListener('pointerup', up); cs.addEventListener('pointercancel', up);
+    if ((e.pointerType === 'mouse' && e.button !== 0) || e.target.closest('.zoomctl, .empty') || !cam) return;
+    const touch = e.pointerType !== 'mouse';
+    if (!touch && e.target.closest('.wnode, .hub, .tnode')) return;
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    begin(ptrs.size > 1); g.touch = touch;
+    if (g.moved) grab(e.pointerId);
   });
+  cs.addEventListener('pointermove', (e) => {
+    if (!g || !ptrs.has(e.pointerId)) return;
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const m = mid();
+    if (!g.moved) {
+      if (Math.hypot(m.x - g.m0.x, m.y - g.m0.y) < (g.touch ? 8 : 0)) return;
+      g.moved = true; grab(e.pointerId);
+    }
+    const k = g.n > 1 ? Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, g.c0.k * m.d / g.m0.d)) : g.c0.k, r = k / g.c0.k, p0 = rel(g.m0), p = rel(m);
+    cam = { k, x: p.x - (p0.x - g.c0.x) * r, y: p.y - (p0.y - g.c0.y) * r };
+    applyCam(cv);
+  });
+  cs.addEventListener('pointerup', end); cs.addEventListener('pointercancel', end);
   cs.addEventListener('dblclick', (e) => { if (!e.target.closest('.wnode, .hub, .tnode, .zoomctl')) { cam = fitCam(cs, cv); applyCam(cv); } });
   cs.querySelectorAll('[data-zoom]').forEach((b) => (b.onclick = () => {
     if (b.dataset.zoom === 'fit') { cam = fitCam(cs, cv); applyCam(cv); } else zoomAt(cs, parseFloat(b.dataset.zoom));
@@ -1659,7 +1722,11 @@ function triageBar() {
   const open = S.workstreams.filter((w) => w.state !== 'done');
   const dests = () => {
     const raw = $('#tMove').value.trim(), q = raw.toLowerCase();
-    const hits = !q ? open : [...open.filter((w) => w.name.toLowerCase().startsWith(q)), ...open.filter((w) => !w.name.toLowerCase().startsWith(q) && w.name.toLowerCase().includes(q))];
+    const matches = !q ? open : [...open.filter((w) => w.name.toLowerCase().startsWith(q)), ...open.filter((w) => !w.name.toLowerCase().startsWith(q) && w.name.toLowerCase().includes(q))];
+    // a match brings its descendants along (tree order, right after it), so a parent typed in the filter shows its children
+    const hits = [], seenW = new Set();
+    const add = (w, d = 0) => { if (seenW.has(w.slug) || d > 12) return; seenW.add(w.slug); hits.push(w); if (q) open.filter((c) => c.parent === w.slug).forEach((c) => add(c, d + 1)); };
+    matches.forEach((w) => add(w));
     const list = [...(tscope === 'all' && !q ? [{ slug: '', name: 'Inbox' }] : []), ...hits.map((w) => ({ slug: w.slug, name: w.name }))];
     if (q && !open.some((w) => w.name.toLowerCase() === q)) list.push({ create: raw, name: `+ New workstream “${raw}”` });
     return list;
