@@ -76,6 +76,26 @@ async function liveSessions(file = stateDb) {
   } catch (e) { console.warn(`devin: can't read the Desktop session list (${String(e.message).split('\n')[0]})`); return []; }
 }
 
+// A CLI session stopped on a permission prompt (command, request_scope…) writes nothing to sessions.db: its head is an assistant message
+// whose tool calls have no result yet, same as a tool that is running. The CLI process logs it though, in
+// <cli dir>/logs/devin_<stamp>_<pid>.log: `... Permission decision for tool <name>: prompting user` (no session id in the line).
+// `session_locks/<session>.lock` holds the pid, so: head waiting on tool calls + that process alive + a "prompting user" line at or after
+// the last message's save time = asking (the row's main_chain_id can lag behind a running session, so the last node is used). Answered/denied -> a tool result node is saved and the last node changes. Heuristic, seen on CLI 2026-11-02.
+const cliDir = path.dirname(db);
+function promptingUser(id, lastActivityMs) {
+  try {
+    const pid = Number(fs.readFileSync(path.join(cliDir, 'session_locks', `${id}.lock`), 'utf8').trim());
+    if (!pid) return false;
+    try { process.kill(pid, 0); } catch (e) { if (e.code !== 'EPERM') return false; }
+    const logs = path.join(cliDir, 'logs'), f = fs.readdirSync(logs).filter((n) => n.endsWith(`_${pid}.log`)).sort().pop();
+    if (!f) return false;
+    const fd = fs.openSync(path.join(logs, f), 'r'), size = fs.fstatSync(fd).size, len = Math.min(size, 262144), buf = Buffer.alloc(len);
+    fs.readSync(fd, buf, 0, len, size - len); fs.closeSync(fd);
+    const hits = [...buf.toString('utf8').matchAll(/^(\S+Z)\s+\w+\s+\S+: Permission decision for tool [^:\n]+: prompting user/gm)];
+    return hits.length > 0 && Date.parse(hits.at(-1)[1]) >= lastActivityMs - 2000;
+  } catch { return false; }
+}
+
 const iso = (t) => (t ? new Date(t < 1e12 ? t * 1000 : t).toISOString() : undefined); // epoch s or ms
 // Two Desktop generations, two link handlers (sources.md `devin_link`):
 //   shell (default; Desktop 3.11+): the shell routes `devin://app/return/<base64url(path)>` to an in-app path,
@@ -95,7 +115,9 @@ const WAIT_MIN = Number(readSources().devin_waiting_minutes ?? 2);
 const notes = await annotations();
 const rows = await query(db, `SELECT s.id, s.title, s.working_directory, s.backend_type, s.model, s.created_at, s.last_activity_at, s.hidden,
   json_extract(n.chat_message, '$.role') AS head_role, json_array_length(json_extract(n.chat_message, '$.tool_calls')) AS head_tools,
-  substr(n.chat_message, 1, 600) AS head_raw
+  substr(n.chat_message, 1, 600) AS head_raw,
+  (SELECT json_extract(t.chat_message, '$.role') FROM message_nodes t WHERE t.session_id = s.id ORDER BY t.node_id DESC LIMIT 1) AS tail_role,
+  (SELECT json_array_length(json_extract(t.chat_message, '$.tool_calls')) FROM message_nodes t WHERE t.session_id = s.id ORDER BY t.node_id DESC LIMIT 1) AS tail_tools
   FROM sessions s LEFT JOIN message_nodes n ON n.session_id = s.id AND n.node_id = s.main_chain_id`);
 // Devin's last message ended its turn (text with no tool call), or the last tool call was cancelled/interrupted: either way it won't
 // continue by itself. The cancelled case is matched on the tool result's text (role `tool`), not verified against a real cancelled run.
@@ -103,7 +125,8 @@ const yoursTurn = (r) => (r.head_role === 'assistant' && !Number(r.head_tools)) 
 const live = new Map((await liveSessions()).map((x) => [x.id, x]));
 const incoming = rows.map((r) => {
   const a = notes.get(r.id) || {};
-  const asking = !!live.get(r.id)?.isWaiting;
+  const lastMs = r.last_activity_at < 1e12 ? r.last_activity_at * 1000 : r.last_activity_at;
+  const asking = !!live.get(r.id)?.isWaiting || (r.tail_role === 'assistant' && Number(r.tail_tools) > 0 && promptingUser(r.id, lastMs));
   const archived = !!(a.archived || a.done || Number(r.hidden));
   const idleMin = (Date.now() - (r.last_activity_at < 1e12 ? r.last_activity_at * 1000 : r.last_activity_at)) / 6e4;
   return {

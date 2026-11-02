@@ -84,3 +84,26 @@ test('Desktop metadataCache: isWaiting flags an approval/question, and Cascade-o
   assert.equal(d.state, 'waiting'); assert.equal(d.turn, 'me'); assert.equal(d.asking, true); assert.equal(d.title, 'pede aprovação');
   assert.equal(by['eeeeeeee-0000-0000-0000-000000000005'].state, 'done'); // archived in the Desktop
 });
+
+test('CLI session stopped on a permission prompt: last message has tool calls + live pid + "prompting user" in its log', () => {
+  const ctx = setup([]);
+  const X = 'xxxxxxxx-0000-0000-0000-000000000009', now = Math.floor(Date.now() / 1000);
+  const sdb = new DatabaseSync(path.join(ctx.dir, 'sessions.db'));
+  const add = (id, last, at = now) => {
+    sdb.prepare('INSERT INTO sessions VALUES (?,?,?,?,?,?,?,0,?)').run(id, 't', '/tmp', 'local', 'm', now, at, 'n1');
+    sdb.prepare('INSERT INTO message_nodes VALUES (?,?,?)').run(id, 'n1', JSON.stringify({ role: 'system', content: 'x' }));
+    sdb.prepare('INSERT INTO message_nodes VALUES (?,?,?)').run(id, 'n2', JSON.stringify(last));
+  };
+  add(X, { role: 'assistant', content: 'vou pedir', tool_calls: [{ id: 'c1', name: 'request_scope', arguments: {} }] });
+  const Y = 'yyyyyyyy-0000-0000-0000-000000000010'; // a tool call that started long after the prompt: running, not asking
+  add(Y, { role: 'assistant', content: 'rodando', tool_calls: [{ id: 'c2', name: 'exec', arguments: {} }] }, now + 120);
+  sdb.close();
+  const cli = ctx.dir; fs.mkdirSync(path.join(cli, 'session_locks')); fs.mkdirSync(path.join(cli, 'logs'));
+  fs.writeFileSync(path.join(cli, 'session_locks', `${X}.lock`), String(process.pid));
+  fs.writeFileSync(path.join(cli, 'session_locks', `${Y}.lock`), String(process.pid));
+  fs.writeFileSync(path.join(cli, 'logs', `devin_20261102-000000_${process.pid}.log`),
+    `${new Date(Date.now() + 1000).toISOString()}  INFO chisel_core::translator: Permission decision for tool request_scope: prompting user (decision=None, perm_level=Normal)\n`);
+  const by = collect(ctx);
+  assert.equal(by[X].asking, true); assert.equal(by[X].state, 'waiting'); assert.equal(by[X].turn, 'me');
+  assert.equal(by[Y].asking, undefined);
+});
