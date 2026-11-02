@@ -83,6 +83,8 @@ test('Desktop metadataCache: isWaiting flags an approval/question, and Cascade-o
   const d = by['dddddddd-0000-0000-0000-000000000004'];
   assert.equal(d.state, 'waiting'); assert.equal(d.turn, 'me'); assert.equal(d.asking, true); assert.equal(d.title, 'pede aprovação');
   assert.equal(by['eeeeeeee-0000-0000-0000-000000000005'].state, 'done'); // archived in the Desktop
+  const arch = collect(setup([['windsurf.acp.metadataCache', JSON.stringify({ sessions: [{ sessionId: 'dddddddd-0000-0000-0000-000000000004', providerId: 'cascade', status: 'end_turn', title: 'x', _meta: { 'cognition.ai/isArchived': true } }] })]]));
+  assert.equal(arch['dddddddd-0000-0000-0000-000000000004'].state, 'done'); // archived via the cache's own _meta flag
 });
 
 test('CLI session stopped on a permission prompt: last message has tool calls + live pid + "prompting user" in its log', () => {

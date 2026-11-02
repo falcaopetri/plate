@@ -66,6 +66,7 @@ async function annotations(file = stateDb) {
 // The Desktop's own session list: ItemTable `windsurf.acp.metadataCache` = {sessions: [{sessionId (or "acp/devin-cli/<id>"), providerId,
 // status, title, updatedAt, isWaiting}]}. `isWaiting: true` = the session is stopped asking you something (a command to approve, a
 // question): the one signal sessions.db lacks, and Cascade-provider sessions are only listed here (never in sessions.db).
+// `_meta['cognition.ai/isArchived']` is where the Desktop records archiving a Cascade session (archivedSessions never listed it, 2026-11-02).
 // Unreadable/missing = no sessions (never stops the collection).
 async function liveSessions(file = stateDb) {
   if (!fs.existsSync(file)) return [];
@@ -127,7 +128,7 @@ const incoming = rows.map((r) => {
   const a = notes.get(r.id) || {};
   const lastMs = r.last_activity_at < 1e12 ? r.last_activity_at * 1000 : r.last_activity_at;
   const asking = !!live.get(r.id)?.isWaiting || (r.tail_role === 'assistant' && Number(r.tail_tools) > 0 && promptingUser(r.id, lastMs));
-  const archived = !!(a.archived || a.done || Number(r.hidden));
+  const archived = !!(a.archived || a.done || Number(r.hidden) || live.get(r.id)?._meta?.['cognition.ai/isArchived']);
   const idleMin = (Date.now() - (r.last_activity_at < 1e12 ? r.last_activity_at * 1000 : r.last_activity_at)) / 6e4;
   return {
     id: `session:${r.id}`, source: 'session', kind: 'session', tool: 'devin', url: link(r),
@@ -141,7 +142,7 @@ const incoming = rows.map((r) => {
 const known = new Set(rows.map((r) => String(r.id)));
 for (const x of live.values()) {
   if (known.has(x.id) || x.providerId === 'devin-cli') continue;
-  const archived = !!(notes.get(x.id)?.archived || notes.get(x.id)?.done);
+  const archived = !!(notes.get(x.id)?.archived || notes.get(x.id)?.done || x._meta?.['cognition.ai/isArchived']);
   incoming.push({
     id: `session:${x.id}`, source: 'session', kind: 'session', tool: 'devin', url: null, title: x.title || `Cascade session ${x.id.slice(0, 8)}`,
     cwd: x.workspaceDirs?.[0] || null, model: null, lastActivity: x.updatedAt ? new Date(x.updatedAt).toISOString() : null, devinFolder: null,
