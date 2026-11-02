@@ -70,3 +70,17 @@ test('malformed or absent archive data does not crash collection', () => {
   const t = setup([]); fs.writeFileSync(t.state, 'garbage'); // not even a database
   assert.equal(collect(t)[A].state, 'waiting');
 });
+
+test('Desktop metadataCache: isWaiting flags an approval/question, and Cascade-only sessions are listed from it', () => {
+  const cache = { version: 11, sessions: [
+    { sessionId: `acp/devin-cli/${B}`, providerId: 'devin-cli', status: 'idle', title: 'x', isWaiting: true },
+    { sessionId: 'dddddddd-0000-0000-0000-000000000004', providerId: 'cascade', status: 'active', title: 'pede aprovação', updatedAt: '2026-11-02T15:33:24.276Z', isWaiting: true },
+    { sessionId: 'eeeeeeee-0000-0000-0000-000000000005', providerId: 'cascade', status: 'active', title: 'rodando', updatedAt: '2026-11-02T15:33:24.276Z' },
+  ] };
+  const by = collect(setup([['windsurf.acp.metadataCache', JSON.stringify(cache)], [NEW, JSON.stringify([`cascade/eeeeeeee-0000-0000-0000-000000000005`])]]));
+  assert.equal(by[B].asking, true); assert.equal(by[B].turn, 'me');
+  assert.equal(by[A].asking, undefined);
+  const d = by['dddddddd-0000-0000-0000-000000000004'];
+  assert.equal(d.state, 'waiting'); assert.equal(d.turn, 'me'); assert.equal(d.asking, true); assert.equal(d.title, 'pede aprovação');
+  assert.equal(by['eeeeeeee-0000-0000-0000-000000000005'].state, 'done'); // archived in the Desktop
+});

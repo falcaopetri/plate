@@ -63,6 +63,19 @@ async function annotations(file = stateDb) {
   return out;
 }
 
+// The Desktop's own session list: ItemTable `windsurf.acp.metadataCache` = {sessions: [{sessionId (or "acp/devin-cli/<id>"), providerId,
+// status, title, updatedAt, isWaiting}]}. `isWaiting: true` = the session is stopped asking you something (a command to approve, a
+// question): the one signal sessions.db lacks, and Cascade-provider sessions are only listed here (never in sessions.db).
+// Unreadable/missing = no sessions (never stops the collection).
+async function liveSessions(file = stateDb) {
+  if (!fs.existsSync(file)) return [];
+  try {
+    const [r] = await query(file, "SELECT value FROM ItemTable WHERE key = 'windsurf.acp.metadataCache'");
+    const list = JSON.parse(String(r?.value || '{}')).sessions;
+    return (Array.isArray(list) ? list : []).filter((x) => x && x.sessionId).map((x) => ({ ...x, id: String(x.sessionId).split('/').pop() }));
+  } catch (e) { console.warn(`devin: can't read the Desktop session list (${String(e.message).split('\n')[0]})`); return []; }
+}
+
 const iso = (t) => (t ? new Date(t < 1e12 ? t * 1000 : t).toISOString() : undefined); // epoch s or ms
 // Two Desktop generations, two link handlers (sources.md `devin_link`):
 //   shell (default; Desktop 3.11+): the shell routes `devin://app/return/<base64url(path)>` to an in-app path,
@@ -87,18 +100,32 @@ const rows = await query(db, `SELECT s.id, s.title, s.working_directory, s.backe
 // Devin's last message ended its turn (text with no tool call), or the last tool call was cancelled/interrupted: either way it won't
 // continue by itself. The cancelled case is matched on the tool result's text (role `tool`), not verified against a real cancelled run.
 const yoursTurn = (r) => (r.head_role === 'assistant' && !Number(r.head_tools)) || (r.head_role === 'tool' && /cancel|interrupt|abort|denied|rejected/i.test(r.head_raw || ''));
+const live = new Map((await liveSessions()).map((x) => [x.id, x]));
 const incoming = rows.map((r) => {
   const a = notes.get(r.id) || {};
+  const asking = !!live.get(r.id)?.isWaiting;
   const archived = !!(a.archived || a.done || Number(r.hidden));
   const idleMin = (Date.now() - (r.last_activity_at < 1e12 ? r.last_activity_at * 1000 : r.last_activity_at)) / 6e4;
   return {
     id: `session:${r.id}`, source: 'session', kind: 'session', tool: 'devin', url: link(r),
     title: r.title || `Devin session ${String(r.id).slice(0, 8)}`, cwd: r.working_directory || null,
     model: r.model || null, lastActivity: iso(r.last_activity_at) || null, devinFolder: a.folder || null,
-    state: archived ? 'done' : idleMin >= WAIT_MIN ? 'waiting' : 'idle', created: iso(r.created_at),
-    turn: archived ? undefined : yoursTurn(r) ? 'me' : 'devin',
+    state: archived ? 'done' : asking || idleMin >= WAIT_MIN ? 'waiting' : 'idle', created: iso(r.created_at),
+    turn: archived ? undefined : asking || yoursTurn(r) ? 'me' : 'devin', ...(asking && !archived ? { asking: true } : {}),
   };
 });
+// Desktop-only sessions (Cascade provider, never in sessions.db): listed from the cache; no deep link is known for them
+const known = new Set(rows.map((r) => String(r.id)));
+for (const x of live.values()) {
+  if (known.has(x.id) || x.providerId === 'devin-cli') continue;
+  const archived = !!(notes.get(x.id)?.archived || notes.get(x.id)?.done);
+  incoming.push({
+    id: `session:${x.id}`, source: 'session', kind: 'session', tool: 'devin', url: null, title: x.title || `Cascade session ${x.id.slice(0, 8)}`,
+    cwd: x.workspaceDirs?.[0] || null, model: null, lastActivity: x.updatedAt ? new Date(x.updatedAt).toISOString() : null, devinFolder: null,
+    state: archived ? 'done' : x.isWaiting ? 'waiting' : 'idle', created: x._meta?.['cognition.ai/createdAt'] || x.updatedAt || undefined,
+    turn: archived ? undefined : x.isWaiting ? 'me' : 'devin', ...(x.isWaiting && !archived ? { asking: true } : {}), provider: x.providerId,
+  });
+}
 upsert('session', incoming, { closedStates: ['gone'], owns: (it) => it.tool === 'devin' });
 const nArch = incoming.filter((x) => x.state === 'done').length;
 console.log(`devin: ${incoming.length} sessions, ${nArch} archived (${notes.size} annotations), ${incoming.filter((x) => x.turn === 'me').length} on your turn`);
