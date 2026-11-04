@@ -59,6 +59,10 @@
   .stat.link { cursor: pointer; }
 
   main { padding: var(--s3) var(--s6) calc(var(--dock-h) + var(--s6)); }
+  /* clock, date and counters were noise (the dock pip, the Inbox button and the tab title carry the counts); the bell and ⋯ stay right */
+  header.top .clock, header.top .date, header.top .stats { display: none; } header.top .hbtns { margin-left: auto; } header.top { padding-bottom: 0; }
+  /* map view: the dock floats over the canvas instead of reserving a strip under it */
+  body.mapview main { padding-bottom: var(--s4); }
 
   /* ---------- dock ---------- */
   nav.dock {
@@ -130,7 +134,8 @@
   /* ---------- workstreams mindmap ---------- */
   :root { --pw: min(720px, calc(100vw - 24px)); }
   .ws-main { transition: margin-right .28s ease; }
-  .ws-bar { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; margin-bottom: var(--s4); }
+  .ws-bar { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; margin-bottom: var(--s3); }
+  .ws-bar .page-h h2 { font-size: var(--fs-lg); } .info { margin-left: 8px; font-size: var(--fs-sm); font-weight: 400; color: var(--text-3); cursor: help; } .info:hover, .info:focus { color: var(--text); }
   .ws-bar .page-h { margin: 0 auto 0 0; }
   input, select, button.btn { font: var(--fs-sm) var(--font); color: var(--text); background: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 6px 10px; }
   input:focus, select:focus { outline: none; border-color: var(--text-2); }
@@ -167,12 +172,27 @@
   .wnode.fresh::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--live); pointer-events: none; animation: needpulse 1.6s ease-out infinite; }
   .top3 { display: flex; gap: var(--s2); align-items: stretch; margin: 0 0 var(--s3); }
   .top3 .t3lbl { flex: none; align-self: center; padding-right: var(--s2); font-size: var(--fs-xs); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); } .t3lbl b { color: var(--text-2); font-variant-numeric: tabular-nums; }
-  .t3 { position: relative; flex: 1 1 0; min-width: 0; display: flex; gap: 10px; align-items: center; padding: 8px 12px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--surface-2); cursor: pointer; }
+  .t3 { position: relative; flex: 1 1 0; min-width: 0; display: flex; gap: 10px; align-items: center; padding: 5px 12px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--surface-2); cursor: pointer; }
   .t3:hover { background: var(--surface-3); } .t3 .n { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--text); color: var(--bg); font: 700 11px/20px var(--font); text-align: center; }
-  .t3 .tx { min-width: 0; } .t3 .tt { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t3 .tx { min-width: 0; display: flex; gap: 8px; align-items: baseline; } .t3 .tx .tt { flex: 0 1 auto; } .t3 .tx .ts { flex: 1 1 0; } .t3 .tt { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .t3 .ts { display: block; font-size: var(--fs-xs); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .t3.done .tt { text-decoration: line-through; color: var(--text-3); } .t3.done .n { background: var(--live); }
-  .t3 .x { position: absolute; right: 6px; top: 4px; border: 0; background: none; color: var(--text-3); cursor: pointer; visibility: hidden; } .t3:hover .x { visibility: visible; } .t3 .x:hover { color: var(--text); } .t3 .x[data-t3done] { right: 26px; } .t3.done .x[data-t3done] { visibility: visible; color: var(--live); }
+  .t3 .x { position: absolute; right: 6px; top: 2px; border: 0; background: none; color: var(--text-3); cursor: pointer; visibility: hidden; } .t3:hover .x { visibility: visible; } .t3 .x:hover { color: var(--text); } .t3 .x[data-t3done] { right: 26px; } .t3.done .x[data-t3done] { visibility: visible; color: var(--live); }
+  nav.dock button .pip.quiet { background: var(--surface-3); color: var(--text-2); }
+  nav.dock button.droptarget { outline: 1px dashed var(--accent-line); outline-offset: -3px; color: var(--accent); } nav.dock button.droptarget.over { background: var(--accent-soft); }
+  .fslots { display: flex; flex-direction: column; gap: var(--s3); max-width: 860px; }
+  .fslot { padding: var(--s3) var(--s4); border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--surface-2); }
+  .ftop { display: flex; align-items: center; gap: 10px; } .ftop .n { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line-2); font: 600 11px/20px var(--font); text-align: center; color: var(--text-2); }
+  .ftitle { flex: 1; min-width: 0; border: 0; background: none; padding: 0; text-align: left; color: var(--text); font: 600 var(--fs-lg) var(--font); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ftitle:hover { text-decoration: underline; }
+  .fsince { font-size: var(--fs-xs); color: var(--text-3); } .fib { border: 0; background: none; color: var(--text-3); cursor: pointer; padding: 2px 6px; font-size: var(--fs-md); } .fib:hover { color: var(--text); }
+  .fnote { margin: 8px 0 0 32px; font-size: var(--fs-sm); color: var(--text-2); font-style: italic; } .fnote.add { color: var(--text-3); cursor: pointer; font-style: normal; } .fnote.add:hover { color: var(--text-2); }
+  .fctx { margin: 10px 0 0 32px; padding-top: 8px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+  .fr { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: var(--fs-sm); } .fr .tx { flex: 1; min-width: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; } .fr .dimtx { color: var(--text-3); } .fr.done .tx { text-decoration: line-through; color: var(--text-3); }
+  .prbar { position: sticky; bottom: 84px; z-index: 12; display: flex; gap: var(--s3); align-items: center; width: fit-content; margin: var(--s3) auto 0; padding: 8px 14px; border: 1px solid var(--line-2); border-radius: 99px; background: rgb(12 22 20 / .96); box-shadow: 0 12px 30px -12px #000; font-size: var(--fs-sm); }
+  .devrev.on { color: var(--live); border-style: solid; border-color: var(--live); }
+  .newtask { display: flex; gap: var(--s2); align-items: center; margin-top: var(--s2); } .newtask input { background: none; border: 1px solid var(--line-2); border-radius: 8px; color: var(--text); padding: 3px 9px; font: inherit; font-size: var(--fs-sm); min-width: 0; }
+  .newtask #taskTitle { flex: 1; } .newtask #taskDue { width: 150px; flex: none; } .dueprev { flex: none; min-width: 74px; font-size: var(--fs-xs); color: var(--text-3); } .dueprev.bad { color: var(--late); }
+  button.btn.sm { padding: 3px 10px; font-size: var(--fs-sm); }
   .t3.free { border-style: dashed; background: none; color: var(--text-3); font-size: var(--fs-sm); cursor: default; } .t3.free .n { background: none; border: 1px dashed var(--live); color: var(--live); } .t3.free:hover { background: none; }
   .t3.ghost { border-style: dashed; border-color: var(--line-2); background: none; opacity: .75; } .t3.ghost .n { background: none; border: 1px dashed var(--text-3); color: var(--text-3); }
   .t3.ghost .tt { font-weight: 500; color: var(--text-2); font-style: italic; } .t3.ghost:hover { opacity: 1; border-color: var(--live); } .t3.ghost .plus { flex: none; margin-left: auto; color: var(--live); font-size: var(--fs-xs); white-space: nowrap; }
@@ -451,6 +471,7 @@
 <nav class="dock">
   <button data-v="ws"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5H5v5M12 11.5h7v5"/></svg>Workstreams</button>
   <button data-v="needs"><svg class="i" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Needs you<span class="pip" id="pip"></span></button>
+  <button data-v="focus" id="focusBtn"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Focus now<span class="pip quiet" id="fpip"></span></button>
 </nav>
 <datalist id="devmodels"><option value="opus"><option value="sonnet"><option value="claude-sonnet-4"><option value="claude-opus-4.6"><option value="codex"></datalist>
 <script src="vendor/qrcode.js"></script>
@@ -501,9 +522,26 @@ function drawMenu() {
   $('#menu').innerHTML = `<div class="mstat ${syncText.bad ? 'bad' : ''}" title="${esc(syncText.tip)}">${esc(syncText.text)}</div>` + MENU.map(([k, t, h]) => `<button class="mrow" data-m="${k}">${t}${h ? `<kbd>${h}</kbd>` : ''}</button>`).join('');
 }
 function toggleMenu(on) { const el = $('#menu'); el.hidden = on === undefined ? !el.hidden : !on; $('#moreBtn').classList.toggle('on', !el.hidden); if (!el.hidden) { toggleNotes(false); drawMenu(); } }
+// Sync and wait: collectors run one after another (a full sync takes ~12 s, Todoist is the last), so fixed-delay refreshes missed it.
+// Poll until every collector of this sync has reported newer than the click, then say how it went.
+async function syncWait(only, what) {
+  const t0 = Date.now() - 1500;
+  toast(`Syncing ${what}…`);
+  const r = await fetch('/api/sync', { method: 'POST', body: JSON.stringify(only ? { only } : {}) }).catch(() => null);
+  if (!r || !r.ok) return toastErr('Sync did not reach the server');
+  for (let n = 0; n < 40; n++) {
+    await new Promise((ok) => setTimeout(ok, 1500));
+    await refresh();
+    const c = S.collect || {}, names = only || S.jobs || Object.keys(c);
+    if (names.length && names.every((k) => c[k] && Date.parse(c[k].at) >= t0)) break;
+  }
+  const c = S.collect || {}, bad = Object.entries(c).filter(([, v]) => v && !v.ok && Date.parse(v.at) >= t0).map(([k]) => k);
+  const td = c.todoist && Date.parse(c.todoist.at) >= t0 && (!only || only.includes('todoist')) ? ` · Todoist: ${String(c.todoist.msg).replace(/ -> .*$/, '').replace(/^todoist: /, '')}` : '';
+  bad.length ? toastErr(`Synced ${what}, but ${bad.join(', ')} failed`) : toast(`Synced ${what}${td}`);
+}
 async function runMenu(k) {
   toggleMenu(false);
-  if (k === 'sync') { toast('Syncing…'); await fetch('/api/collect', { method: 'POST' }); setTimeout(refresh, 4000); setTimeout(refresh, 15000); }
+  if (k === 'sync') syncWait(null, 'everything');
   else if (k === 'note') openNotePal(); else if (k === 'submit') openRequests(); else if (k === 'settings') openSettings(); else if (k === 'log') openSettings('log'); else if (k === 'search') openPal();
 }
 document.addEventListener('click', (e) => {
@@ -525,7 +563,7 @@ async function startSetup() {
   }
   toastErr('Devin did not create the session in time; see the Log tab');
 }
-const VNAME = { ws: 'Workstreams', needs: 'Needs you' };
+const VNAME = { ws: 'Workstreams', needs: 'Needs you', focus: 'Focus now' };
 const pad = (n) => String(n).padStart(2, '0');
 // per-browser UI prefs (Today mode, Inbox panel)
 const store = { get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -575,11 +613,13 @@ function render() {
   $('#stats').innerHTML = `<div class="stat"><b>${S.items.length}</b><span>Items</span></div><div class="stat"><b>${inbox}</b><span>Inbox</span></div>`
     + `<div class="stat need link ${need ? '' : 'zero'}" onclick="window.Notification?.requestPermission?.(); document.querySelector('[data-v=needs]').click()" title="Needs you (click also allows desktop notifications for waiting sessions)"><b>${need}</b><span>Needs you</span></div>`;
   $('#pip').textContent = need; $('#pip').hidden = !need;
+  { const nf = (S.doing || []).length; $('#fpip').textContent = nf; $('#fpip').hidden = !nf; }
   syncBadge();
   tabAlert(need);
   collectNotes();
   panelScroll = document.querySelector('.ipanel')?.scrollTop ?? panelScroll; // selecting re-renders; keep the list where it was
-  $('#main').innerHTML = top3Strip() + { ws, needs }[view]();
+  document.body.classList.toggle('mapview', view === 'ws' && !focus);
+  $('#main').innerHTML = top3Strip() + { ws, needs, focus: focusNow }[view]() + prBar();
   document.querySelector('.tri-act')?.remove();
   if (view === 'ws') { wireWs(); if (panelOpen) wirePanel(); }
   const ip = document.querySelector('.ipanel'); if (ip) ip.scrollTop = panelScroll;
@@ -601,13 +641,12 @@ let rArm = 0;
 const SYNCS = { d: [['devin'], 'Devin'], g: [['github', 'mine', 'reviews'], 'GitHub'], a: [null, 'everything'] };
 document.addEventListener('keydown', async (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, select, textarea, [contenteditable]')) return;
-  if (rArm && Date.now() - rArm < 1500 && SYNCS[e.key]) {
+  const k = e.key.toLowerCase(); // Caps Lock / Shift still count
+  if (rArm && Date.now() - rArm < 2500 && SYNCS[k]) {
     rArm = 0; e.preventDefault(); e.stopImmediatePropagation();
-    const [only, what] = SYNCS[e.key];
-    toast(`Syncing ${what}…`);
-    await fetch('/api/collect', { method: 'POST', body: JSON.stringify(only ? { only } : {}) });
-    setTimeout(refresh, 2500); setTimeout(refresh, 8000);
-  } else if (e.key === 'r') { rArm = Date.now(); toast('r → d Devin · g GitHub · a all'); }
+    const [only, what] = SYNCS[k];
+    syncWait(only, what);
+  } else if (k === 'r') { rArm = Date.now(); toast('r → d Devin · g GitHub · a all'); }
   else rArm = 0;
 }, true);
 
@@ -637,13 +676,19 @@ const card = (i, drag = true, extra = '') => {
   const label = i.source === 'tasknotes' ? 'TaskNote' : { todoist: 'Todoist', pr: 'PR', issue: 'Issue', draft: 'Draft PR', session: 'Session', teams: 'Teams', link: 'Link', note: 'Note' }[k] || esc(k);
   return `<div class="card k-${esc(k)} ${ghState(i)} ${i.state === 'done' ? 'done' : ''} ${i.needsYou ? 'need' : ''}" data-pin="item:${esc(i.id)}" ${drag ? `draggable="true" data-id="${esc(i.id)}"` : ''}>
   <div class="kind">${GLYPH[k] || ''}${label}${isPinned('item', i.id) ? '<span class="pinstar" title="In today\'s top 3">★</span>' : ''}${i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context: parent, sub-issues, PRs">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : `<span class="ref">${esc(i.repo)}#${esc(i.number)}</span>`) : ''}</div>
-  <a class="ttl" ${SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"` : ''} ${/^https?:/i.test(i.url || '') ? 'target="_blank" rel="noopener"' : ''}>${esc(nameOf(i))}</a>
+  <a class="ttl" ${SAFE_URL.test(i.url || '') ? `href="${esc(ext(i.url))}"` : ''} ${tgt(i.url)}>${esc(nameOf(i))}</a>
   <div class="chips">${i.label ? `<span class="chip" title="Label">${esc(i.label)}</span>` : ''}${meta(i)}${i.kind === 'draft' || isPull(i) || (i.kind === 'issue' && GH_TICKET.test(i.url || '')) ? devinBits(i.url) : ''}${teamsAuthor(i)}${extra}${snoozeBits(i)}<button class="ibtn" data-edit="${esc(i.id)}" title="Rename / label">✎</button></div></div>`;
 };
 const chip = (t, c = '') => t ? `<span class="chip ${c}">${esc(t)}</span>` : '';
 // a PR by its url, so a draft (kind `draft` on a pasted link) gets the Devin review button too
 const isPull = (i) => /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+/i.test(i.url || '') && i.kind !== 'issue';
 // Devin review of a PR: run state, the session(s) it produced, and the trigger button
+const prsel = new Set(); // PRs picked for one combined Devin review
+const prBar = () => prsel.size ? `<div class="prbar"><span>${prsel.size} PR${prsel.size > 1 ? 's' : ''} selected</span>${prsel.size > 1 ? `<button class="btn" data-prgo>Review ${prsel.size} PRs in Devin</button>` : '<span class="hint" style="margin:0">pick one more</span>'}<button class="lnk" data-prclear>Clear</button></div>` : '';
+async function reviewMany(urls) {
+  const r = await post('/api/devin/review-many', { urls, model: devModel() });
+  if (r) { prsel.clear(); toast(`Devin is reviewing ${urls.length} PRs together…`); load(); }
+}
 const devinBits = (url) => {
   if (!GH_TICKET.test(url || '')) return '';
   const pr = url.replace(/[#?].*$/, ''), r = S.runs?.[pr], c = S.runs?.[`close:${pr}`], pull = /\/pull\//.test(pr);
@@ -651,7 +696,7 @@ const devinBits = (url) => {
   const sess = S.items.filter((i) => i.tool === 'devin' && i.anchor === pr && i.state !== 'done' && !NESTED.has(i.id)).map((i) => `<a class="chip" href="${esc(i.url)}" title="Open the session in Devin">▸ ${esc(nameOf(i).slice(0, 40))}</a><button class="chip dim" data-tr="${esc(i.id.replace(/^session:/, ''))}" title="Read the conversation here">transcript</button>`).join('');
   const busy = r?.state === 'running' || c?.state === 'running';
   const model = busy ? '' : `<input class="devmodel" list="devmodels" placeholder="${esc(S.devinModel || 'model')}" value="${esc(devModel())}" title="Model (devin --model). Empty = the configured one (${esc(S.devinModel || 'Devin default')})">`;
-  return `${runChip(r, 'review')}${runChip(c, 'check')}${sess}${model}${pull && r?.state !== 'running' ? `<button class="devrev" data-review="${esc(pr)}" title="Run the Devin review skill on this PR">Review no Devin</button>` : ''}${c?.state === 'running' ? '' : `<button class="devrev" data-close="${esc(pr)}" title="Start a Devin session that says what is left to close this ticket (devin_close_prompt / devin_close_model)">O que falta?</button>`}`;
+  return `${runChip(r, 'review')}${runChip(c, 'check')}${sess}${model}${pull && r?.state !== 'running' ? `<button class="devrev ${prsel.has(pr) ? 'on' : ''}" data-prsel="${esc(pr)}" title="Select PRs to review together in one Devin session">${prsel.has(pr) ? '☑' : '☐'} together</button><button class="devrev" data-review="${esc(pr)}" title="Run the Devin review skill on this PR">Review no Devin</button>` : ''}${c?.state === 'running' ? '' : `<button class="devrev" data-close="${esc(pr)}" title="Start a Devin session that says what is left to close this ticket (devin_close_prompt / devin_close_model)">O que falta?</button>`}`;
 };
 // after a review: a draft Teams message to the PR's author (deep link, nothing is sent until the user does; needs `people:` for the login)
 const teamsAuthor = (i) => {
@@ -676,7 +721,7 @@ const actBits = (i) => i.activity ? (newAct(i)
   : `<span class="chip dim" title="${esc(i.activity.text)}">💬 @${esc(i.activity.by)} ${esc(ago(i.activity.at))}</span>`) : '';
 const whyBits = (i) => (i.mineWhy || []).filter((w) => w !== 'author' || i.source !== 'mine').map((w) => `<span class="chip dim" title="Why it is on the plate">${WHY[w] || esc(w)}</span>`).join('');
 const meta = (i) => (i.reviewMe ? '<span class="chip need">review requested</span>' : '') + actBits(i) + whyBits(i) + metaOf(i);
-const metaOf = (i) => i.source === 'todoist' || i.source === 'tasknotes' ? `${dueTag(i)}${i.recurring ? `<span class="chip dim" title="Recurring">${REPEAT}</span>` : ''}`
+const metaOf = (i) => i.source === 'todoist' || i.source === 'tasknotes' ? `${dueTag(i)}${i.recurring ? `<span class="chip dim" title="Recurring">${REPEAT}</span>` : ''}${i.source === 'tasknotes' && !i.recurring ? `<button class="devrev" data-tndone="${esc(i.id)}" data-to="${i.state === 'done' ? 0 : 1}" title="${i.state === 'done' ? 'Reopen in the task note' : 'Mark done in the task note (status + completedDate)'}">${i.state === 'done' ? '↺ reopen' : '✓ done'}</button>` : ''}`
   : [i.source === 'session' ? `<span class="state st-${esc(i.state)}">${esc(i.state)}</span>` : '', i.source === 'session' && i.turn === 'me' && i.state !== 'done' ? '<span class="chip need" title="Devin finished its turn: the next move is yours">your turn</span>' : '', i.source === 'session' ? chip(i.tool, 'dim') : '',
     i.cwd ? `<span class="chip dim" title="${esc(i.cwd)}">${esc(base(i.cwd))}</span>` : '',
     i.anchor && GH_TICKET.test(i.anchor) ? `<button class="chip" data-ctx="${esc(i.anchor)}" title="${esc(onPlate(i.anchor)?.title || i.anchor)}">↳ ${esc(i.anchor.replace(/^https:\/\/github\.com\//, '').replace('/pull/', '#'))}</button>` : '',
@@ -755,27 +800,50 @@ const wsStats = (slug) => { const m = S.items.filter((i) => i.workstream === slu
 
 // Radial layout: top-level workstreams on an elliptical ring around the center node; each subtree gets an
 // angle slice proportional to its leaves and continues outward on further rings.
+const VIS = () => S.workstreams.filter((w) => showDone || w.state !== 'done');
 function layoutWs() {
-  const slugs = new Set(S.workstreams.map((w) => w.slug));
-  const kids = (p) => S.workstreams.filter((w) => (w.parent && slugs.has(w.parent) ? w.parent : null) === p);
+  const slugs = new Set(VIS().map((w) => w.slug));
+  const kids = (p) => VIS().filter((w) => (w.parent && slugs.has(w.parent) ? w.parent : null) === p);
   const leaves = new Map();
   const count = (w, seen) => { seen.add(w.slug); const ch = kids(w.slug).filter((c) => !seen.has(c.slug)); const n = ch.length ? ch.reduce((t, c) => t + count(c, seen), 0) : 1; leaves.set(w.slug, n); return n; };
   const seen0 = new Set(), roots = kids(null);
   roots.forEach((r) => count(r, seen0));
-  S.workstreams.filter((w) => !seen0.has(w.slug)).forEach((w) => { roots.push(w); count(w, seen0); }); // broken/cyclic parents surface as roots
+  VIS().filter((w) => !seen0.has(w.slug)).forEach((w) => { roots.push(w); count(w, seen0); }); // broken/cyclic parents surface as roots
   const total = Math.max(1, roots.reduce((t, r) => t + leaves.get(r.slug), 0));
   const r1 = Math.max(R0, (total * 100) / (2 * Math.PI * (1 + AX) / 2)); // ~100px of ring perimeter per leaf
   const pos = new Map(), seen = new Set();
-  const place = (w, d, a0, a1, color) => {
+  const place = (w, d, a0, a1, color, pr = r1) => {
     seen.add(w.slug);
-    const a = (a0 + a1) / 2, r = r1 + RG * (1 - 0.75 ** d) / 0.25; // each deeper ring 25% closer than the previous gap
+    // each deeper ring 25% closer than the previous gap, but never so close that a child's box touches its parent's:
+    // two boxes along direction `a` are apart once the x gap clears the width or the y gap clears the height
+    const a = (a0 + a1) / 2, c = Math.abs(Math.cos(a)) * AX, sn = Math.abs(Math.sin(a));
+    const r = d === 0 ? r1 : pr + Math.max(RG * 0.75 ** (d - 1), Math.min((NW + 24) / Math.max(c, 1e-3), 76 / Math.max(sn, 1e-3)));
     pos.set(w.slug, { x: r * AX * Math.cos(a), y: r * Math.sin(a), d, a, color });
     let at = a0;
-    for (const c of kids(w.slug).filter((c) => !seen.has(c.slug))) { const span = ((a1 - a0) * leaves.get(c.slug)) / leaves.get(w.slug); place(c, d + 1, at, at + span, c.color || shiftHue(color, 22)); at += span; }
+    for (const c of kids(w.slug).filter((c) => !seen.has(c.slug))) { const span = ((a1 - a0) * leaves.get(c.slug)) / leaves.get(w.slug); place(c, d + 1, at, at + span, c.color || shiftHue(color, 22), r); at += span; }
   };
   let at = -Math.PI / 2 - Math.PI / Math.max(roots.length, 2); // start a little before 12 o'clock so a lone branch isn't vertical
   // a branch fans out over at most half the circle, so a lone big branch doesn't wrap around the center
   roots.forEach((r) => { const share = (2 * Math.PI * leaves.get(r.slug)) / total, span = Math.min(share, Math.PI); place(r, 0, at + (share - span) / 2, at + (share + span) / 2, branchColor(r)); at += share; });
+  // relax: boxes that still overlap (neighbours on a crowded ring, a child near its parent) are pushed apart along the axis of
+  // least overlap; the center node stays put. Wide boxes side by side near the top/bottom, tall ones stacked near the sides.
+  const BW = NW + 12, BH = 60, list = [...pos.values()];
+  for (let it = 0; it < 120; it++) {
+    let moved = false;
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      const cx0 = BW / 2 + 90 - Math.abs(p.x), cy0 = BH / 2 + 30 - Math.abs(p.y); // against the center node (180x60)
+      if (cx0 > 0 && cy0 > 0) { moved = true; if (cx0 < cy0) p.x += (p.x < 0 ? -1 : 1) * cx0; else p.y += (p.y < 0 ? -1 : 1) * cy0; }
+      for (let j = i + 1; j < list.length; j++) {
+        const q = list[j], ox = BW - Math.abs(p.x - q.x), oy = BH - Math.abs(p.y - q.y);
+        if (ox <= 0 || oy <= 0) continue;
+        moved = true;
+        if (ox < oy) { const d = ox / 2 + .5, sg = p.x <= q.x ? -1 : 1; p.x += sg * d; q.x -= sg * d; }
+        else { const d = oy / 2 + .5, sg = p.y <= q.y ? -1 : 1; p.y += sg * d; q.y -= sg * d; }
+      }
+    }
+    if (!moved) break;
+  }
   // tight bounding box around the center node and every box (a one-sided map doesn't reserve the empty side)
   let x0 = -90, x1 = 90, y0 = -30, y1 = 30;
   for (const p of pos.values()) { x0 = Math.min(x0, p.x - NW / 2); x1 = Math.max(x1, p.x + NW / 2); y0 = Math.min(y0, p.y - 26); y1 = Math.max(y1, p.y + 26); }
@@ -791,6 +859,7 @@ const wsTasks = (w) => [
 ];
 let freshWs = null, freshT = null, freshShown = null; // a workstream just created from the map: pulsed and brought into view so it's easy to drag under a parent
 let tasksOpen = new Set(store.get('plate.tasksOpen', []));
+let showDone = store.get('plate.showDone', false); // finished workstreams stay off the map unless asked
 const MAX_LEAVES = 8;
 // leaves fan out from the node, away from the center; returns positioned leaves for the expanded workstreams
 function taskLeaves(L) {
@@ -847,19 +916,85 @@ function top3Strip() {
   const pins = S.top3 || [], free = 3 - pins.length, prev = prevPins();
   const slots = pins.map((p, n) => { const f = pinInfo(p); return `<div class="t3 ${f.done ? 'done' : ''}" data-pin="${esc(p.type)}:${esc(p.ref)}" data-open="${n}" title="${esc(f.t)}"><span class="n">${f.done ? '✓' : n + 1}</span><span class="tx"><span class="tt">${esc(f.t)}</span><span class="ts">${esc(f.sub)}</span></span><button class="x" data-t3done="${n}" title="${p.done ? 'Reopen' : 'Done: I did this'}">${p.done ? '↺' : '✓'}</button><button class="x" data-unpin="${n}" title="Unpin">✕</button></div>`; });
   prev.forEach((p, n) => { const f = pinInfo(p); slots.push(`<div class="t3 ghost" data-pin="${esc(p.type)}:${esc(p.ref)}" data-carry="${n}" title="Pin for today: ${esc(f.t)}"><span class="n">${n + 1}</span><span class="tx"><span class="tt">${esc(f.t)}</span><span class="ts">${esc(f.sub)}</span></span><span class="plus">＋ today</span></div>`); });
-  for (let n = pins.length + prev.length; n < 3; n++) slots.push(`<div class="t3 free"><span class="n">${n + 1}</span>Free slot · right-click a node or card to pin</div>`);
+  for (let n = pins.length + prev.length; n < 3; n++) slots.push(`<div class="t3 free" title="Right-click a node or card to pin"><span class="n">${n + 1}</span>Free slot</div>`);
   return `<div class="top3"><span class="t3lbl">Today's focus <b>${pins.filter((p) => pinInfo(p).done).length ? `${pins.filter((p) => pinInfo(p).done).length}✓ · ` : ''}${pins.length}/3</b>${prev.length ? ` · from ${esc(dayLabel(S.top3Prev.day))}<button class="carry" data-carryall>carry all</button>` : free ? ` · ${free} free` : ''}</span>${slots.join('')}</div>`;
 }
+// "Focus now": a view of its own with the short-memory slots (what I'm working on right now). Persistent (not per day), size-limited
+// by `doing_limit`. Each slot shows a "where I stopped" line and the context that hangs off it (tasks, PRs, sessions, to-dos).
+const isDoing = (type, ref) => (S.doing || []).some((p) => p.type === type && p.ref === ref);
+let fcol = new Set(); // slots collapsed in this tab
+const ctxRow = (i) => {
+  const k = i.source === 'tasknotes' || i.source === 'todoist' ? 'task' : i.tool === 'devin' ? 'session' : i.kind === 'issue' ? 'issue' : isPull(i) || i.kind === 'pr' ? 'PR' : i.source === 'link' ? 'link' : i.source;
+  const t = SAFE_URL.test(i.url || '') ? `<a class="tx" href="${esc(ext(i.url))}"${tgt(i.url)}>${esc(nameOf(i))}</a>` : `<span class="tx">${esc(nameOf(i))}</span>`;
+  const mark = i.needsYou ? (i.tool === 'devin' ? '<span class="chip need">your turn</span>' : '<span class="chip need">needs you</span>') : '';
+  const done = i.source === 'tasknotes' && !i.recurring ? `<button class="devrev" data-tndone="${esc(i.id)}" data-to="${i.state === 'done' ? 0 : 1}">${i.state === 'done' ? '↺' : '✓'}</button>` : '';
+  return `<div class="fr ${i.state === 'done' ? 'done' : ''}"><span class="chip dim">${esc(k)}</span>${t}${i.source === 'todoist' || i.source === 'tasknotes' ? dueTag(i) : ''}${mark}${done}</div>`;
+};
+function slotContext(p) {
+  const live = (i) => i.state !== 'gone' && i.state !== 'done' && !i.dismissed;
+  let list = [], todos = [];
+  if (p.type === 'ws') {
+    const w = wsOf(p.ref);
+    list = S.items.filter((i) => i.workstream === p.ref && live(i));
+    todos = ((w && w.body) || '').split('\n').map((l) => l.match(TODO_RE)).filter((m) => m && m[1] === ' ').map((m) => m[2].trim());
+  } else {
+    const it = S.items.find((x) => x.id === p.ref), pr = (it?.url || '').replace(/[#?].*$/, '');
+    if (it) list = [it, ...S.items.filter((x) => x.id !== it.id && live(x) && x.anchor && x.anchor === pr)];
+  }
+  list.sort((a, b) => (b.needsYou ? 1 : 0) - (a.needsYou ? 1 : 0) || byDue(a, b));
+  const rows = list.slice(0, 8).map(ctxRow).join('') + todos.slice(0, 5).map((t) => `<div class="fr"><span class="chip dim">to-do</span><span class="tx">${esc(t)}</span></div>`).join('');
+  return rows ? `<div class="fctx">${rows}${list.length > 8 ? `<div class="fr"><span class="tx dimtx">+${list.length - 8} more in the workstream</span></div>` : ''}</div>` : '';
+}
+function focusNow() {
+  const d = S.doing || [], lim = S.doingLimit || 4;
+  const head = `<div class="page-h"><h2>Focus now</h2><p>${d.length}/${lim} slots · what you're working on right now. Finish or drop one to make room. Drag a card, node or Inbox row onto Focus now in the dock, or hover it and press <b>f</b>.</p></div>`;
+  if (!d.length) return head + '<div class="empty">Nothing in focus yet. Drag something onto Focus now in the dock, or hover a card, node or row and press f.</div>';
+  const slots = d.map((p, n) => {
+    const f = pinInfo(p), k = p.type === 'ws' ? 'workstream' : (S.items.find((x) => x.id === p.ref)?.kind || 'item'), col = fcol.has(p.ref);
+    const it = p.type === 'item' ? S.items.find((x) => x.id === p.ref) : null, link = it && SAFE_URL.test(it.url || '') ? it.url : '', wn = it?.workstream ? wsOf(it.workstream)?.name : '';
+    return `<section class="fslot ${col ? 'col' : ''}"><div class="ftop"><span class="n">${n + 1}</span><button class="ftitle" data-dopen="${n}" title="Open">${esc(f.t)}</button><span class="chip dim">${esc(k)}</span>${wn ? `<span class="chip ws" title="Its workstream">▸ ${esc(wn)}</span>` : ''}${p.since ? `<span class="fsince">${esc(ago(p.since))}</span>` : ''}
+      ${link ? `<button class="fib" data-dlink="${n}" title="Open the item itself (${esc(link.replace(/^https?:\/\//, '').slice(0, 40))})">↗</button>` : ''}<button class="fib" data-dnote="${n}" title="Where I stopped (a note to myself)">✎</button><button class="fib" data-dcol="${esc(p.ref)}" title="${col ? 'Expand' : 'Collapse'}">${col ? '▸' : '▾'}</button><button class="fib" data-ddrop="${n}" title="Finished or dropped: free the slot">✓</button></div>
+      ${p.note ? `<div class="fnote">${esc(p.note)}</div>` : `<div class="fnote add" data-dnote="${n}">Where did you stop? Click to leave yourself a note.</div>`}
+      ${col ? '' : slotContext(p)}</section>`;
+  });
+  return head + `<div class="fslots">${slots.join('')}</div>`;
+}
+// a slot's title takes you to where the thing lives (its workstream, or the Inbox search for an unclassified item); ↗ opens its own link
+function openDoing(p) {
+  if (p.type === 'ws') return openPin(p);
+  const i = S.items.find((x) => x.id === p.ref); if (!i) return;
+  if (i.workstream && wsOf(i.workstream)) { view = 'ws'; return setFocus(i.workstream); }
+  view = 'ws'; focus = null; panelOpen = true; tscope = 'inbox'; tq = nameOf(i); render();
+}
+async function setDoing(type, ref, on) { if (await post('/api/doing', { type, ref, on })) load(); }
 function openPin(p) {
   if (p.type === 'ws') { view = 'ws'; return setFocus(p.ref); }
   const i = S.items.find((x) => x.id === p.ref); if (!i) return;
-  if (SAFE_URL.test(i.url || '')) return void window.open(i.url, '_blank', 'noopener');
+  if (SAFE_URL.test(i.url || '')) return void openExt(i.url);
   view = 'ws'; if (i.workstream) return setFocus(i.workstream);
   focus = null; panelOpen = true; tscope = 'inbox'; tq = nameOf(i); render();
 }
 async function carry(list) { for (const p of list.filter(Boolean)) if (!(await post('/api/top3', { type: p.type, ref: p.ref, on: true }))) break; load(); }
 async function setPin(type, ref, on) { if (await post('/api/top3', { type, ref, on })) load(); }
 document.addEventListener('click', async (e) => {
+  const arch = e.target.closest('[data-arch]'); if (arch) { e.stopPropagation(); openArchive(arch.dataset.arch); return; }
+  const fnow = e.target.closest('[data-fnow]');
+  if (fnow) { e.stopPropagation(); const [t, ...r] = fnow.dataset.fnow.split(':'); setDoing(t, r.join(':'), !isDoing(t, r.join(':'))); return; }
+  const dd = e.target.closest('[data-ddrop]');
+  if (dd) { e.stopPropagation(); const p = S.doing[Number(dd.dataset.ddrop)]; if (p) setDoing(p.type, p.ref, false); return; }
+  const dnote = e.target.closest('[data-dnote]');
+  if (dnote) { e.stopPropagation(); const p = S.doing[Number(dnote.dataset.dnote)]; const v = p && prompt('Where did you stop? (empty clears)', p.note || ''); if (v !== null && v !== false && p && await post('/api/doing', { type: p.type, ref: p.ref, note: v })) load(); return; }
+  const dlk = e.target.closest('[data-dlink]');
+  if (dlk) { e.stopPropagation(); const p = S.doing[Number(dlk.dataset.dlink)], i = p && S.items.find((x) => x.id === p.ref); if (i && SAFE_URL.test(i.url || '')) openExt(i.url); return; }
+  const dcol = e.target.closest('[data-dcol]'); if (dcol) { const r = dcol.dataset.dcol; fcol.has(r) ? fcol.delete(r) : fcol.add(r); render(); return; }
+  const dop = e.target.closest('[data-dopen]'); if (dop) { e.preventDefault(); openDoing(S.doing[Number(dop.dataset.dopen)]); return; }
+  const tnd = e.target.closest('[data-tndone]');
+  if (tnd) { e.stopPropagation(); if (await post('/api/tasks/done', { id: tnd.dataset.tndone, done: tnd.dataset.to === '1' })) load(); return; }
+  const psel = e.target.closest('[data-prsel]');
+  if (psel) { e.stopPropagation(); const u = psel.dataset.prsel; prsel.has(u) ? prsel.delete(u) : prsel.add(u); render(); return; }
+  const prgo = e.target.closest('[data-prgo]');
+  if (prgo) { e.stopPropagation(); reviewMany([...prsel]); return; }
+  const prclr = e.target.closest('[data-prclear]'); if (prclr) { prsel.clear(); render(); return; }
   const dn = e.target.closest('[data-t3done]');
   if (dn) { e.stopPropagation(); const p = S.top3[Number(dn.dataset.t3done)]; if (p && await post('/api/top3', { type: p.type, ref: p.ref, done: !p.done })) load(); return; }
   const x = e.target.closest('[data-unpin]');
@@ -875,8 +1010,9 @@ document.addEventListener('contextmenu', (e) => {
   const [type, ...rest] = el.dataset.pin.split(':'), ref = rest.join(':'), pinned = isPinned(type, ref), full = (S.top3 || []).length >= 3;
   e.preventDefault();
   const name = pinInfo({ type, ref }).t, m = document.createElement('div'); m.className = 'cmenu';
-  m.innerHTML = `<div class="h">${esc(name)}</div>` + (pinned ? '<button data-act="off">☆ Unpin from today\'s top 3</button>' : full ? '<button disabled>Top 3 is full · unpin one first</button>' : '<button data-act="on">★ Pin to today\'s top 3</button>');
-  m.onclick = (ev) => { const a = ev.target.closest('[data-act]'); if (!a) return; m.remove(); setPin(type, ref, a.dataset.act === 'on'); };
+  m.innerHTML = `<div class="h">${esc(name)}</div>` + (pinned ? '<button data-act="off">☆ Unpin from today\'s top 3</button>' : full ? '<button disabled>Top 3 is full · unpin one first</button>' : '<button data-act="on">★ Pin to today\'s top 3</button>')
+    + (isDoing(type, ref) ? '<button data-act="doff">◎ Remove from Focus now</button>' : (S.doing || []).length >= (S.doingLimit || 4) ? `<button disabled>Focus now is full (${S.doingLimit || 4}) · finish one first</button>` : '<button data-act="don">◎ Add to Focus now</button>');
+  m.onclick = (ev) => { const a = ev.target.closest('[data-act]'); if (!a) return; m.remove(); if (a.dataset.act[0] === 'd') setDoing(type, ref, a.dataset.act === 'don'); else setPin(type, ref, a.dataset.act === 'on'); };
   document.body.append(m);
   m.style.left = `${Math.min(e.clientX, innerWidth - m.offsetWidth - 8)}px`; m.style.top = `${Math.min(e.clientY, innerHeight - m.offsetHeight - 8)}px`;
 });
@@ -985,7 +1121,11 @@ function openNotePal() {
 document.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && !e.altKey) { e.preventDefault(); openPal(); } });
 
 // ---------- workstream focus: click a node → full-area view of that one workstream ----------
-const SAFE_URL = /^(https?|msteams|devin|obsidian):\/\//i; // only link-out schemes become hrefs (devin:// opens the session in Devin Desktop)
+// Todoist task links open the desktop app (todoist://task?id=…) unless sources.md says `todoist_link: web`
+const ext = (u) => { if (S.todoistLink !== 'web') { const m = String(u || '').match(/^https:\/\/app\.todoist\.com\/app\/task\/(?:[^/?#]*-)?([^/?#-]+)/i); if (m) return `todoist://task?id=${m[1]}`; } return u; };
+const openExt = (u) => { u = ext(u); if (/^https?:/i.test(u)) window.open(u, '_blank', 'noopener'); else location.href = u; };
+const tgt = (u) => (/^https?:/i.test(ext(u || '')) ? ' target="_blank" rel="noopener"' : '');
+const SAFE_URL = /^(https?|msteams|devin|obsidian|todoist):\/\//i; // only link-out schemes become hrefs (devin:// opens the session in Devin Desktop)
 const MANUAL = ['teams', 'link', 'note', 'ghref'];
 let focus = null, propsOpen = false, enter = false; // focus = slug of the workstream in full view
 const setFocus = (slug) => { focus = slug; selWs = slug; enter = true; window.scrollTo(0, 0); render(); };
@@ -1000,7 +1140,7 @@ function ws() {
   return panelOpen ? `${crumb}<div class="wsx with-panel">${inboxPanel()}<div>${main}</div></div>` : crumb + main;
 }
 // Inbox panel beside the map (or a focused workstream): classify by dragging rows onto nodes
-let panelOpen = store.get('plate.panel', true);
+let panelOpen = store.get('plate.panel', false);
 const togglePanel = () => { panelOpen = !panelOpen; store.set('plate.panel', panelOpen); render(); };
 
 // ---------- Today mode: what moved today (events.jsonl), as lit nodes + a timeline ----------
@@ -1022,6 +1162,29 @@ async function loadWindow() {
   finally { loadingWin = false; }
 }
 const setSpan = async (sp) => { span = sp; store.set('plate.span', sp); await loadWindow(); render(); };
+// due-date shorthand for a new task: today / tmrw · +3d · +2w · mon…sun (the next one) · wknd · eom · 20/11 · 2026-11-20 (pt and en)
+const dueLabel = (d) => new Date(`${d}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+function parseDue(raw, today) {
+  const v = String(raw || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, '');
+  if (!v) return {};
+  const dow = new Date(`${today}T12:00:00`).getDay(), at = (n) => ({ date: shiftDay(today, n) });
+  if (/^(0|t|td|today|hoje|hj)$/.test(v)) return at(0);
+  if (/^(1|tm|tmr|tmrw|tomorrow|amanha)$/.test(v)) return at(1);
+  let m;
+  if ((m = v.match(/^\+?(\d{1,3})(d|w)?$/))) return at(Number(m[1]) * (m[2] === 'w' ? 7 : 1));
+  if (/^(we|wknd|weekend|fds|fimdesemana)$/.test(v)) return at((6 - dow + 7) % 7);
+  if (/^(eom|fimdomes)$/.test(v)) { const e = new Date(`${today}T12:00:00`); e.setMonth(e.getMonth() + 1, 0); return { date: e.toLocaleDateString('en-CA') }; }
+  const DOW = { sun: 0, dom: 0, mon: 1, seg: 1, tue: 2, ter: 2, wed: 3, qua: 3, thu: 4, qui: 4, fri: 5, sex: 5, sat: 6, sab: 6 };
+  if ((m = v.match(/^(?:next|prox|n)?([a-z]{3})[a-z]*$/)) && m[1] in DOW) return at(((DOW[m[1]] - dow + 7) % 7) || 7);
+  if ((m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/))) return Number(m[2]) >= 1 && Number(m[2]) <= 12 && Number(m[3]) >= 1 && Number(m[3]) <= 31 ? { date: v } : { bad: true };
+  if ((m = v.match(/^(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?$/))) {
+    const [d, mo] = [Number(m[1]), Number(m[2])]; if (d < 1 || d > 31 || mo < 1 || mo > 12) return { bad: true };
+    let y = m[3] ? Number(m[3]) + (m[3].length === 2 ? 2000 : 0) : Number(today.slice(0, 4));
+    const mk = (yy) => `${yy}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    return { date: !m[3] && mk(y) < today ? mk(y + 1) : mk(y) };
+  }
+  return { bad: true };
+}
 const shiftDay = (d, n) => { const t = new Date(`${d}T12:00:00`); t.setDate(t.getDate() + n); return t.toLocaleDateString('en-CA'); };
 async function goDay(day) {
   viewDay = !day || day >= S.today ? null : day;
@@ -1069,16 +1232,17 @@ function timeline(L) {
 }
 
 // title + controls; drawn above the panel/map grid so the Inbox panel starts level with the canvas
-const wsBar = () => `<div class="ws-bar"><div class="page-h"><h2>Workstreams</h2><p>Click a node to focus on it · scroll/pinch to zoom, drag the background to pan (double-click = fit) · ☑ n on a node fans out its tasks · drag a node onto another to re-parent, onto the center to make it a root · dashed = related · paste a link or note to add it to the Inbox</p></div>
+const wsBar = () => `<div class="ws-bar"><div class="page-h"><h2>Workstreams<span class="info" tabindex="0" title="Click a node to focus on it · scroll/pinch to zoom, drag the background to pan (double-click = fit) · ☑ n on a node fans out its tasks · drag a node onto another to re-parent, onto the center to make it a root · dashed = related · paste a link or note to add it to the Inbox">ⓘ</span></h2></div>
       <button class="btn ${panelOpen ? 'on' : ''}" data-panel title="Inbox panel (i)">Inbox · ${S.items.filter(inInbox).length}</button>
       <button class="btn" id="palBtn" title="Jump to a workstream or item (⌘K)">Search ⌘K</button>
       <button class="btn ${todayOn ? 'on' : ''}" id="todayBtn" title="Light up what moved today (t)">Today</button>
+      ${S.workstreams.some((w) => w.state === 'done') ? `<button class="btn ${showDone ? 'on' : ''}" id="doneBtn" title="Finished workstreams are hidden from the map">Show done · ${S.workstreams.filter((w) => w.state === 'done').length}</button>` : ''}${(S.archived || []).length ? `<button class="btn" id="archBtn" title="Archived workstreams: leave every view, can be restored">Archive · ${S.archived.length}</button>` : ''}
       <input id="newName" placeholder="New workstream…" size="18"><button class="btn" id="newRoot">+ Root</button>
 </div>`;
 function mindmap() {
   if (todayOn && span !== 'day' && !winReady() && !loadingWin) loadWindow().then(render); // first paint with a stored week/month span, or the day rolled over
   const L = layoutWs(), leaves = taskLeaves(L), heat = todayOn ? todayHeat() : new Map(), inNeed = S.items.filter((i) => i.needsYou && !i.workstream).length;
-  const nodes = S.workstreams.map((w) => {
+  const nodes = S.workstreams.filter((w) => L.pos.has(w.slug)).map((w) => {
     const p = L.pos.get(w.slug), st = wsStats(w.slug), h = heat.get(w.slug), nt = wsTasks(w).length, idle = todayOn ? null : idleInfo(w);
     return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''}  ${h ? 'lit' : ''} ${idle ? 'stale' : ''} ${w.slug === freshWs ? 'fresh' : ''} ${esc(w.state)}" draggable="true" data-slug="${esc(w.slug)}" data-pin="ws:${esc(w.slug)}"
       style="left:${p.x}px;top:${p.y}px;--b:${p.color}${h ? `;--heat:${h.heat.toFixed(2)};--d:${Math.min(h.rank * 0.15, 3)}s` : ''}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${h?.n ? ` · ${h.n} event${h.n > 1 ? 's' : ''} today` : h ? ' · on the path to something that moved today' : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}${idle ? ` · idle ${idle.untracked ? '≥' : ''}${idle.days}d` : ''}">
@@ -1088,7 +1252,7 @@ function mindmap() {
     <div class="canvas-scroll"><div class="canvas ${todayOn ? 'today' : ''} ${todayAnim ? 'anim' : ''}" style="width:${L.w}px;height:${L.h}px"><svg width="${L.w}" height="${L.h}">${edgesSvg(L, heat)}${leaves.map((t) => `<path class="edge tk" style="--b:${t.color}" d="M${t.px} ${t.py} L${t.x} ${t.y}"/>`).join('')}</svg>
       <div class="hub ${inNeed ? 'need' : ''}" id="rootzone" style="left:${L.cx}px;top:${L.cy}px" title="Drop a workstream here to make it top-level${inNeed ? ` · ${inNeed} in the Inbox need you` : ''}">On my plate${inNeed ? `<span class="wneed">${inNeed}</span>` : ''}</div>${nodes || '<div class="empty">No workstreams yet. Create one above.</div>'}${leaves.map((t) => {
         const st = `left:${t.x}px;top:${t.y}px;--b:${t.color}`, cls = `tnode ${t.need ? 'need' : ''} ${t.more ? 'more' : ''}`;
-        return t.url ? `<a class="${cls}" href="${esc(t.url)}" target="_blank" rel="noopener" style="${st}" title="${esc(t.text)}">${esc(t.text)}</a>` : `<div class="${cls}" data-focus="${esc(t.slug)}" style="${st}" title="${esc(t.text)}">${esc(t.text)}</div>`;
+        return t.url ? `<a class="${cls}" href="${esc(ext(t.url))}"${tgt(t.url)} style="${st}" title="${esc(t.text)}">${esc(t.text)}</a>` : `<div class="${cls}" data-focus="${esc(t.slug)}" style="${st}" title="${esc(t.text)}">${esc(t.text)}</div>`;
       }).join('')}</div>
       <div class="zoomctl"><button data-zoom="1.25" title="Zoom in">+</button><button data-zoom="0.8" title="Zoom out">−</button><button data-zoom="fit" title="Fit all (double-click the background)">Fit</button></div></div>
     ${todayOn ? timeline(L) : ''}</div>`;
@@ -1151,7 +1315,7 @@ function bodyHtml(w) {
     <div class="todos"><div class="subrow"><span>To-do</span>${todos.length ? `<span class="chip dim">${open} open</span>` : ''}</div>
       ${todos.map((t, n) => `<label class="${t.done ? 'x' : ''}"><input type="checkbox" data-todo="${n}" ${t.done ? 'checked' : ''}>${esc(t.text)}</label>`).join('')}
       <div class="addtodo"><input id="todoNew" placeholder="Add a to-do… (Enter)"></div>
-      ${S.canTask ? `<div class="addtodo newtask"><input id="taskTitle" placeholder="New dated task (TaskNote)…"><input id="taskDue" type="date"><button class="btn" id="taskAdd">Add task</button></div>` : ''}</div>`;
+      ${S.canTask ? `<div class="newtask"><input id="taskTitle" placeholder="+ New task (TaskNote)…"><input id="taskDue" placeholder="due: +1d, mon, 20/11" autocomplete="off" title="today · tmrw · +3d · +2w · mon…sun · wknd · eom · 20/11 · 2026-11-20"><span class="dueprev" id="duePrev"></span><button class="btn sm" id="taskAdd">Add</button></div>` : ''}</div>`;
 }
 
 function crumbHtml(w) {
@@ -1169,6 +1333,12 @@ function peopleHtml(w) {
     return `<span class="person"><b>${link}</b>${[c.role, c.department, c.company].filter(Boolean).map((x) => `<span class="chip dim">${esc(x)}</span>`).join('')}${c.email ? `<a class="chip dim" href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ''}${teams(c)}${c.email && c.note ? `<button class="ibtn" data-syncperson="${esc(n)}" title="Re-read role, department and photo from the directory (by e-mail)">↻</button>` : ''}<button class="ibtn" data-unperson="${esc(n)}" title="Remove from this workstream">✕</button></span>`; };
   return `<div class="subrow people"><span>People</span>${w.people.map(card).join('')}<input id="personNew" list="personList" placeholder="+ person (Enter)"><details class="newperson"><summary>new person</summary><input id="npEmail" placeholder="E-mail (the directory fills the rest)"><input id="npName" placeholder="Name (if not in the directory)"><input id="npRole" placeholder="Role"><input id="npTeams" placeholder="Teams e-mail (if different)"><button class="btn" id="npAdd">Create note + add</button></details><datalist id="personList">${[...new Set(S.workstreams.flatMap((x) => x.people))].map((n) => `<option value="${esc(n)}">`).join('')}</datalist></div>`;
 }
+// suggestion only (never automatic): an active leaf with nothing open and no event for `archive_after_days`
+function archiveHint(w, open) {
+  if (w.state === 'paused' || w.state === 'archived' || open || S.workstreams.some((x) => x.parent === w.slug && x.state !== 'done')) return false;
+  const last = S.activity?.last?.[w.slug]; if (!last) return false;
+  return (Date.now() - Date.parse(last)) / 864e5 >= (S.archiveDays || 14);
+}
 function focusView(w) {
   const items = S.items.filter((i) => i.workstream === w.slug), { parent, kids: nested } = nestOf(items);
   NESTED = new Set([...parent.keys()].filter((id) => items.find((x) => x.id === id)?.tool === 'devin'));
@@ -1183,14 +1353,14 @@ function focusView(w) {
   const tree = (i, d = 0) => { const k = d < 3 ? (nested.get(i.id) || []).filter((x) => x.state !== 'gone' && !(x.source === 'session' && x.state === 'done')) : [];
     return k.length ? `<div class="nest">${card(i, true, mv(i))}<div class="kids">${k.map((x) => tree(x, d + 1)).join('')}</div></div>` : card(i, true, mv(i)); };
   const section = (cls, title, hint, list) => list.length ? `<section class="fsec ${cls}"><h3>${title}<span>${list.length}</span></h3>${hint ? `<p>${hint}</p>` : ''}<div class="igrid">${list.map((i) => tree(i)).join('')}</div></section>` : '';
-  const chips = (title, list) => list.length ? `<div class="subrow"><span>${title}</span>${list.map((x) => { const st = wsStats(x.slug); return `<button class="sub-ws ${st.need ? 'need' : ''}" data-focus="${esc(x.slug)}"><b>${esc(x.name)}</b><span>${st.n} items${st.need ? ` · ${st.need} needs you` : ''}</span></button>`; }).join('')}</div>` : '';
+  const chips = (title, list, full) => list.length ? `<div class="subrow"><span>${title}</span>${list.map((x) => { const st = wsStats(x.slug); return `<button class="sub-ws ${st.need ? 'need' : ''}" data-focus="${esc(x.slug)}"><b>${esc(full ? wsPath(x) : x.name)}</b><span>${st.n} items${st.need ? ` · ${st.need} needs you` : ''}</span></button>`; }).join('')}</div>` : '';
   const empty = !items.length ? '<div class="empty">Nothing in this workstream yet. Paste a link or note, or drag items here from the Board.</div>' : '';
   return `<div class="focus ${enter ? 'enter' : ''}">
     <header class="fhead" data-pin="ws:${esc(w.slug)}"><h1>${esc(w.name)}</h1>
-      <div class="wrow">${w.note ? (w.noteMissing ? `<span class="chip late" title="No note with this name in the vault">note “${esc(w.note)}” not found</span>` : `<a class="btn" href="obsidian://open?vault=${encodeURIComponent(S.vault || '')}&file=${encodeURIComponent(w.note)}" title="Open the note this workstream is built on">Open note</a>`) : ''}<button class="btn" id="meetBtn" title="New meeting note for this workstream (QuickAdd in Obsidian)">+ Meeting note</button><span class="chip">${open} open</span>${g.need.length ? `<span class="chip need">${g.need.length} need you</span>` : ''}<span class="chip dim">${esc(w.state)}</span>${idleInfo(w) ? `<span class="chip dim" title="No event on this workstream for a while (sources.md: stale_days)">idle ${idleInfo(w).untracked ? '≥' : ''}${idleInfo(w).days}d</span>` : ''}</div>
+      <div class="wrow">${w.note ? (w.noteMissing ? `<span class="chip late" title="No note with this name in the vault">note “${esc(w.note)}” not found</span>` : `<a class="btn" href="obsidian://open?vault=${encodeURIComponent(S.vault || '')}&file=${encodeURIComponent(w.note)}" title="Open the note this workstream is built on">Open note</a>`) : `<a class="btn" href="obsidian://open?vault=${encodeURIComponent(S.vault || '')}&file=${encodeURIComponent(`${S.dataDir.split('/').slice(-2).join('/')}/workstreams/${w.slug}`)}" title="Edit this workstream's file (its to-dos and text) in Obsidian">Open in Obsidian</a>`}<button class="btn" data-fnow="ws:${esc(w.slug)}" title="Put this workstream in Focus now (or take it out). Also: hover it and press f">${isDoing('ws', w.slug) ? '◎ In focus · remove' : '◎ Focus now'}</button><button class="btn" data-arch="${esc(w.slug)}" title="Archive this workstream: it leaves the map, the Inbox and Needs you; restore from Archive">Archive</button>${archiveHint(w, open) ? `<button class="chip dim" data-arch="${esc(w.slug)}" title="Nothing open and no activity for a while">archive?</button>` : ''}<button class="btn" id="meetBtn" title="New meeting note for this workstream (QuickAdd in Obsidian)">+ Meeting note</button><span class="chip">${open} open</span>${g.need.length ? `<span class="chip need">${g.need.length} need you</span>` : ''}<span class="chip dim">${esc(w.state)}</span>${idleInfo(w) ? `<span class="chip dim" title="No event on this workstream for a while (sources.md: stale_days)">idle ${idleInfo(w).untracked ? '≥' : ''}${idleInfo(w).days}d</span>` : ''}</div>
       ${bodyHtml(w)}</header>
     ${peopleHtml(w)}
-    ${chips('Inside', kids)}${chips('Related', [...rel].map(wsOf).filter(Boolean))}
+    ${chips('Inside', kids)}${chips('Related', [...rel].map(wsOf).filter(Boolean).sort((a, b) => wsPath(a).localeCompare(wsPath(b))), true)}
     ${section('need', 'Needs you / next', 'Waiting sessions, overdue and due-today tasks, PRs in review: this is what moves it forward.', g.need)}
     ${section('', 'In progress', 'Running sessions and open issues and PRs.', g.prog)}
     ${section('', 'Coming up', 'Tasks with a later date.', g.soon)}
@@ -1201,8 +1371,8 @@ function focusView(w) {
       <label>Name</label><input id="fName" value="${esc(w.name)}">
       <label>State</label><select id="fState">${['active', 'paused', 'done'].map((s) => opt(s, s, w.state)).join('')}</select>
       <label>Parent</label><select id="fParent">${opt('', '— root —', w.parent || '')}${others.map((x) => opt(x.slug, x.name, w.parent || '')).join('')}</select>
-      <label>Related</label><div class="rels">${[...rel].map((r) => `<span class="chip x" data-unrel="${esc(r)}" title="Remove link">${esc(wsOf(r)?.name || r)} ✕</span>`).join('')}
-        <select id="fRelAdd"><option value="">+ link…</option>${others.filter((x) => !rel.has(x.slug)).map((x) => opt(x.slug, x.name, '')).join('')}</select></div>
+      <label>Related</label><div class="rels">${[...rel].map((r) => `<span class="chip x" data-unrel="${esc(r)}" title="Remove link">${esc(wsOf(r) ? wsPath(wsOf(r)) : r)} ✕</span>`).join('')}
+        <input id="fRelAdd" list="relList" placeholder="+ link… (type to search)"><datalist id="relList">${others.filter((x) => !rel.has(x.slug)).map((x) => wsPath(x)).sort((a, b) => a.localeCompare(b)).map((t) => `<option value="${esc(t)}">`).join('')}</datalist></div>
       <label>Note</label><input id="fNote" value="${esc(w.note || '')}" placeholder="vault note name (its text and to-dos become this workstream's)">
       <label>GitHub</label><input id="fGh" value="${esc(w.github.join(', '))}" placeholder="repo:owner/name, issue:owner/repo#12">
       <span></span><span class="hint" style="margin:0">Routing rules: new GitHub items from a <code>repo:</code> (or under an <code>issue:</code> epic) land here instead of the Inbox. Items already on the plate stay put.</span>
@@ -1223,6 +1393,8 @@ function wireWs() {
   if (!focus) {
     $('#newRoot').onclick = () => create('');
     $('#todayBtn').onclick = toggleToday;
+  if ($('#doneBtn')) $('#doneBtn').onclick = () => { showDone = !showDone; store.set('plate.showDone', showDone); render(); };
+  if ($('#archBtn')) $('#archBtn').onclick = openArchiveList;
     document.querySelectorAll('.daynav [data-day]').forEach((b) => (b.onclick = () => goDay(b.dataset.day)));
     document.querySelectorAll('.daynav [data-span]').forEach((b) => (b.onclick = () => setSpan(b.dataset.span)));
     $('#palBtn').onclick = openPal;
@@ -1290,9 +1462,12 @@ function wireWs() {
     if (r) { if (email && r.directory !== 'ok') toast(`Created, but the directory said: ${r.directory}`); load(); }
   };
   document.querySelectorAll('[data-syncperson]').forEach((b) => (b.onclick = async () => { b.textContent = '…'; if (await post('/api/people/sync', { name: b.dataset.syncperson })) { toast('Updated from the directory'); load(); } else b.textContent = '↻'; }));
+  if ($('#taskDue')) $('#taskDue').oninput = () => { const r = parseDue($('#taskDue').value, S.today); $('#duePrev').textContent = r.date ? `→ ${dueLabel(r.date)}` : r.bad ? '?' : ''; $('#duePrev').classList.toggle('bad', !!r.bad); };
+  if ($('#taskTitle')) [$('#taskTitle'), $('#taskDue')].forEach((el) => (el.onkeydown = (e) => { if (e.key === 'Enter') $('#taskAdd').click(); }));
   if ($('#taskAdd')) $('#taskAdd').onclick = async () => {
     const title = $('#taskTitle').value.trim(); if (!title) return $('#taskTitle').focus();
-    if (await post('/api/tasks/create', { title, due: $('#taskDue').value || undefined, workstream: slug })) { toast('Task created in TaskNotes'); setTimeout(load, 1500); }
+    const d = parseDue($('#taskDue').value, S.today); if (d.bad) { toastErr(`Can't read the due date "${$('#taskDue').value}". Try +1d, mon, wknd, 20/11`); return $('#taskDue').focus(); }
+    if (await post('/api/tasks/create', { title, due: d.date, workstream: slug })) { toast('Task created in TaskNotes'); setTimeout(load, 1500); }
   };
   $('#newChild').onclick = () => create(slug);
   $('#fName').onchange = (e) => save(slug, { name: e.target.value });
@@ -1305,7 +1480,12 @@ function wireWs() {
     if (await post('/api/items/add-teams', { label: $('#tLabel').value, url, workstream: slug })) load();
   };
   const curRel = [...new Set([...w.related, ...S.workstreams.filter((x) => x.related.includes(slug)).map((x) => x.slug)])];
-  $('#fRelAdd').onchange = (e) => e.target.value && save(slug, { related: [...w.related, e.target.value] });
+  $('#fRelAdd').onchange = (e) => {
+    const v = fold(e.target.value.trim()); if (!v) return;
+    const cand = S.workstreams.filter((x) => x.slug !== slug && !curRel.includes(x.slug));
+    const hit = cand.find((x) => fold(wsPath(x)) === v) || (cand.filter((x) => fold(wsPath(x)).includes(v)).length === 1 ? cand.find((x) => fold(wsPath(x)).includes(v)) : null);
+    if (hit) save(slug, { related: [...w.related, hit.slug] }); else toastErr('No unique workstream matches that: pick one from the list');
+  };
   document.querySelectorAll('[data-unrel]').forEach((c) => (c.onclick = () => save(slug, { related: curRel.filter((r) => r !== c.dataset.unrel) })));
 }
 
@@ -1404,6 +1584,53 @@ document.addEventListener('click', async (e) => {
   await load(); if (document.querySelector('.ctx') && ctxStack.length) openCtx(ctxStack.at(-1), false);
 }, true);
 // annotate any item: rename (alias) + label; snooze from Needs you; transcript drawer; routing rules
+// archive: confirm what happens to the open items and to the sub-workstreams, then offer Undo
+async function openArchive(slug) {
+  let p; try { p = await (await fetch(`/api/ws/archive-preview?slug=${encodeURIComponent(slug)}`)).json(); } catch { return toastErr('Could not read the workstream'); }
+  if (p.error) return toastErr(p.error);
+  const ids = new Set(p.children.map((c) => c.slug)), others = S.workstreams.filter((x) => x.slug !== slug && !ids.has(x.slug) && x.state !== 'done').sort((a, b) => wsPath(a).localeCompare(wsPath(b)));
+  const kinds = Object.entries(p.kinds).map(([k, n]) => `${n} ${k}`).join(', ');
+  const row = (inner) => `<div style="display:flex;gap:8px;align-items:center;margin:6px 0">${inner}</div>`;
+  const scrim = document.createElement('div'); scrim.className = 'modal-scrim';
+  scrim.innerHTML = `<form class="modal"><h3>Archive “${esc(p.name)}”</h3>
+    ${p.children.length ? row(`<input type="checkbox" name="cascade" checked id="aCas"><label for="aCas">Archive its ${p.children.length} sub-workstream${p.children.length > 1 ? 's' : ''} too (${esc(p.children.map((c) => c.name).join(', ').slice(0, 80))})</label>`) : ''}
+    ${p.open ? `<p style="margin:10px 0 2px">${p.open} open item${p.open > 1 ? 's' : ''} (${esc(kinds)}). What happens to them?</p>
+      ${row('<input type="radio" name="items" value="inbox" checked id="aI"><label for="aI">Move to the Inbox</label>')}
+      ${row(`<input type="radio" name="items" value="ws" id="aW"><label for="aW">Move to</label><select name="to">${others.map((x) => `<option value="${esc(x.slug)}">${esc(wsPath(x))}</option>`).join('')}</select>`)}
+      ${row('<input type="radio" name="items" value="keep" id="aK"><label for="aK">Leave them here (hidden with it, back on restore)</label>')}` : '<p>Nothing open inside.</p>'}
+    <p class="hint">Archived workstreams leave the map, the Inbox, Needs you and search. They stay in Archive, where you can restore them.</p>
+    <div class="row"><button type="button" class="btn" data-cancel>Cancel</button><button class="btn">Archive</button></div></form>`;
+  document.body.append(scrim);
+  const close = () => scrim.remove();
+  scrim.onclick = (e) => { if (e.target === scrim || e.target.closest('[data-cancel]')) close(); };
+  scrim.querySelector('form').onsubmit = async (e) => {
+    e.preventDefault(); const fd = new FormData(e.target);
+    const r = await post('/api/ws/archive', { slug, items: fd.get('items') || 'inbox', to: fd.get('to') || undefined, cascade: p.children.length ? fd.get('cascade') === 'on' : true });
+    if (!r) return;
+    close(); const parent = wsOf(slug)?.parent || null;
+    if (focus && r.archived.includes(focus)) focus = parent && !r.archived.includes(parent) ? parent : null;
+    await load();
+    toast(`Archived ${p.name}${r.moved.length ? ` · ${r.moved.length} item${r.moved.length > 1 ? 's' : ''} moved` : ''}`, async () => {
+      await post('/api/ws/restore', { slug });
+      const back = new Map(); for (const m of r.moved) back.set(m.from, [...(back.get(m.from) || []), m.id]);
+      for (const [from, ids2] of back) await post('/api/move', { ids: ids2, workstream: from });
+      load();
+    });
+  };
+}
+function openArchiveList() {
+  const list = (S.archived || []).filter((a) => !a.archivedWith).sort((a, b) => String(b.archivedAt).localeCompare(String(a.archivedAt)));
+  const scrim = document.createElement('div'); scrim.className = 'modal-scrim';
+  const paint = () => {
+    scrim.innerHTML = `<div class="modal"><h3>Archive</h3>${list.length ? list.map((a) => { const sub = (S.archived || []).filter((x) => x.archivedWith === a.slug).length; return `<div style="display:flex;gap:10px;align-items:center;margin:8px 0"><span style="flex:1;min-width:0"><b>${esc(a.name)}</b><br><span class="hint" style="margin:0">${esc(a.archivedAt || '')}${a.items ? ` · ${a.items} item${a.items > 1 ? 's' : ''} hidden` : ''}${sub ? ` · +${sub} sub-workstream${sub > 1 ? 's' : ''}` : ''}</span></span><button class="btn" data-restore="${esc(a.slug)}">Restore</button></div>`; }).join('') : '<p>Nothing archived.</p>'}<div class="row"><button type="button" class="btn" data-cancel>Close</button></div></div>`;
+  };
+  paint(); document.body.append(scrim);
+  scrim.onclick = async (e) => {
+    if (e.target === scrim || e.target.closest('[data-cancel]')) return scrim.remove();
+    const b = e.target.closest('[data-restore]'); if (!b) return;
+    if (await post('/api/ws/restore', { slug: b.dataset.restore })) { await load(); toast('Restored'); scrim.remove(); }
+  };
+}
 function editItem(id) {
   const i = S.items.find((x) => x.id === id); if (!i) return;
   const used = [...new Set([...ITEM_LABELS, ...S.items.map((x) => x.label).filter(Boolean)])];
@@ -1587,9 +1814,9 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (documen
 const MIN_ZOOM = 0.15, MAX_ZOOM = 2.5, FIT_MIN = 0.4;
 let cam = null;
 const fitCam = (cs, cv) => {
-  const pad = 32, w = parseFloat(cv.style.width), h = parseFloat(cv.style.height);
-  const k = Math.max(FIT_MIN, Math.min(1, (cs.clientWidth - pad) / w, (cs.clientHeight - pad) / h)); // never fit smaller than legible; pan to the rest
-  return { k, x: (cs.clientWidth - w * k) / 2, y: (cs.clientHeight - h * k) / 2 };
+  const pad = 32, w = parseFloat(cv.style.width), h = parseFloat(cv.style.height), ch = cs.clientHeight - 84; // the dock floats over the bottom of the map: fit above it
+  const k = Math.max(FIT_MIN, Math.min(1, (cs.clientWidth - pad) / w, (ch - pad) / h)); // never fit smaller than legible; pan to the rest
+  return { k, x: (cs.clientWidth - w * k) / 2, y: (ch - h * k) / 2 };
 };
 const applyCam = (cv) => { cv.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.k})`; };
 function zoomAt(cs, factor, cx = cs.clientWidth / 2, cy = cs.clientHeight / 2) {
@@ -1697,7 +1924,7 @@ function inboxPanel() {
   const kinds = ['all', ...new Set(S.items.filter((i) => i.state !== 'done').map((i) => KGROUP[kindOf(i)]).filter(Boolean))];
   const seg = (attr, cur, opts) => `<div class="seg">${opts.map(([v, t]) => `<button data-${attr}="${esc(v)}" class="${v === cur ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>`;
   const row = (i) => {
-    const k = kindOf(i), href = SAFE_URL.test(i.url || '') ? `href="${esc(i.url)}"${/^https?:/i.test(i.url) ? ' target="_blank" rel="noopener"' : ''}` : '';
+    const k = kindOf(i), href = SAFE_URL.test(i.url || '') ? `href="${esc(ext(i.url))}"${tgt(i.url)}` : '';
     return `<div class="trow k-${esc(k)} ${ghState(i)} ${tsel.has(i.id) ? 'sel' : ''}" data-tid="${esc(i.id)}" data-pin="item:${esc(i.id)}" draggable="true">
       <input type="checkbox" ${tsel.has(i.id) ? 'checked' : ''} tabindex="-1"><span class="g">${GLYPH[k] || ''}</span>
       <span class="t"><a ${href}>${esc(nameOf(i))}</a></span>
@@ -1717,7 +1944,7 @@ function triageBar() {
   const bar = document.createElement('div'); bar.className = 'tri-act';
   // one click on a destination moves the selection; typing filters them, Enter takes the highlighted (first) one
   bar.innerHTML = `<b>${tsel.size}</b> selected · move to: <input id="tMove" placeholder="filter or new name…" autocomplete="off">
-    <button class="btn" id="tDismiss">${tscope === 'dismissed' ? 'Restore' : 'Dismiss'}</button><button class="lnk" id="tClear">Clear selection</button><div class="dests" id="tDests"></div>`;
+    ${(() => { const n = [...tsel].filter((id) => isPull(S.items.find((x) => x.id === id) || {})).length; return n > 1 ? `<button class="btn" id="tReviewMany">Review ${n} PRs in Devin</button>` : ''; })()}<button class="btn" id="tDismiss">${tscope === 'dismissed' ? 'Restore' : 'Dismiss'}</button><button class="lnk" id="tClear">Clear selection</button><div class="dests" id="tDests"></div>`;
   document.body.append(bar);
   const open = S.workstreams.filter((w) => w.state !== 'done');
   const dests = () => {
@@ -1743,6 +1970,7 @@ function triageBar() {
     if (e.key !== 'Enter') return;
     const d = dests()[0]; if (d) moveSel(d.slug || null, d.create);
   };
+  if ($('#tReviewMany')) $('#tReviewMany').onclick = () => reviewMany([...tsel].map((id) => S.items.find((x) => x.id === id)).filter((x) => x && isPull(x)).map((x) => x.url));
   $('#tClear').onclick = () => { tsel.clear(); renderPanel(); };
   $('#tDismiss').onclick = () => dismiss([...tsel], tscope !== 'dismissed');
 }
@@ -1814,6 +2042,7 @@ function classifyPaste(raw) {
   const text = raw.trim(), oneToken = !/\s/.test(text);
   if (oneToken && (/teams\.(microsoft\.com|cloud\.microsoft)\/l\//i.test(text) || /^msteams:/i.test(text))) return { source: 'teams', title: 'Teams conversation', url: text };
   if (oneToken && /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/(issues|pull)\/\d+/i.test(text)) return { source: 'ghref', url: text };
+  if (oneToken && /^https:\/\/outlook\.(office|office365|cloud\.microsoft)(\.com)?\/(mail|calendar)\//i.test(text)) return { source: 'link', title: /\/calendar\//i.test(text) ? 'Outlook event' : 'Outlook e-mail', url: text };
   if (oneToken && /^https?:\/\//i.test(text)) {
     let title = text;
     try { const u = new URL(text); const last = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() || ''); title = u.hostname.replace(/^www\./, '') + (last ? ` › ${last}` : ''); } catch {}
@@ -1851,4 +2080,34 @@ load().then(() => {
   const h = new URLSearchParams(location.hash.slice(1)).get('ws');
   if (h && wsOf(h.split(',').pop())) setFocus(h.split(',').pop());
 });
+
+// ---------- Focus now: drop a card / row / node on the dock button, or hover (or select) and press f ----------
+{
+  const btn = document.getElementById('focusBtn');
+  const arm = (on) => btn.classList.toggle('droptarget', on);
+  document.addEventListener('dragstart', () => arm(true), true);
+  document.addEventListener('dragend', () => { arm(false); btn.classList.remove('over'); }, true);
+  btn.addEventListener('dragover', (e) => { e.preventDefault(); btn.classList.add('over'); });
+  btn.addEventListener('dragleave', () => btn.classList.remove('over'));
+  btn.addEventListener('drop', async (e) => {
+    e.preventDefault(); e.stopPropagation(); arm(false); btn.classList.remove('over');
+    const w = e.dataTransfer.getData('application/x-plate-ws');
+    const adds = w ? [['ws', w]] : draggedIds(e).map((id) => ['item', id]);
+    for (const [type, ref] of adds) if (!isDoing(type, ref) && !(await post('/api/doing', { type, ref, on: true }))) break;
+    await load();
+    if (adds.length) toast(`In Focus now: ${(S.doing || []).length}/${S.doingLimit || 4}`);
+  });
+  let hov = null;
+  document.addEventListener('mouseover', (e) => { hov = e.target.closest?.('[data-pin]') || null; });
+  document.addEventListener('keydown', async (e) => {
+    if (e.key !== 'f' || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, select, textarea, [contenteditable]')) return;
+    const sel = view === 'ws' && panelOpen && tsel.size ? [...tsel].map((id) => ['item', id]) : null;
+    const targets = sel || (hov?.dataset.pin ? [[hov.dataset.pin.split(':')[0], hov.dataset.pin.split(':').slice(1).join(':')]] : []);
+    if (!targets.length) return;
+    e.preventDefault();
+    const turnOn = !targets.every(([t, r]) => isDoing(t, r));
+    for (const [type, ref] of targets) if (isDoing(type, ref) !== turnOn && !(await post('/api/doing', { type, ref, on: turnOn }))) break;
+    await load();
+  });
+}
 </script>

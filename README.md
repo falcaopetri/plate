@@ -90,10 +90,15 @@ A session may carry `"github": "<item url>"`: a new session inherits that item's
 | `devin_review_prompt` | override, `{url}` placeholder (default `/code-review {url}`) |
 | `devin_waiting_minutes` | a Devin session idle this long (and not archived) becomes `waiting` = Needs you (default 2; `0` = immediately) |
 | `github_query` | Projects filter sent with every board query (same syntax as the board's filter box), e.g. `-label:Stale`; items it filters out go away from the plate. Empty = the whole board |
+| `todoist_link` | `web` opens Todoist tasks in the browser; default opens the desktop app (`todoist://task?id=…`) |
+| `archive_after_days` | an active workstream with nothing open and no event for this many days gets an "archive?" suggestion in its header (default 14; never archived by itself) |
+| `doing_limit` | slots in "Focus now" (default 4, 1-9); adding past it asks you to finish or drop one |
+| `devin_review_multi_prompt` | prompt for "Review N PRs in Devin", `{urls}` = the PRs one per line (default: one consolidated review of related PRs) |
 | `done_days` | finished items stay under "Recently done" in a workstream this many days (default 7) |
 | `stale_days` | an active workstream with something open and no event for this many days is dimmed on the map with an `Nd` badge (default 3; before the event log is that old it counts from where the log starts) |
 | `tasknotes_dir` | TaskNotes tasks folder (default `<data>/../TaskNotes/Tasks` if it exists; `off` disables); open tasks with a `due`/`scheduled` date ≤ today go to Needs you |
 | `people_dir` | folder of the people notes behind a workstream's `people:` (default `<data>/../../Atlas/People`); optional note frontmatter `role`, `email`, `teams`, `github`, `company` |
+| `teams_after_review: off` | do not open the Teams draft to the PR author when a Devin review session is archived (default on, macOS) |
 | `people_directory: off` / `dscl_node` | directory lookup of people by e-mail through macOS `dscl` (on by default on a Mac; node default `/Search`) |
 | `lan: on` | Also listen on the local network, e.g. to open Plate on a phone on the same wifi (default off: `127.0.0.1` only). Other devices need an access token: the server log and ⚙ (on the Mac) print `http://<ip>:4173/?t=<token>`; open it once on the phone and it becomes a cookie. The token lives in `.cache/lan-token`; delete the file and restart to rotate it. Plate has no login and its routes write files and run Devin: keep it off on shared networks. Restart required. On macOS the firewall blocks incoming connections to `node`; instead of allowing every node program, run `scripts/private-node.sh` (copies node to `.bin/`, which `npm start` then uses, and prints the one-time `sudo` line that allows that copy only) |
 | `setup_agent` | Who the **Setup pending** badge opens to apply the CHANGELOG: `claude` (default; Claude Code app via `claude://code/new` on this repo with the prompt filled in) or `devin` (headless `devin -p /plate-changelog` in this repo; the session appears in Devin Desktop and Plate offers its link). Set `devin` on the work machine |

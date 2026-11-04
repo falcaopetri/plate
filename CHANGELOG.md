@@ -6,6 +6,27 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 12 — 2026-11-03: Focus now, Related search, TaskNote ✓, "Review N PRs in Devin", map spacing
+
+- **Focus now**, a view of its own in the dock: short-memory slots for what you are working on (each with a "where I stopped" line and its context: tasks, PRs, sessions, to-dos), persistent (`<data>/doing.json`, not per day), limit `doing_limit` (default 4). Add by dragging a card, Inbox row or node onto the dock's Focus now button, by hovering/selecting and pressing `f`, or right-click → "Add to Focus now"; ✎ keeps a "where I stopped" line; ✓ frees the slot. Full = it refuses until one is finished or dropped.
+- **New TaskNote** row is one slim line with a due-date shorthand box instead of the date picker: `today`, `tmrw`, `+3d`, `+2w`, `mon`…`sun` (the next one), `wknd`, `eom`, `20/11`, `2026-11-20` (pt and en); a preview shows the resolved date, Enter adds.
+- **Todoist tasks open in the Todoist app** (`todoist://task?id=…`; `todoist_link: web` brings the browser back). A Focus now slot title goes to the item's workstream, ↗ opens the item itself.
+- **Workstream lifecycle: active → paused → done → archived.** *Archive* button in the workstream header (and an "archive?" chip when an active leaf has nothing open and no event for `archive_after_days`, default 14: only a suggestion). The dialog asks about the sub-workstreams (archive them too, default) and the open items (to the Inbox, to another workstream, or left inside, hidden with it). Archived workstreams leave the map, Inbox, counts, search and Needs you; **Archive · n** in the map bar lists and restores them (children come back with their parent; Undo in the toast). New GitHub items never route into an archived workstream's `repo:` anchor. **paused / done / archived workstreams no longer feed "Needs you"** (their items stay, just quiet); **done** ones are hidden from the map behind **Show done · n**.
+- **Sync (⋯ → Sync and `r`+`a`/`d`/`g`) waits for the collectors** and ends with "Synced everything · Todoist: 20 pulled, 1 gone" (or which ones failed). Before, the page refreshed at fixed delays, so a full sync (~12 s, Todoist last) looked like it had done nothing until the next poll.
+- A manual Sync runs the slow collector (`mine`, ~8 s) last, so Todoist, reviews and the others show up within a few seconds.
+- **Focus now button** in a workstream's header (plus `f` on hover, drag to the dock).
+- **Teams after the review:** archiving a Devin review session in Devin (session anchored to a PR) opens the Teams chat draft to the PR's author ("Oi! Fiz o review do seu PR …"), nothing is sent. Macs only (`open`); `teams_after_review: off` disables it. The author's e-mail is `people:` in `sources.md`.
+- **Related**: the link box in "Edit workstream" is a search (type any part of the path), options and chips show the full `Parent › Child` path; the "Related" row in the focus view is sorted the same way.
+- **TaskNotes ✓ done / ↺ reopen** on the card: writes `status` + `completedDate` in the task's own `.md` (recurring tasks refuse: complete them in Obsidian).
+- **Review N PRs in Devin**: "☐ together" on PR cards (or select ≥2 PRs in the Inbox) → one headless `devin -p` session with a multi-PR prompt (`devin_review_multi_prompt`, `{urls}`); the session anchors to the first PR, every PR shows the same run.
+- Pasting an Outlook web link (`outlook.office.com/mail/...`) now becomes "Outlook e-mail". Outlook has no "copy link" for a message: see the project note for how to get one.
+- Mindmap: boxes that overlapped (siblings on a crowded ring, a child on top of its parent) are pushed apart.
+
+**Setup**
+1. Restart the server.
+2. Work machine: fill `people:` in `<data>/sources.md` (`- <github login>: <work e-mail>`) from the user's `teams.md` table (ask where it is). The agent applying this entry reads the table, finds the GitHub login of the people who review or author PRs here (`gh pr list`/the Plate's items.jsonl `author` values, matched by name with `gh api users/<login>`), writes the entries, and lists whoever it could not match for the user to fill in.
+3. Optional keys (⚙ → Workstreams / Devin): `doing_limit`, `devin_review_multi_prompt`, `teams_after_review`. Work machine: untested there (Devin 3.4 CLI for the multi-PR run).
+
 ## 11 — 2026-11-01: Plate from a phone on the local network (`lan`)
 
 - New `lan: on` key (⚙ → Network): the server also listens on the local network, and devices other than this machine need the access token (printed in the server log and in ⚙: `http://<ip>:4173/?t=<token>`, open it once). Off by default.

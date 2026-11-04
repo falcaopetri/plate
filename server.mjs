@@ -4,13 +4,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ticketContext } from './lib/ghcontext.mjs';
-import { withLock, collectNow, startSchedule, status, busy } from './lib/schedule.mjs';
+import { withLock, collectNow, startSchedule, status, busy, enabledJobs } from './lib/schedule.mjs';
 import { lookupByEmail } from './lib/directory.mjs';
 import { transcript } from './lib/devintranscript.mjs';
-import { startReview, startClose, startSetup, runs } from './lib/devinrun.mjs';
+import { startReview, startReviewMany, startClose, startSetup, runs } from './lib/devinrun.mjs';
 import { log, tail } from './lib/log.mjs';
 import { check as lanCheck, whyDenied, isLocal, lanToken, lanUrls, COOKIE } from './lib/lan.mjs';
-import { readRequests, addRequest, toggleRequest, DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, readSettings, patchSources, createWorkstream, workstreamFromNote, searchNotes, vaultRoot, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
+import { readRequests, addRequest, toggleRequest, DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readDoing, setDoing, doingLimit, setTaskDone, archivePreview, archiveWorkstream, restoreWorkstream, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, readSettings, patchSources, createWorkstream, workstreamFromNote, searchNotes, vaultRoot, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
 
 const PORT = Number(process.env.PORT) || 4173;
 const LAN = readSources().lan === 'on'; // read at startup: changing it needs a restart
@@ -52,12 +52,15 @@ async function handle(req, res, url) {
   {
     if (url.pathname === '/api/state') {
       const t = today();
-      const items = readItems().filter((i) => i.state !== 'gone').map((i) => ({ ...i, needsYou: needsYou(i, t) }));
+      const wsAll = readWorkstreams(), quiet = new Set(wsAll.filter((w) => w.state !== 'active').map((w) => w.slug)), hidden = new Set(wsAll.filter((w) => w.state === 'archived').map((w) => w.slug));
+      const allItems = readItems().filter((i) => i.state !== 'gone');
+      const items = allItems.filter((i) => !hidden.has(i.workstream)).map((i) => ({ ...i, needsYou: needsYou(i, t) && !quiet.has(i.workstream) }));
       // events: today's (local date), for the mindmap's Today mode; people: login -> e-mail for Teams chats
       const log = readEvents(), events = eventsBetween(log, t, t), src = readSources();
       const meeting = src.meeting_quickadd ? { choice: src.meeting_quickadd, vault: src.obsidian_vault || null, values: src.meeting_values } : null;
-      const workstreams = readWorkstreams();
-      return json(res, 200, { dataDir: DATA_DIR, vault: src.obsidian_vault || path.basename(vaultRoot()), today: t, workstreams, canTask: tasknotesDir() !== null, contacts: readContacts(workstreams.flatMap((w) => w.people)), items, events, top3: readTop3(t), top3Prev: readTop3Prev(t), activity: activitySummary(log), staleDays: Number(src.stale_days) || 3, doneDays: Number(src.done_days) || 7, people: src.people, meeting, setup: setupPending(), setupAgent: src.setup_agent === 'devin' ? 'devin' : 'claude', collect: status, runs, busy, devinModel: src.devin_review_model || null });
+      const workstreams = wsAll.filter((w) => w.state !== 'archived');
+      const archived = wsAll.filter((w) => w.state === 'archived').map((w) => ({ slug: w.slug, name: w.name, parent: w.parent, archivedAt: w.archivedAt, archivedWith: w.archivedWith, items: allItems.filter((i) => i.workstream === w.slug && i.state !== 'done').length }));
+      return json(res, 200, { dataDir: DATA_DIR, vault: src.obsidian_vault || path.basename(vaultRoot()), today: t, workstreams, canTask: tasknotesDir() !== null, contacts: readContacts(workstreams.flatMap((w) => w.people)), items, events, top3: readTop3(t), doing: readDoing(), doingLimit: doingLimit(), archived, jobs: enabledJobs(), archiveDays: Number(src.archive_after_days) || 14, todoistLink: src.todoist_link === 'web' ? 'web' : 'app', top3Prev: readTop3Prev(t), activity: activitySummary(log), staleDays: Number(src.stale_days) || 3, doneDays: Number(src.done_days) || 7, people: src.people, meeting, setup: setupPending(), setupAgent: src.setup_agent === 'devin' ? 'devin' : 'claude', collect: status, runs, busy, devinModel: src.devin_review_model || null });
     }
     if (url.pathname === '/api/events') {
       // one local day (`day`) or a window (`from`..`to`, inclusive) of the event log, for Today mode's replay + the days that have any
@@ -67,7 +70,7 @@ async function handle(req, res, url) {
       for (const e of all) days[eventDay(e)] = (days[eventDay(e)] || 0) + 1;
       return json(res, 200, { day, from, to, events: eventsBetween(all, from, to), days });
     }
-    if (url.pathname === '/api/collect' && req.method === 'POST') {
+    if ((url.pathname === '/api/sync' || url.pathname === '/api/collect') && req.method === 'POST') {
       // runs outside the request's lock: each collector takes the lock itself
       // body (optional): {only: ['devin', …]} for a partial sync (the r+d / r+g shortcuts); none = everything enabled
       const raw = await readBody(req), only = raw ? JSON.parse(raw).only : null;
@@ -101,6 +104,15 @@ async function handle(req, res, url) {
       const { type, ref, on = true, done } = JSON.parse(await readBody(req));
       return json(res, 200, { top3: setTop3(today(), type, ref, !!on, done === undefined ? undefined : !!done) });
     }
+    if (url.pathname === '/api/doing' && req.method === 'POST') {
+      // body: {type, ref, on} adds or removes a slot; {type, ref, note} sets its "where I stopped" line; answers the list
+      const { type, ref, on = true, note } = JSON.parse(await readBody(req));
+      return json(res, 200, { doing: setDoing(type, ref, !!on, note) });
+    }
+    if (url.pathname === '/api/tasks/done' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, { item: setTaskDone(b.id, b.done !== false) }); }
+    if (url.pathname === '/api/ws/archive-preview') return json(res, 200, archivePreview(url.searchParams.get('slug')));
+    if (url.pathname === '/api/ws/archive' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, archiveWorkstream(b.slug, b)); }
+    if (url.pathname === '/api/ws/restore' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, restoreWorkstream(b.slug)); }
     if (url.pathname === '/api/dismiss' && req.method === 'POST') {
       // body: {ids, dismissed}; hides items from the Inbox (any source; collectors keep the flag) or brings them back
       const { ids, dismissed = true } = JSON.parse(await readBody(req));
@@ -120,6 +132,7 @@ async function handle(req, res, url) {
     }
     if (url.pathname === '/api/rules/apply' && req.method === 'POST') return json(res, 200, { ok: true, routed: applyRules() });
     if (url.pathname === '/api/devin/review' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startReview(b.url, b.model)); }
+    if (url.pathname === '/api/devin/review-many' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startReviewMany(b.urls, b.model)); }
     if (url.pathname === '/api/devin/close' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startClose(b.url, b.model)); }
     if (url.pathname === '/api/setup/apply' && req.method === 'POST') return json(res, 200, startSetup(setupPending()));
     if (url.pathname === '/api/requests' && req.method === 'POST') return json(res, 200, { ok: true, request: addRequest(JSON.parse(await readBody(req))) });
