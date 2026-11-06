@@ -70,3 +70,27 @@ test('github_query in sources.md is sent as the board filter, and the PR author 
   assert.match(fs.readFileSync(path.join(t.dir, 'gh.log'), 'utf8'), /^-label:Stale$/m);
   assert.equal(t.read().find((i) => i.number === 2).author, 'ana');
 });
+
+test('a pasted ticket outside every anchored repo notices that it was closed (it stayed "In progress")', () => {
+  const url = 'https://github.com/p/q/issues/9';
+  const held = { id: 'ghref:1', source: 'ghref', kind: 'issue', url, title: 'p/q#9', state: 'open', workstream: 'proj' };
+  const t = setup({ items: [held], fixture: { repos: { 'o/r': [] }, known: { [url]: { id: 'I_9', url, number: 9, title: 'x', state: 'CLOSED', repository: { nameWithOwner: 'p/q' }, assignees: { nodes: [] }, parent: null } } } });
+  t.run();
+  const i = t.read().find((x) => x.id === 'ghref:1');
+  assert.equal(i.source, 'ghref'); assert.equal(i.state, 'done'); assert.equal(i.status, 'Closed');
+});
+test('the board Target date field is kept on the item', () => {
+  const t = setup({ sources: 'github_projects: [o/1]', fixture: { board: [{ ...issue(4), target: '2026-11-20' }, issue(5)], repos: {}, known: {} } });
+  t.run();
+  const items = t.read();
+  assert.equal(items.find((i) => i.number === 4).target, '2026-11-20');
+  assert.equal(items.find((i) => i.number === 5).target, null);
+});
+
+test('a pasted sub-issue outside the anchored repos gets its parent, so it nests under a pasted parent', () => {
+  const url = 'https://github.com/p/q/issues/10', par = 'https://github.com/p/q/issues/9';
+  const held = { id: 'ghref:2', source: 'ghref', kind: 'issue', url, title: 'child', state: 'open', workstream: 'proj' };
+  const t = setup({ items: [held], fixture: { repos: { 'o/r': [] }, known: { [url]: { id: 'I_10', url, number: 10, title: 'child', state: 'OPEN', repository: { nameWithOwner: 'p/q' }, assignees: { nodes: [] }, parent: { url: par } } } } });
+  t.run();
+  assert.equal(t.read().find((x) => x.id === 'ghref:2').parent, par);
+});

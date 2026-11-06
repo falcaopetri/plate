@@ -85,6 +85,9 @@ A session may carry `"github": "<item url>"`: a new session inherits that item's
 | `devin_close_prompt` / `devin_close_model` | the **O que falta?** button on any GitHub ticket starts a Devin session with this prompt (`{url}` placeholder; e.g. `/my-skill {url}`) and `--model` (default: `devin_review_model`) |
 | `<collector>_every_minutes` | polling interval per collector (`devin` 1, `github` 10, `reviews` 10, `mine` 5, `tasknotes` 5, `todoist` 15 by default), read each tick |
 | `collect: off` | turns off all automatic collection (timers); **Sync now** still runs the enabled collectors by hand |
+| `devin_permission_mode` | `--permission-mode` of the headless Devin runs (review, O que falta?, setup): `auto` \| `accept-edits` \| `smart` (default) \| `dangerous`. Headless Devin cannot ask for approval, so `auto` rejects every command that is not read-only |
+| `claude_sessions: off` / `claude_projects_dir` / `claude_session_days` / `claude_active_hours` | Claude Code sessions listed from the transcripts in `~/.claude/projects` (default on): only those with activity in the last `claude_session_days` (3); a session quiet for `claude_active_hours` (3) is done instead of waiting on you |
+| `target_warn_days` | a board item whose "Target date" is this many days away (default 7) or past gets a 🎯 chip and moves to "Needs you / next"; `0` turns it off |
 | `devin_review_model` | default `--model` for "Review no Devin" (e.g. `opus`); the box next to the button overrides it |
 | `devin_review_dir` | folder where "Review no Devin" runs (the one with the repo clones) |
 | `devin_review_prompt` | override, `{url}` placeholder (default `/code-review {url}`) |

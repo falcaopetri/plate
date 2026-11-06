@@ -6,6 +6,24 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 13 — 2026-11-06: work-machine fixes redone here, Claude Code sessions, target date, sub-issues, `r`+`t`, `s`
+
+- **Fixes that existed only on the work Mac, now in the repo** (pull before re-applying them there): `test/teamsnotify.test.mjs` polls for the opener's file (up to 5 s) instead of a fixed 300 ms; `collectors/mine.mjs` no longer re-creates as `mine:` a board item that the board collector dropped through a `-status:` term of `github_query` (other terms such as `-label:` are not mirrored).
+- **Pasted ticket closed later stays closed:** a pasted GitHub link (`ghref`) outside every `repo:` anchor was never re-fetched, so a closed issue kept showing under "In progress". The GitHub collector now refreshes those too (state only).
+- **Teams meeting links** (`teams.microsoft.com/meet/<n>?p=<passcode>`) pasted with ⌘V become a Teams item (they were saved as a generic link); the passcode stays in the url.
+- **Archive no longer asks about references:** a pasted link, a Teams chat and a note stay in the archived workstream; only tasks, open tickets/PRs and sessions are offered for moving.
+- **Inbox titles wrap**; the Inbox box keeps the height of the map (it shrank whenever the page was scrolled).
+- **Sub-issues:** an issue whose GitHub `parent` is in the same workstream hangs under it (like a PR under its issue).
+- **Target date:** the board's "Target date" field is collected; a still-open item within `target_warn_days` (default 7) of it, or past it, gets a 🎯 chip and goes to "Needs you / next" in its workstream (not to the Needs you view).
+- **Claude Code sessions** are listed (tool `claude`) from `~/.claude/projects`: your move when Claude ended on text, or sat 90 s on a tool call (permission prompt); done after `claude_active_hours` (default 3) of silence. No deep link to open one in the Claude app is known, so the card has none.
+- **Outlook e-mail link:** `scripts/outlook-link.js` (paste in the console of Outlook on the web with an e-mail open) builds candidate links to the message, tests in new tabs which one reopens it instead of bouncing to the home, and copies the first that holds. Pasting `…/owa/?ItemID=…` now becomes an "Outlook e-mail" item. **Untested on the work M365** (not installed on the personal Mac); no extension, and the new Outlook for Mac has no usable AppleScript.
+- **Keys:** `r` then `t` syncs Todoist + TaskNotes; `s` opens Submit a request; Esc inside a text field leaves it.
+- **Headless Devin runs** (review, "O que falta?", setup) now pass `--permission-mode` (`devin_permission_mode`, default `smart`): in the CLI's default mode every command except read-only tools is rejected with "Running in non-interactive mode".
+
+**Setup**
+- Nothing is required. On the work Mac: check `claude_projects_dir` if Claude Code keeps transcripts elsewhere, `claude_sessions: off` to hide them, and `devin_permission_mode: auto` to go back to the old behaviour. The `Target date` flag needs a board field literally named "Target date".
+- Restart the server (new collector and routes).
+
 ## 12 — 2026-11-03: Focus now, Related search, TaskNote ✓, "Review N PRs in Devin", map spacing
 
 - **Focus now**, a view of its own in the dock: short-memory slots for what you are working on (each with a "where I stopped" line and its context: tasks, PRs, sessions, to-dos), persistent (`<data>/doing.json`, not per day), limit `doing_limit` (default 4). Add by dragging a card, Inbox row or node onto the dock's Focus now button, by hovering/selecting and pressing `f`, or right-click → "Add to Focus now"; ✎ keeps a "where I stopped" line; ✓ frees the slot. Full = it refuses until one is finished or dropped.

@@ -26,7 +26,7 @@ test('only a session that turns done between runs opens the chat, once', async (
   assert.equal(await t.notifyArchived(before), 0); // nothing changed
   write('done');
   assert.equal(await t.notifyArchived(before), 1);
-  await new Promise((ok) => setTimeout(ok, 300));
+  for (let n = 0; n < 100 && !fs.existsSync(out); n++) await new Promise((ok) => setTimeout(ok, 50)); // the fake opener is a spawned process: wait for it, up to 5 s
   const url = fs.readFileSync(out, 'utf8').trim();
   assert.match(url, /^msteams:\/\/.*users=ana\.souza%40corp\.com/);
   assert.match(decodeURIComponent(url), /Fix it/);

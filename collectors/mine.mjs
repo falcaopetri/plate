@@ -70,8 +70,13 @@ for (const i of items) {
 }
 if (flagged) writeItems(items);
 
+// github_query "-status:Cancelled,Done,Stale": a board item the board collector dropped (state gone) with such a Status is not
+// "already on the plate", but must not come back here as `mine:` either. Other terms (-label:) are not mirrored.
+const excluded = new Set(String(readSources().github_query || '').split(/\s+/).filter((t) => /^-status:/i.test(t))
+  .flatMap((t) => t.replace(/^-status:/i, '').replace(/^"|"$/g, '').split(',')).map((s) => s.trim().toLowerCase()).filter(Boolean));
+const dropped = new Set(items.filter((i) => i.source === 'github' && i.state === 'gone' && i.url && excluded.has(String(i.status || '').toLowerCase())).map((i) => canon(i.url)));
 const repoWs = repoAnchors();
-const incoming = [...found].filter(([url]) => !elsewhere.has(canon(url))).map(([url, { node: n, why }]) => ({
+const incoming = [...found].filter(([url]) => !elsewhere.has(canon(url)) && !dropped.has(canon(url))).map(([url, { node: n, why }]) => ({
   id: `mine:${url}`, source: 'mine', kind: n.__typename === 'PullRequest' ? 'pr' : 'issue', url, title: n.title, repo: n.repository.nameWithOwner, number: n.number,
   author: n.author?.login || null, draft: n.isDraft || undefined, ghState: 'open', status: 'Mine', state: 'open', mineWhy: [...why],
   activity: activityOf(n), created: n.createdAt, lastActivity: n.updatedAt, workstream: repoWs.get(n.repository.nameWithOwner.toLowerCase()),

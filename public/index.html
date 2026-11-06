@@ -296,12 +296,12 @@
   .tgrp { margin-bottom: var(--s4); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); overflow: hidden; }
   .tgrp > h4 { display: flex; align-items: center; gap: var(--s2); margin: 0; padding: 8px 12px; font: 600 var(--fs-xs)/1.4 var(--mono); color: var(--text-2); border-bottom: 1px solid var(--line); background: var(--surface-2); cursor: pointer; }
   .tgrp > h4 span { margin-left: auto; font-family: var(--font); color: var(--text-3); font-weight: 500; }
-  .trow { --k: var(--text-2); display: grid; grid-template-columns: 22px 16px minmax(0, 1fr) auto; gap: var(--s2); align-items: center; padding: 7px 12px; border-top: 1px solid var(--line); cursor: pointer; }
+  .trow { --k: var(--text-2); display: grid; grid-template-columns: 22px 16px minmax(0, 1fr) auto; gap: var(--s2); align-items: start; padding: 7px 12px; border-top: 1px solid var(--line); cursor: pointer; }
   .trow:first-of-type { border-top: 0; }
   .trow:hover { background: var(--surface-2); }
   .trow.sel { background: rgb(95 211 162 / .09); }
   .trow .g { color: var(--k); display: flex; }
-  .trow .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trow .t { white-space: normal; overflow-wrap: anywhere; }
   .trow .t a { color: var(--text); text-decoration: none; } .trow .t a:hover { text-decoration: underline; text-decoration-color: var(--text-3); }
   .trow .m { display: flex; gap: 6px; align-items: center; }
   .trow.k-todoist { --k: var(--todo); } .trow.k-pr { --k: var(--pr); } .trow.k-issue { --k: var(--issue); } .trow.k-session { --k: var(--sess); } .trow.k-teams { --k: #9db4ff; } .trow.k-link { --k: #7fd0e0; } .trow.k-note { --k: #d9c79a; } .trow.k-draft { --k: var(--text-3); }
@@ -517,7 +517,7 @@ function syncBadge() {
 }
 let syncText = { bad: false, text: '', tip: '' };
 // the ⋯ menu: everything that used to be a loose button in the top bar
-const MENU = [['sync', 'Sync now', 'r a'], ['submit', 'Submit a request', ''], ['note', 'Make a note a workstream…', ''], ['settings', 'Settings', ''], ['log', 'Server log', ''], ['search', 'Search…', '⌘K']];
+const MENU = [['sync', 'Sync now', 'r a'], ['submit', 'Submit a request', 's'], ['note', 'Make a note a workstream…', ''], ['settings', 'Settings', ''], ['log', 'Server log', ''], ['search', 'Search…', '⌘K']];
 function drawMenu() {
   $('#menu').innerHTML = `<div class="mstat ${syncText.bad ? 'bad' : ''}" title="${esc(syncText.tip)}">${esc(syncText.text)}</div>` + MENU.map(([k, t, h]) => `<button class="mrow" data-m="${k}">${t}${h ? `<kbd>${h}</kbd>` : ''}</button>`).join('');
 }
@@ -634,11 +634,14 @@ document.addEventListener('keydown', (e) => {
   if (v) { e.preventDefault(); view = v; render(); }
   else if (e.key === '/') { e.preventDefault(); view = 'ws'; panelOpen = true; render(); $('#tq')?.focus(); }
   else if (e.key === 'i' && view === 'ws') togglePanel();
+  else if (e.key === 's') { e.preventDefault(); openRequests(); }
 });
+// Esc inside a text field gives the focus back (so the single-key shortcuts work again)
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !e.defaultPrevented && e.target.matches?.('input, select, textarea, [contenteditable]')) e.target.blur(); });
 
 // r then d / g / a: sync Devin / GitHub (board, repos, my tickets, review requests) / everything right now
 let rArm = 0;
-const SYNCS = { d: [['devin'], 'Devin'], g: [['github', 'mine', 'reviews'], 'GitHub'], a: [null, 'everything'] };
+const SYNCS = { d: [['devin'], 'Devin'], g: [['github', 'mine', 'reviews'], 'GitHub'], t: [['todoist', 'tasknotes'], 'tasks'], a: [null, 'everything'] };
 document.addEventListener('keydown', async (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, select, textarea, [contenteditable]')) return;
   const k = e.key.toLowerCase(); // Caps Lock / Shift still count
@@ -646,7 +649,7 @@ document.addEventListener('keydown', async (e) => {
     rArm = 0; e.preventDefault(); e.stopImmediatePropagation();
     const [only, what] = SYNCS[k];
     syncWait(only, what);
-  } else if (k === 'r') { rArm = Date.now(); toast('r → d Devin · g GitHub · a all'); }
+  } else if (k === 'r') { rArm = Date.now(); toast('r → d Devin · g GitHub · t tasks · a all'); }
   else rArm = 0;
 }, true);
 
@@ -662,6 +665,13 @@ const GLYPH = {
   session: ic('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="m8 10 3 2-3 2M13 14.5h3.5"/>'),
 };
 const REPEAT = ic('<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>');
+// the board's "Target date": flagged when it is within target_warn_days (or past) and the ticket is still open
+const targetInfo = (i) => {
+  if (!i.target || i.state === 'done' || i.state === 'gone' || !S.targetWarnDays) return null;
+  const d = Math.round((Date.parse(i.target) - Date.parse(S.today)) / 864e5);
+  return d <= S.targetWarnDays ? { d, cls: d < 0 ? 'late' : d === 0 ? 'today' : 'need' } : null;
+};
+const targetTag = (i) => { const t = targetInfo(i); return t ? `<span class="chip ${t.cls}" title="Target date ${esc(i.target)}">🎯 ${t.d < 0 ? `${-t.d}d past target` : t.d === 0 ? 'target today' : `target in ${t.d}d`}</span>` : ''; };
 const dueTag = (i) => {
   if (!i.due) return '';
   const cls = i.due < S.today ? 'late' : i.due === S.today ? 'today' : 'soon';
@@ -725,7 +735,7 @@ const metaOf = (i) => i.source === 'todoist' || i.source === 'tasknotes' ? `${du
   : [i.source === 'session' ? `<span class="state st-${esc(i.state)}">${esc(i.state)}</span>` : '', i.source === 'session' && i.turn === 'me' && i.state !== 'done' ? '<span class="chip need" title="Devin finished its turn: the next move is yours">your turn</span>' : '', i.source === 'session' ? chip(i.tool, 'dim') : '',
     i.cwd ? `<span class="chip dim" title="${esc(i.cwd)}">${esc(base(i.cwd))}</span>` : '',
     i.anchor && GH_TICKET.test(i.anchor) ? `<button class="chip" data-ctx="${esc(i.anchor)}" title="${esc(onPlate(i.anchor)?.title || i.anchor)}">↳ ${esc(i.anchor.replace(/^https:\/\/github\.com\//, '').replace('/pull/', '#'))}</button>` : '',
-    i.tool === 'devin' && i.id.startsWith('session:') ? `<button class="chip dim" data-tr="${esc(i.id.slice(8))}" title="Read the conversation here">transcript</button>` : '', chip(ago(i.lastActivity), 'dim'), chip(i.status), chip(i.iteration, 'dim'), dueTag(i)].join('');
+    i.tool === 'devin' && i.id.startsWith('session:') ? `<button class="chip dim" data-tr="${esc(i.id.slice(8))}" title="Read the conversation here">transcript</button>` : '', chip(ago(i.lastActivity), 'dim'), chip(i.status), chip(i.iteration, 'dim'), dueTag(i), targetTag(i)].join('');
 const ORDER = { session: 0, teams: 1, link: 2, note: 3, pr: 4, issue: 5, draft: 6 };
 const byDue = (a, b) => (ORDER[a.kind] ?? 7) - (ORDER[b.kind] ?? 7) || (a.due || '9').localeCompare(b.due || '9');
 
@@ -1267,7 +1277,7 @@ function nestOf(items) {
   const norm = (u) => String(u || '').replace(/[#?].*$/, ''), byUrl = new Map(items.filter((i) => i.url).map((i) => [norm(i.url), i]));
   const parent = new Map(), kids = new Map();
   for (const i of items) {
-    const p = i.tool === 'devin' && i.anchor ? byUrl.get(norm(i.anchor)) : isPull(i) && Array.isArray(i.closes) ? i.closes.map((u) => byUrl.get(norm(u))).find((x) => x && !isPull(x)) : null;
+    const p = i.tool === 'devin' && i.anchor ? byUrl.get(norm(i.anchor)) : isPull(i) && Array.isArray(i.closes) ? i.closes.map((u) => byUrl.get(norm(u))).find((x) => x && !isPull(x)) : i.kind === 'issue' && i.parent ? byUrl.get(norm(i.parent)) : null; // sub-issue under its parent issue
     if (!p || p === i || parent.get(p.id) === i) continue;
     parent.set(i.id, p); kids.set(p.id, [...(kids.get(p.id) || []), i]);
   }
@@ -1277,14 +1287,14 @@ function nestOf(items) {
 function groupItems(items, kids = new Map(), doneDays = 0) {
   const g = { need: [], prog: [], soon: [], talk: [], done: [] };
   const live = (x) => x.state !== 'done' && x.state !== 'gone';
-  const needsDeep = (i, d = 0) => (i.needsYou && live(i)) || (d < 3 && (kids.get(i.id) || []).some((k) => needsDeep(k, d + 1)));
+  const needsDeep = (i, d = 0) => ((i.needsYou || targetInfo(i)) && live(i)) || (d < 3 && (kids.get(i.id) || []).some((k) => needsDeep(k, d + 1)));
   for (const i of items) {
     const review = i.kind === 'pr' && i.state === 'open' && /review/i.test(i.status || '');
     if ((i.state === 'done' || i.state === 'gone') && doneDays && i.source !== 'session' && Date.parse(i.updated || 0) < Date.now() - doneDays * 864e5 && !(kids.get(i.id) || []).some(live)) continue; // finished long ago: out of "Recently done"
     if (live(i) && needsDeep(i)) { g.need.push(i); continue; }
     if (i.source === 'session' && (i.state === 'done' || i.state === 'gone')) continue; // archived in Devin: out of sight
     if (i.state === 'done' || i.state === 'gone') g.done.push(i);
-    else if (i.needsYou || review) g.need.push(i);
+    else if (i.needsYou || review || targetInfo(i)) g.need.push(i);
     else if (MANUAL.includes(i.source) && i.source !== 'ghref') g.talk.push(i);
     else if (i.source === 'todoist' || i.source === 'tasknotes') g.soon.push(i);
     else g.prog.push(i);
@@ -1886,8 +1896,10 @@ function fitView() {
     }
     applyCam(cv);
   }
-  for (const el of document.querySelectorAll('.ipanel, .tl')) el.style.maxHeight = `${room(el)}px`;
-  const ip = document.querySelector('.ipanel'); if (ip && cs) ip.style.height = cs.style.height; // same box as the map beside it
+  for (const el of document.querySelectorAll('.tl')) el.style.maxHeight = `${room(el)}px`;
+  // the panel is position: sticky, so its own top moves with the scroll and the old measure shrank it whenever the page was scrolled
+  const ip = document.querySelector('.ipanel');
+  if (ip) { const h = cs ? cs.style.height : `${room(ip.parentElement || ip)}px`; ip.style.maxHeight = h; if (cs) ip.style.height = h; }
 }
 addEventListener('resize', () => requestAnimationFrame(fitView));
 // panel-only interactions (select, search, filters) redraw just the panel, so the map doesn't jump or replay
@@ -1928,7 +1940,7 @@ function inboxPanel() {
     return `<div class="trow k-${esc(k)} ${ghState(i)} ${tsel.has(i.id) ? 'sel' : ''}" data-tid="${esc(i.id)}" data-pin="item:${esc(i.id)}" draggable="true">
       <input type="checkbox" ${tsel.has(i.id) ? 'checked' : ''} tabindex="-1"><span class="g">${GLYPH[k] || ''}</span>
       <span class="t"><a ${href}>${esc(nameOf(i))}</a></span>
-      <span class="m">${i.source === 'session' ? chip(ago(i.lastActivity), 'dim') : i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : chip(`${i.repo}#${i.number}`, 'dim')) : ''}${dueTag(i)}${i.workstream ? `<span class="chip ws">▸ ${esc(wsOf(i.workstream)?.name || i.workstream)}</span>` : ''}${i.reviewMe ? '<span class="chip need">review</span>' : ''}${newAct(i) ? `<span class="chip need" title="${esc('@' + i.activity.by + ': ' + i.activity.text)}">💬 @${esc(i.activity.by)}</span>` : ''}<button class="dis" data-dismiss="${esc(i.id)}" title="${i.dismissed ? 'Restore to the Inbox' : 'Dismiss (d)'}">${i.dismissed ? '↺' : '✕'}</button></span></div>`;
+      <span class="m">${i.source === 'session' ? chip(ago(i.lastActivity), 'dim') : i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : chip(`${i.repo}#${i.number}`, 'dim')) : ''}${dueTag(i)}${targetTag(i)}${i.workstream ? `<span class="chip ws">▸ ${esc(wsOf(i.workstream)?.name || i.workstream)}</span>` : ''}${i.reviewMe ? '<span class="chip need">review</span>' : ''}${newAct(i) ? `<span class="chip need" title="${esc('@' + i.activity.by + ': ' + i.activity.text)}">💬 @${esc(i.activity.by)}</span>` : ''}<button class="dis" data-dismiss="${esc(i.id)}" title="${i.dismissed ? 'Restore to the Inbox' : 'Dismiss (d)'}">${i.dismissed ? '↺' : '✕'}</button></span></div>`;
   };
   return `<aside class="ipanel">
     <div class="tri-bar"><div class="page-h"><h2>Inbox</h2><p>${list.length} ${tq ? 'matching' : tscope === 'inbox' ? 'unclassified' : 'open'} · drag onto a workstream · click / shift-click to select · <kbd>/</kbd> search · <kbd>a</kbd> all · <kbd>m</kbd> move · <kbd>d</kbd> dismiss · <kbd>i</kbd> hide</p></div>
@@ -2040,9 +2052,9 @@ document.addEventListener('keydown', (e) => {
 // ---------- smart paste: Cmd+V outside a form field adds an item ----------
 function classifyPaste(raw) {
   const text = raw.trim(), oneToken = !/\s/.test(text);
-  if (oneToken && (/teams\.(microsoft\.com|cloud\.microsoft)\/l\//i.test(text) || /^msteams:/i.test(text))) return { source: 'teams', title: 'Teams conversation', url: text };
+  if (oneToken && (/teams\.(microsoft\.com|cloud\.microsoft)\/(l|meet)\//i.test(text) || /^msteams:/i.test(text))) return { source: 'teams', title: /\/meet\//i.test(text) ? 'Teams meeting' : 'Teams conversation', url: text };
   if (oneToken && /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/(issues|pull)\/\d+/i.test(text)) return { source: 'ghref', url: text };
-  if (oneToken && /^https:\/\/outlook\.(office|office365|cloud\.microsoft)(\.com)?\/(mail|calendar)\//i.test(text)) return { source: 'link', title: /\/calendar\//i.test(text) ? 'Outlook event' : 'Outlook e-mail', url: text };
+  if (oneToken && /^https:\/\/outlook\.(office|office365|cloud\.microsoft)(\.com)?\/(mail|calendar|owa)\//i.test(text)) return { source: 'link', title: /\/calendar\//i.test(text) ? 'Outlook event' : 'Outlook e-mail', url: text };
   if (oneToken && /^https?:\/\//i.test(text)) {
     let title = text;
     try { const u = new URL(text); const last = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() || ''); title = u.hostname.replace(/^www\./, '') + (last ? ` › ${last}` : ''); } catch {}

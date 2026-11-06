@@ -111,3 +111,16 @@ test('sources.md settings: edit in place, keep unknown keys and the body, empty 
   assert.match(text, /Body stays\./);
   assert.doesNotMatch(text, /collect:/);
 });
+
+test('github_query -status: a board item the board collector dropped does not come back as mine:', () => {
+  const stale = { id: 'github:I_1', source: 'github', kind: 'issue', url: U(1), title: 'old', status: 'Stale', state: 'gone', workstream: 'proj' };
+  const t = setup({ sources: 'github_query: "-status:Cancelled,Done,Stale"', items: [stale], fixture: { mine: { author: [node(1), node(2)], assignee: [], mention: [] } } });
+  t.run();
+  assert.deepEqual(t.read().filter((i) => i.source === 'mine').map((i) => i.number), [2]);
+});
+test('without that term the same ticket does come back', () => {
+  const stale = { id: 'github:I_1', source: 'github', kind: 'issue', url: U(1), title: 'old', status: 'Stale', state: 'gone', workstream: 'proj' };
+  const t = setup({ items: [stale], fixture: { mine: { author: [node(1)], assignee: [], mention: [] } } });
+  t.run();
+  assert.equal(t.read().filter((i) => i.source === 'mine').length, 1);
+});

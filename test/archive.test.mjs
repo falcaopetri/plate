@@ -67,3 +67,18 @@ test('without children: they move up one level; a restored child under an archiv
   assert.equal(state('b'), 'active');
   assert.ok(!store.readWorkstreams().find((w) => w.slug === 'b').parent);
 });
+
+test('a pasted link, a Teams chat and a note are references: they are not pending items to move', () => {
+  reset();
+  fs.appendFileSync(path.join(dir, 'items.jsonl'), [
+    { id: 'l1', source: 'link', state: 'open', workstream: 'a', title: 'ref' },
+    { id: 't1', source: 'teams', state: 'open', workstream: 'a', title: 'chat' },
+    { id: 'n1', source: 'note', state: 'open', workstream: 'a', title: 'note' },
+    { id: 'g1', source: 'ghref', url: 'https://github.com/o/r/issues/3', state: 'open', workstream: 'a', title: 'ticket' },
+  ].map((i) => JSON.stringify(i)).join('\n') + '\n');
+  assert.equal(store.archivePreview('a').open, 3); // x, y and the pasted ticket
+  store.archiveWorkstream('a');
+  assert.equal(wsOf('l1'), 'a'); assert.equal(wsOf('t1'), 'a'); assert.equal(wsOf('n1'), 'a'); // stay (hidden with it)
+  assert.equal(wsOf('g1'), null); // the open ticket goes to the Inbox
+  reset();
+});

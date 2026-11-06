@@ -38,4 +38,4 @@ const incoming = JSON.parse(fs.readFileSync(file, 'utf8')).sessions.map((s) => {
     state: s.state, created: s.created, workstream: s.workstream ?? inherit(s.github),
   };
 });
-upsert('session', incoming, { closedStates: [], owns: (it) => it.tool !== 'devin' }); // devin items belong to collectors/devin.mjs
+upsert('session', incoming, { closedStates: [], owns: (it) => it.tool !== 'devin' && it.tool !== 'claude' }); // devin items belong to collectors/devin.mjs, claude ones to collectors/claude.mjs

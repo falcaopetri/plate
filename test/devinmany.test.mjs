@@ -32,8 +32,9 @@ test('one run, a prompt with every PR, and the run shared by each PR', async () 
   assert.throws(() => startReviewMany([B, 'https://github.com/o/r/pull/9']), /already running/);
   for (let n = 0; n < 50 && !fs.existsSync(argvFile); n++) await new Promise((ok) => setTimeout(ok, 100));
   const argv = JSON.parse(fs.readFileSync(argvFile, 'utf8'));
-  assert.equal(argv[0], '-p');
-  assert.ok(argv[1].includes(A) && argv[1].includes(B));
+  assert.deepEqual(argv.slice(0, 2), ['--permission-mode', 'smart']); // headless cannot ask: default mode is smart
+  const p = argv.indexOf('-p');
+  assert.ok(p > 0 && argv[p + 1].includes(A) && argv[p + 1].includes(B));
   for (let n = 0; n < 50 && runs[A].state === 'running'; n++) await new Promise((ok) => setTimeout(ok, 100));
   assert.equal(runs[A].state, 'done');
 });

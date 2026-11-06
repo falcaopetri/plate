@@ -49,6 +49,7 @@ const ITEMS = `items(first: 100, after: $cursor, query: $q) {
     fieldValues(first: 30) { nodes {
       ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2FieldCommon { name } } }
       ... on ProjectV2ItemFieldIterationValue { title }
+      ... on ProjectV2ItemFieldDateValue { date field { ... on ProjectV2FieldCommon { name } } }
     } }
     content {
       ... on DraftIssue { title }
@@ -116,11 +117,12 @@ const fromGraphql = (n) => fromContent(n.content || {}, n.fieldValues?.nodes || 
 function fromContent(c, fv, id) {
   const status = fv.find((v) => v.field?.name === 'Status')?.name || null;
   const iteration = fv.find((v) => 'title' in v)?.title || null;
+  const target = fv.find((v) => 'date' in v && /^target.?date$/i.test(v.field?.name || ''))?.date || undefined; // the board's "Target date" field
   const isPr = 'closingIssuesReferences' in c, isIssue = !isPr && 'number' in c;
   const closes = isPr ? c.closingIssuesReferences.nodes : [];
   return {
     id, kind: isPr ? 'pr' : isIssue ? 'issue' : 'draft', url: c.url || null, title: c.title, repo: c.repository?.nameWithOwner || null,
-    number: c.number ?? null, author: c.author?.login || undefined, status, iteration, assignees: c.assignees?.nodes.map((a) => a.login), closed: /^(closed|merged)$/i.test(c.state || ''), ghState: c.state ? c.state.toLowerCase() : null,
+    number: c.number ?? null, author: c.author?.login || undefined, status, iteration, target, assignees: c.assignees?.nodes.map((a) => a.login), closed: /^(closed|merged)$/i.test(c.state || ''), ghState: c.state ? c.state.toLowerCase() : null,
     parent: isIssue ? c.parent?.url || null : undefined, closes: isPr ? closes.map((x) => x.url) : undefined,
     lineage: isIssue ? chain(c) : closes.flatMap((x) => [x.url, ...chain(x)]), // the epics this item could belong to, nearest first
   };
@@ -179,7 +181,7 @@ for (const r of raw) {
   const epic = [r.url, ...r.lineage].find((u) => epicWs.has(u));
   incoming.push({
     id: `github:${r.id}`, source: 'github', kind: r.kind, url: r.url, title: r.title, repo: r.repo, number: r.number,
-    status: r.status, iteration: r.iteration, author: r.author, assignees: r.assignees, parent: r.parent, closes: r.closes, ghState: r.ghState,
+    status: r.status, iteration: r.iteration, target: r.target ?? null, author: r.author, assignees: r.assignees, parent: r.parent, closes: r.closes, ghState: r.ghState,
     state: DONE.test(r.status || '') || r.closed ? 'done' : 'open',
     workstream: (epic && epicWs.get(epic)) ?? repoWs.get(String(r.repo).toLowerCase()) ?? undefined,
   });
@@ -192,3 +194,22 @@ const absorbed = incoming.filter((x) => refs.has(canon(x.url)));
 for (const x of absorbed) x.workstream = refs.get(canon(x.url)).workstream ?? x.workstream;
 if (absorbed.length) writeItems(all.filter((x) => !((x.source === 'ghref' || x.source === 'mine') && absorbed.some((a) => canon(a.url) === canon(x.url)))));
 upsert('github', incoming, { closedStates: ['gone'] });
+
+// A pasted link (`ghref`) outside every anchored repo isn't re-fetched above, so a ticket closed after it was pasted stayed
+// "In progress" forever. Only its state is refreshed here (it stays a ghref).
+if (!oneBoard && !arg('file')) {
+  const anchored = (x) => { const m = String(x.url).match(/github\.com\/([\w.-]+\/[\w.-]+)\/(?:issues|pull)\/\d+/i); return !!m && repoWs.has(m[1].toLowerCase()); };
+  const held = readItems().filter((x) => x.source === 'ghref' && x.state !== 'gone' && x.state !== 'done' && x.url && !anchored(x));
+  if (held.length) {
+    const fresh = new Map(fetchKnown([...new Set(held.map((x) => canon(x.url)))]).map((c) => [canon(c.url), c]));
+    const items = readItems(); let n = 0;
+    for (const i of items) {
+      const c = i.source === 'ghref' && fresh.get(canon(i.url)); if (!c) continue;
+      const closed = /^(closed|merged)$/i.test(c.state || '');
+      const par = c.parent?.url || undefined; // sub-issue parent, so a pasted child nests under a pasted parent
+      if (par !== i.parent) { if (par) i.parent = par; else delete i.parent; n++; }
+      if (closed && i.state !== 'done') { i.state = 'done'; i.ghState = c.state.toLowerCase(); i.status = /^merged$/i.test(c.state) ? 'Merged' : 'Closed'; i.updated = new Date().toISOString(); n++; }
+    }
+    if (n) { writeItems(items); console.log(`github: ${n} pasted ticket(s) outside the anchored repos refreshed (closed or parent)`); }
+  }
+}
