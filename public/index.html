@@ -142,7 +142,7 @@
   select option { background: #10201d; }
   button.btn { cursor: pointer; } button.btn:hover { background: var(--surface-3); }
   button.btn.ghost { background: none; color: var(--text-2); }
-  .rootzone { padding: 6px 14px; border: 1px dashed var(--line-2); border-radius: 99px; color: var(--text-3); font-size: var(--fs-xs); letter-spacing: .06em; text-transform: uppercase; }
+  .rootzone { position: absolute; left: 12px; top: 12px; z-index: 3; padding: 6px 14px; border: 1px dashed var(--line-2); border-radius: 99px; color: var(--text-3); font-size: var(--fs-xs); letter-spacing: .06em; text-transform: uppercase; cursor: default; }
   .rootzone.over { border-color: var(--text); color: var(--text); background: var(--surface-2); }
   .canvas-scroll { position: relative; overflow: hidden; cursor: grab; touch-action: none; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); padding: var(--s4); box-sizing: border-box; }
   .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
@@ -322,17 +322,19 @@
   .wnode .wn { min-width: 0; font-size: var(--fs-sm); font-weight: 600; color: color-mix(in srgb, var(--b) 55%, var(--text)); white-space: normal; line-height: 1.3;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .wnode.root { padding: 9px 14px; } .wnode.root .wn { font-size: var(--fs-md); }
+  /* depth gives visual weight: the center is biggest, leaves smallest, so the radial space reads as a hierarchy instead of uniform boxes.
+     Widths stay within NW (the box size the layout's overlap math assumes) or shrink it, never grow past it, so bigger boxes can't
+     overlap a neighbour the relax pass already considered clear. */
+  .wnode[data-lvl="0"] { padding: 12px 18px; } .wnode[data-lvl="0"] .wn { font-size: var(--fs-lg); }
+  .wnode[data-lvl="1"] { padding: 9px 14px; } .wnode[data-lvl="1"] .wn { font-size: var(--fs-md); }
+  .wnode[data-lvl="3"] { padding: 5px 9px; max-width: 140px; } .wnode[data-lvl="3"] .wn { font-size: var(--fs-xs); }
   .wnode.need { border-color: var(--b); box-shadow: 0 0 22px -8px rgb(255 165 110 / .5); }
   .wc { flex: none; font-size: var(--fs-xs); color: var(--text-3); font-variant-numeric: tabular-nums; }
   .wneed { flex: none; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-size: 10.5px; font-weight: 700; line-height: 18px; text-align: center; }
-  .hub { position: absolute; transform: translate(-50%, -50%); padding: 12px 22px; border: 2px solid var(--text); border-radius: 14px; background: rgb(10 20 18 / .96);
-    color: var(--text); font-size: var(--fs-lg); font-weight: 600; letter-spacing: -.01em; text-transform: none; white-space: nowrap; }
-  .hub.over { border-color: var(--live); color: var(--live); }
-  /* needs you on the map: amber ring pulsing out of the node (workstreams), and on the center hub for unclassified ones */
-  .wnode.need::after, .hub.need::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--accent); pointer-events: none; animation: needpulse 2.2s ease-out infinite; }
+  /* needs you on the map: amber ring pulsing out of the node */
+  .wnode.need::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--accent); pointer-events: none; animation: needpulse 2.2s ease-out infinite; }
   @keyframes needpulse { 0% { opacity: .8; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(1.18, 1.35); } }
-  @media (prefers-reduced-motion: reduce) { .wnode.need::after, .hub.need::after { animation: none; opacity: .6; } }
-  .hub.need { border-color: var(--accent); } .hub .wneed { margin-left: 8px; vertical-align: 2px; }
+  @media (prefers-reduced-motion: reduce) { .wnode.need::after { animation: none; opacity: .6; } }
   .edge.br { stroke: var(--b); stroke-width: 2.2; opacity: .9; }
   /* Today mode: the map dims, workstreams touched today light up in the order they were first touched */
   .ws-main.today { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--s4); align-items: start; }
@@ -351,6 +353,7 @@
   .tl .ev .what { color: var(--text); overflow-wrap: anywhere; } .tl .ev .what i { font-style: normal; color: var(--text-3); }
   .tl .ev .where { grid-column: 2; font-size: var(--fs-xs); color: var(--b, var(--text-3)); }
   button.btn.on { background: var(--surface-3); border-color: var(--text-2); }
+  button.btn.need { border-color: var(--accent-line); color: var(--accent); }
   @media (max-width: 900px) { .ws-main.today { grid-template-columns: 1fr; } .tl { position: static; max-height: none; } }
   /* per-workstream to-dos (checkboxes in the workstream's .md body) */
   .todos { margin: var(--s4) 0 0; max-width: 62ch; }
@@ -424,6 +427,7 @@
   .ibtn { font: 600 var(--fs-xs) var(--font); color: var(--text-3); background: none; border: 1px solid transparent; border-radius: 99px; padding: 1px 7px; cursor: pointer; }
   .ibtn:hover { color: var(--text); border-color: var(--line-2); }
   select.snz, input.devmodel { font: 600 var(--fs-xs) var(--font); color: var(--text-3); background: transparent; border: 1px dashed var(--line-2); border-radius: 99px; padding: 1px 7px; max-width: 120px; }
+  #rootFilter { font: 600 var(--fs-xs) var(--font); color: var(--text-2); background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 99px; padding: 4px 10px; max-width: 160px; }
   input.devmodel { width: 82px; } select.snz option { color: #111; }
   .modal-scrim { position: fixed; inset: 0; z-index: 40; background: rgb(0 0 0 / .5); display: grid; place-items: center; }
   .modal { width: min(460px, 92vw); padding: var(--s5); border-radius: var(--r-md); background: rgb(14 24 22 / .97); border: 1px solid var(--line-2); display: grid; gap: var(--s2); }
@@ -435,6 +439,7 @@
   .newtask input[type=date], details.newperson input { background: none; border: 1px solid var(--line-2); border-radius: 8px; color: var(--text); padding: 3px 8px; font: inherit; font-size: var(--fs-xs); }
   details.newperson { display: inline-block; font-size: var(--fs-xs); color: var(--text-3); } details.newperson input { margin: 4px 4px 0 0; }
   .daynav { display: flex; gap: 6px; align-items: center; margin: 0 0 var(--s2); } .daynav input { background: none; border: 1px solid var(--line-2); border-radius: 8px; color: var(--text); padding: 3px 8px; font: inherit; font-size: var(--fs-xs); }
+  .daystrip { display: flex; gap: 4px; margin: 0 0 var(--s3); overflow-x: auto; } .daystrip .btn { flex: none; font-size: var(--fs-xs); }
   .tr-msg { margin: 0 0 var(--s3); } .tr-msg b { display: block; font-size: var(--fs-xs); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 2px; }
   .tr-msg.assistant b { color: var(--sess); } .tr-msg b span { margin-left: 8px; font-weight: 400; letter-spacing: 0; text-transform: none; }
   .tr-msg .md { word-break: break-word; font-size: var(--fs-sm); line-height: 1.5; }
@@ -731,7 +736,7 @@ const actBits = (i) => i.activity ? (newAct(i)
   : `<span class="chip dim" title="${esc(i.activity.text)}">💬 @${esc(i.activity.by)} ${esc(ago(i.activity.at))}</span>`) : '';
 const whyBits = (i) => (i.mineWhy || []).filter((w) => w !== 'author' || i.source !== 'mine').map((w) => `<span class="chip dim" title="Why it is on the plate">${WHY[w] || esc(w)}</span>`).join('');
 const meta = (i) => (i.reviewMe ? '<span class="chip need">review requested</span>' : '') + actBits(i) + whyBits(i) + metaOf(i);
-const metaOf = (i) => i.source === 'todoist' || i.source === 'tasknotes' ? `${dueTag(i)}${i.recurring ? `<span class="chip dim" title="Recurring">${REPEAT}</span>` : ''}${i.source === 'tasknotes' && !i.recurring ? `<button class="devrev" data-tndone="${esc(i.id)}" data-to="${i.state === 'done' ? 0 : 1}" title="${i.state === 'done' ? 'Reopen in the task note' : 'Mark done in the task note (status + completedDate)'}">${i.state === 'done' ? '↺ reopen' : '✓ done'}</button>` : ''}`
+const metaOf = (i) => i.source === 'todoist' || i.source === 'tasknotes' ? `${dueTag(i)}${i.recurring ? `<span class="chip dim" title="Recurring">${REPEAT}</span>` : ''}${i.source === 'tasknotes' && !i.recurring ? `<button class="devrev" data-tndone="${esc(i.id)}" data-to="${i.state === 'done' ? 0 : 1}" title="${i.state === 'done' ? 'Reopen in the task note' : 'Mark done in the task note (status + completedDate)'}">${i.state === 'done' ? '↺ reopen' : '✓ done'}</button>` : ''}${i.source === 'todoist' ? `<button class="devrev" data-tddone="${esc(i.id)}" data-to="${i.state === 'done' ? 0 : 1}" title="${i.state === 'done' ? 'Reopen in Todoist' : i.recurring ? 'Close this occurrence in Todoist (it moves to the next date)' : 'Close in Todoist (needs TODOIST_API_TOKEN on the server)'}">${i.state === 'done' ? '↺ reopen' : '✓ done'}</button>` : ''}`
   : [i.source === 'session' ? `<span class="state st-${esc(i.state)}">${esc(i.state)}</span>` : '', i.source === 'session' && i.turn === 'me' && i.state !== 'done' ? '<span class="chip need" title="Devin finished its turn: the next move is yours">your turn</span>' : '', i.source === 'session' ? chip(i.tool, 'dim') : '',
     i.cwd ? `<span class="chip dim" title="${esc(i.cwd)}">${esc(base(i.cwd))}</span>` : '',
     i.anchor && GH_TICKET.test(i.anchor) ? `<button class="chip" data-ctx="${esc(i.anchor)}" title="${esc(onPlate(i.anchor)?.title || i.anchor)}">↳ ${esc(i.anchor.replace(/^https:\/\/github\.com\//, '').replace('/pull/', '#'))}</button>` : '',
@@ -810,7 +815,25 @@ const wsStats = (slug) => { const m = S.items.filter((i) => i.workstream === slu
 
 // Radial layout: top-level workstreams on an elliptical ring around the center node; each subtree gets an
 // angle slice proportional to its leaves and continues outward on further rings.
-const VIS = () => S.workstreams.filter((w) => showDone || w.state !== 'done');
+// isolating a root: hide every workstream outside its subtree, so a big mindmap can be worked on one cluster at a time
+let rootFilter = store.get('plate.rootFilter', null);
+const setRootFilter = (slug) => { rootFilter = slug || null; store.set('plate.rootFilter', rootFilter); cam = null; render(); };
+const VIS = () => {
+  const all = S.workstreams.filter((w) => showDone || w.state !== 'done');
+  if (!rootFilter || !all.some((w) => w.slug === rootFilter)) return all;
+  const keep = new Set([rootFilter]);
+  for (let grew = true; grew; ) { grew = false; for (const w of all) if (w.parent && keep.has(w.parent) && !keep.has(w.slug)) { keep.add(w.slug); grew = true; } }
+  return all.filter((w) => keep.has(w.slug));
+};
+// the filter dropdown's options: true top-level root(s) (usually just the one real "On my plate" workstream after 2026-11-08's
+// migration) plus their direct children (the PARA areas) — the level that's actually useful to isolate, one level deeper than
+// "root" in the strict sense now that everything hangs off one real home workstream
+const rootsOf = () => {
+  const vis = S.workstreams.filter((w) => showDone || w.state !== 'done');
+  const top = vis.filter((w) => !w.parent || !vis.some((p) => p.slug === w.parent));
+  const lvl1 = vis.filter((w) => top.some((t) => t.slug === w.parent));
+  return [...top, ...lvl1].sort((a, b) => a.name.localeCompare(b.name));
+};
 function layoutWs() {
   const slugs = new Set(VIS().map((w) => w.slug));
   const kids = (p) => VIS().filter((w) => (w.parent && slugs.has(w.parent) ? w.parent : null) === p);
@@ -821,20 +844,25 @@ function layoutWs() {
   VIS().filter((w) => !seen0.has(w.slug)).forEach((w) => { roots.push(w); count(w, seen0); }); // broken/cyclic parents surface as roots
   const total = Math.max(1, roots.reduce((t, r) => t + leaves.get(r.slug), 0));
   const r1 = Math.max(R0, (total * 100) / (2 * Math.PI * (1 + AX) / 2)); // ~100px of ring perimeter per leaf
+  // a single true root sits right at the center, like any node with children around it (no separate hub box); several true roots
+  // (the usual case right after detaching one from its parent) still fan out from an implicit center, same as before
+  const singleRoot = roots.length === 1;
   const pos = new Map(), seen = new Set();
   const place = (w, d, a0, a1, color, pr = r1) => {
     seen.add(w.slug);
     // each deeper ring 25% closer than the previous gap, but never so close that a child's box touches its parent's:
     // two boxes along direction `a` are apart once the x gap clears the width or the y gap clears the height
     const a = (a0 + a1) / 2, c = Math.abs(Math.cos(a)) * AX, sn = Math.abs(Math.sin(a));
-    const r = d === 0 ? r1 : pr + Math.max(RG * 0.75 ** (d - 1), Math.min((NW + 24) / Math.max(c, 1e-3), 76 / Math.max(sn, 1e-3)));
-    pos.set(w.slug, { x: r * AX * Math.cos(a), y: r * Math.sin(a), d, a, color });
+    // when there's one true root, its direct children take the generous r1 ring (what used to separate the true roots from the virtual
+    // hub) instead of the tight ring-gap: they're functionally the old "roots" now, and still need room for their own big subtrees
+    const r = d === 0 ? (singleRoot ? 0 : r1) : d === 1 && singleRoot ? r1 : pr + Math.max(RG * 0.75 ** (d - 1), Math.min((NW + 24) / Math.max(c, 1e-3), 76 / Math.max(sn, 1e-3)));
+    pos.set(w.slug, { x: r * AX * Math.cos(a), y: r * Math.sin(a), d, a, color, root: d === 0 && singleRoot });
     let at = a0;
     for (const c of kids(w.slug).filter((c) => !seen.has(c.slug))) { const span = ((a1 - a0) * leaves.get(c.slug)) / leaves.get(w.slug); place(c, d + 1, at, at + span, c.color || shiftHue(color, 22), r); at += span; }
   };
-  let at = -Math.PI / 2 - Math.PI / Math.max(roots.length, 2); // start a little before 12 o'clock so a lone branch isn't vertical
-  // a branch fans out over at most half the circle, so a lone big branch doesn't wrap around the center
-  roots.forEach((r) => { const share = (2 * Math.PI * leaves.get(r.slug)) / total, span = Math.min(share, Math.PI); place(r, 0, at + (share - span) / 2, at + (share + span) / 2, branchColor(r)); at += share; });
+  let at = singleRoot ? -Math.PI / 2 : -Math.PI / 2 - Math.PI / Math.max(roots.length, 2); // single root: start at 12 o'clock and own the whole circle
+  // several true roots still cap a lone big branch at half the circle, so it doesn't crowd out the others; a single root has no one to crowd
+  roots.forEach((r) => { const share = (2 * Math.PI * leaves.get(r.slug)) / total, span = singleRoot ? share : Math.min(share, Math.PI); place(r, 0, at + (share - span) / 2, at + (share + span) / 2, branchColor(r)); at += share; });
   // relax: boxes that still overlap (neighbours on a crowded ring, a child near its parent) are pushed apart along the axis of
   // least overlap; the center node stays put. Wide boxes side by side near the top/bottom, tall ones stacked near the sides.
   const BW = NW + 12, BH = 60, list = [...pos.values()];
@@ -842,8 +870,11 @@ function layoutWs() {
     let moved = false;
     for (let i = 0; i < list.length; i++) {
       const p = list[i];
-      const cx0 = BW / 2 + 90 - Math.abs(p.x), cy0 = BH / 2 + 30 - Math.abs(p.y); // against the center node (180x60)
-      if (cx0 > 0 && cy0 > 0) { moved = true; if (cx0 < cy0) p.x += (p.x < 0 ? -1 : 1) * cx0; else p.y += (p.y < 0 ? -1 : 1) * cy0; }
+      // a single true root IS the center node now (root: true): it has nothing to avoid itself, only the pairwise check below keeps others off it
+      if (!p.root) {
+        const cx0 = BW / 2 + 90 - Math.abs(p.x), cy0 = BH / 2 + 30 - Math.abs(p.y); // against the empty center spot (180x60), when several true roots fan around it
+        if (cx0 > 0 && cy0 > 0) { moved = true; if (cx0 < cy0) p.x += (p.x < 0 ? -1 : 1) * cx0; else p.y += (p.y < 0 ? -1 : 1) * cy0; }
+      }
       for (let j = i + 1; j < list.length; j++) {
         const q = list[j], ox = BW - Math.abs(p.x - q.x), oy = BH - Math.abs(p.y - q.y);
         if (ox <= 0 || oy <= 0) continue;
@@ -859,7 +890,7 @@ function layoutWs() {
   for (const p of pos.values()) { x0 = Math.min(x0, p.x - NW / 2); x1 = Math.max(x1, p.x + NW / 2); y0 = Math.min(y0, p.y - 26); y1 = Math.max(y1, p.y + 26); }
   const cx = PAD / 2 - x0, cy = PAD / 2 - y0;
   for (const p of pos.values()) { p.x += cx; p.y += cy; }
-  return { pos, w: x1 - x0 + PAD, h: y1 - y0 + PAD, cx, cy };
+  return { pos, w: x1 - x0 + PAD, h: y1 - y0 + PAD, cx, cy, singleRoot };
 }
 // Tasks of a workstream for the map: open Todoist/TaskNotes items and open `- [ ]` to-dos from its body
 const wsTasks = (w) => [
@@ -998,6 +1029,8 @@ document.addEventListener('click', async (e) => {
   if (dlk) { e.stopPropagation(); const p = S.doing[Number(dlk.dataset.dlink)], i = p && S.items.find((x) => x.id === p.ref); if (i && SAFE_URL.test(i.url || '')) openExt(i.url); return; }
   const dcol = e.target.closest('[data-dcol]'); if (dcol) { const r = dcol.dataset.dcol; fcol.has(r) ? fcol.delete(r) : fcol.add(r); render(); return; }
   const dop = e.target.closest('[data-dopen]'); if (dop) { e.preventDefault(); openDoing(S.doing[Number(dop.dataset.dopen)]); return; }
+  const tdd = e.target.closest('[data-tddone]');
+  if (tdd) { e.stopPropagation(); if (await post('/api/todoist/done', { id: tdd.dataset.tddone, done: tdd.dataset.to === '1' })) load(); return; }
   const tnd = e.target.closest('[data-tndone]');
   if (tnd) { e.stopPropagation(); if (await post('/api/tasks/done', { id: tnd.dataset.tndone, done: tnd.dataset.to === '1' })) load(); return; }
   const psel = e.target.closest('[data-prsel]');
@@ -1021,12 +1054,32 @@ document.addEventListener('contextmenu', (e) => {
   e.preventDefault();
   const name = pinInfo({ type, ref }).t, m = document.createElement('div'); m.className = 'cmenu';
   m.innerHTML = `<div class="h">${esc(name)}</div>` + (pinned ? '<button data-act="off">☆ Unpin from today\'s top 3</button>' : full ? '<button disabled>Top 3 is full · unpin one first</button>' : '<button data-act="on">★ Pin to today\'s top 3</button>')
+    + (type === 'ws' ? '<button data-act="child">＋ Child workstream…</button>' : '')
+    + (type === 'ws' && wsOf(ref)?.parent ? '<button data-act="unparent">✂ Remove parent (make root)</button>' : '')
     + (isDoing(type, ref) ? '<button data-act="doff">◎ Remove from Focus now</button>' : (S.doing || []).length >= (S.doingLimit || 4) ? `<button disabled>Focus now is full (${S.doingLimit || 4}) · finish one first</button>` : '<button data-act="don">◎ Add to Focus now</button>');
-  m.onclick = (ev) => { const a = ev.target.closest('[data-act]'); if (!a) return; m.remove(); if (a.dataset.act[0] === 'd') setDoing(type, ref, a.dataset.act === 'don'); else setPin(type, ref, a.dataset.act === 'on'); };
+  m.onclick = async (ev) => { const a = ev.target.closest('[data-act]'); if (!a) return; m.remove();
+    if (a.dataset.act === 'child') { const nm = (prompt(`New workstream under “${name}”`) || '').trim(); if (!nm) return; const r = await post('/api/ws/create', { name: nm, parent: ref }); if (r) { freshWs = r.slug; freshShown = null; clearTimeout(freshT); freshT = setTimeout(() => { freshWs = null; document.querySelector('.wnode.fresh')?.classList.remove('fresh'); }, 8000); load(); } return; }
+    if (a.dataset.act === 'unparent') { await post('/api/ws/update', { slug: ref, parent: '' }); load(); return; }
+    if (a.dataset.act[0] === 'd') setDoing(type, ref, a.dataset.act === 'don'); else setPin(type, ref, a.dataset.act === 'on'); };
   document.body.append(m);
   m.style.left = `${Math.min(e.clientX, innerWidth - m.offsetWidth - 8)}px`; m.style.top = `${Math.min(e.clientY, innerHeight - m.offsetHeight - 8)}px`;
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelector('.cmenu')?.remove(); }, true);
+// Touch has no right click: holding a pinnable thing for 0.5 s opens the same menu (Android fires contextmenu itself, iOS does not)
+{
+  let t = null, x0 = 0, y0 = 0;
+  const stop = () => { clearTimeout(t); t = null; };
+  document.addEventListener('touchstart', (e) => {
+    stop(); const el = e.target.closest('[data-pin]'); if (!el || e.touches.length !== 1 || e.target.closest('input, textarea, select')) return;
+    const { clientX, clientY } = e.touches[0]; x0 = clientX; y0 = clientY;
+    t = setTimeout(() => {
+      t = null; el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: x0, clientY: y0 }));
+      addEventListener('click', (ev) => { if (!ev.target.closest('.cmenu')) { ev.stopPropagation(); ev.preventDefault(); } }, { capture: true, once: true });
+    }, 500);
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => { const p = e.touches[0]; if (t && (e.touches.length > 1 || Math.hypot(p.clientX - x0, p.clientY - y0) > 10)) stop(); }, { passive: true });
+  document.addEventListener('touchend', stop, { passive: true }); document.addEventListener('touchcancel', stop, { passive: true });
+}
 addEventListener('scroll', () => document.querySelector('.cmenu')?.remove(), true);
 
 // Hovering a node lights it, its parent, children and related ones; everything else fades (off in Today mode, which dims on its own)
@@ -1172,14 +1225,14 @@ async function loadWindow() {
   finally { loadingWin = false; }
 }
 const setSpan = async (sp) => { span = sp; store.set('plate.span', sp); await loadWindow(); render(); };
-// due-date shorthand for a new task: today / tmrw · +3d · +2w · mon…sun (the next one) · wknd · eom · 20/11 · 2026-11-20 (pt and en)
+// due-date shorthand for a new task: today / tom / tmrw · +3d · +2w · mon…sun (the next one) · wknd · eom · 20/11 · 2026-11-20 (pt and en)
 const dueLabel = (d) => new Date(`${d}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 function parseDue(raw, today) {
   const v = String(raw || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, '');
   if (!v) return {};
   const dow = new Date(`${today}T12:00:00`).getDay(), at = (n) => ({ date: shiftDay(today, n) });
   if (/^(0|t|td|today|hoje|hj)$/.test(v)) return at(0);
-  if (/^(1|tm|tmr|tmrw|tomorrow|amanha)$/.test(v)) return at(1);
+  if (/^(1|tm|tmr|tmrw|tom|tomorrow|amanha)$/.test(v)) return at(1);
   let m;
   if ((m = v.match(/^\+?(\d{1,3})(d|w)?$/))) return at(Number(m[1]) * (m[2] === 'w' ? 7 : 1));
   if (/^(we|wknd|weekend|fds|fimdesemana)$/.test(v)) return at((6 - dow + 7) % 7);
@@ -1196,10 +1249,34 @@ function parseDue(raw, today) {
   return { bad: true };
 }
 const shiftDay = (d, n) => { const t = new Date(`${d}T12:00:00`); t.setDate(t.getDate() + n); return t.toLocaleDateString('en-CA'); };
+const PLANNER_DAYS = 14; // how far ahead the planner strip/nav reaches
 async function goDay(day) {
-  viewDay = !day || day >= S.today ? null : day;
+  viewDay = !day || day === S.today ? null : day;
   await loadWindow();
   render();
+}
+const isFuture = () => !!viewDay && viewDay > S.today;
+// planner: for a future day, heat comes from open items due/targeted that day, not from events (which don't exist yet)
+function dueHeat(day) {
+  const by = new Map();
+  for (const i of S.items) {
+    if (!i.workstream || !wsOf(i.workstream) || i.state === 'done' || i.state === 'gone') continue;
+    if (i.due !== day && i.target !== day) continue;
+    if (!by.has(i.workstream)) by.set(i.workstream, { n: 0, rank: by.size });
+    by.get(i.workstream).n++;
+  }
+  const max = Math.max(1, ...[...by.values()].map((v) => v.n));
+  for (const v of by.values()) v.heat = 0.35 + (0.65 * v.n) / max;
+  for (const [slug, v] of [...by]) {
+    for (let p = wsOf(slug)?.parent, hop = 0; p && wsOf(p) && hop < 20; p = wsOf(p).parent, hop++) {
+      if (!by.has(p)) by.set(p, { n: 0, rank: v.rank, heat: 0.3, path: true });
+      else if (by.get(p).path) by.get(p).rank = Math.min(by.get(p).rank, v.rank);
+    }
+  }
+  return by;
+}
+function dueOnDay(day) {
+  return S.items.filter((i) => i.workstream && wsOf(i.workstream) && i.state !== 'done' && i.state !== 'gone' && (i.due === day || i.target === day));
 }
 const EVLABEL = { 'item.new': 'added', 'item.moved': 'moved in', 'item.gone': 'left', 'item.removed': 'removed', 'workstream.new': 'new workstream',
   'workstream.reparented': 'reparented', 'todo.new': 'new to-do', 'task.new': 'new task', 'todo.done': 'to-do done', 'todo.reopened': 'to-do reopened' };
@@ -1223,8 +1300,27 @@ function todayHeat() {
   }
   return by;
 }
+// planner strip: quick jump across the next PLANNER_DAYS days, dot = something due/targeted that day
+function dayStrip(day) {
+  const days = Array.from({ length: PLANNER_DAYS + 1 }, (_, n) => shiftDay(S.today, n));
+  return `<div class="daystrip">${days.map((d) => `<button class="btn ${d === day ? 'on' : ''}" data-day="${d === S.today ? '' : d}" title="${dueLabel(d)}">${d === S.today ? 'Today' : new Date(`${d}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short' })}${dueOnDay(d).length ? ' •' : ''}</button>`).join('')}</div>`;
+}
+function plannerRow(L, i) {
+  const w = wsOf(i.workstream);
+  return `<div class="ev" ${w ? `data-focus="${esc(w.slug)}" style="--b:${L.pos.get(w.slug)?.color}"` : ''} title="${esc(i.source || '')}">
+    <span class="what"><i>${i.due ? 'due' : 'target'}</i> ${esc(i.title || i.ref || '')}</span>
+    <span class="where">${w ? `▸ ${esc(w.name)}` : 'Inbox'}</span></div>`;
+}
 function timeline(L) {
-  const all = [...curEvents()].sort((a, b) => b.ts.localeCompare(a.ts)), evs = all.slice(0, 300), day = endDay(), n = SPAN_DAYS[span];
+  const day = endDay(), n = SPAN_DAYS[span];
+  if (isFuture()) {
+    const due = dueOnDay(day).sort(byDue);
+    return `<aside class="tl"><h3>Planner <span>· ${esc(dueLabel(day))} · ${due.length} due</span></h3>
+      <div class="daynav"><button class="btn" data-day="${shiftDay(day, -1)}" title="Previous day">←</button><input type="date" id="dayPick" value="${esc(day)}" min="${esc(S.today)}" title="Pick a day"><button class="btn" data-day="${shiftDay(day, 1)}" title="Next day">→</button><button class="btn" data-day="">Today</button></div>
+      ${dayStrip(day)}
+      ${due.map((i) => plannerRow(L, i)).join('') || `<p class="hint">Nothing due or targeted on ${esc(day)}.</p>`}</aside>`;
+  }
+  const all = [...curEvents()].sort((a, b) => b.ts.localeCompare(a.ts)), evs = all.slice(0, 300);
   const heading = span === 'day' ? (viewDay ? 'Replay' : 'Today') : `${span === 'week' ? 'Week' : 'Month'} to ${day}`;
   const row = (e) => {
     const w = wsOf(e.workstream), t = new Date(e.ts);
@@ -1235,35 +1331,41 @@ function timeline(L) {
   const withEv = dayData?.days ? Object.keys(dayData.days).sort() : [];
   const unit = span === 'day' ? 'day' : span;
   return `<aside class="tl"><h3>${heading} <span>· ${all.length} event${all.length === 1 ? '' : 's'}</span></h3>
-    <div class="daynav"><button class="btn" data-day="${shiftDay(day, -n)}" title="Previous ${unit}">←</button><input type="date" id="dayPick" value="${esc(day)}" max="${esc(S.today)}" title="${span === 'day' ? 'Pick a day to replay' : 'Last day of the window'}"><button class="btn" data-day="${shiftDay(day, n)}" title="Next ${unit}" ${viewDay ? '' : 'disabled'}>→</button>${viewDay ? '<button class="btn" data-day="">Today</button>' : ''}
+    <div class="daynav"><button class="btn" data-day="${shiftDay(day, -n)}" title="Previous ${unit}">←</button><input type="date" id="dayPick" value="${esc(day)}" max="${esc(shiftDay(S.today, PLANNER_DAYS))}" title="${span === 'day' ? 'Pick a day to replay or plan' : 'Last day of the window'}"><button class="btn" data-day="${shiftDay(day, n)}" title="Next ${unit}" ${viewDay ? '' : 'disabled'}>→</button>${viewDay ? '<button class="btn" data-day="">Today</button>' : ''}
       <span class="seg">${['day', 'week', 'month'].map((k) => `<button class="btn ${span === k ? 'on' : ''}" data-span="${k}">${k === 'day' ? 'D' : k === 'week' ? 'W' : 'M'}</button>`).join('')}</span></div>
+    ${span === 'day' ? dayStrip(day) : ''}
     ${evs.map(row).join('') || `<p class="hint">${span !== 'day' && !winReady() ? 'Loading…' : span !== 'day' ? `Nothing was recorded in this ${span}${withEv.length ? ` (days with events: ${esc(withEv.slice(-5).reverse().join(', '))})` : ''}.` : viewDay ? `Nothing was recorded on ${esc(day)}${withEv.length ? ` (days with events: ${esc(withEv.slice(-5).reverse().join(', '))})` : ''}.` : 'Nothing moved yet today.'}</p>`}
     ${all.length > evs.length ? `<p class="hint">Showing the latest ${evs.length} of ${all.length}.</p>` : ''}</aside>`;
 }
 
 // title + controls; drawn above the panel/map grid so the Inbox panel starts level with the canvas
-const wsBar = () => `<div class="ws-bar"><div class="page-h"><h2>Workstreams<span class="info" tabindex="0" title="Click a node to focus on it · scroll/pinch to zoom, drag the background to pan (double-click = fit) · ☑ n on a node fans out its tasks · drag a node onto another to re-parent, onto the center to make it a root · dashed = related · paste a link or note to add it to the Inbox">ⓘ</span></h2></div>
-      <button class="btn ${panelOpen ? 'on' : ''}" data-panel title="Inbox panel (i)">Inbox · ${S.items.filter(inInbox).length}</button>
+const wsBar = () => `<div class="ws-bar"><div class="page-h"><h2>Workstreams<span class="info" tabindex="0" title="Click a node to focus on it · scroll/pinch to zoom, drag the background to pan (double-click = fit) · ☑ n on a node fans out its tasks · drag a node onto another to re-parent, onto 'Drop to make root' to detach it · dashed = related · paste a link or note to add it to the Inbox">ⓘ</span></h2></div>
+      <button class="btn ${panelOpen ? 'on' : ''} ${S.items.some((i) => i.needsYou && !i.workstream) ? 'need' : ''}" data-panel title="Inbox panel (i)">Inbox · ${S.items.filter(inInbox).length}${S.items.some((i) => i.needsYou && !i.workstream) ? ` · ${S.items.filter((i) => i.needsYou && !i.workstream).length} needs you` : ''}</button>
       <button class="btn" id="palBtn" title="Jump to a workstream or item (⌘K)">Search ⌘K</button>
       <button class="btn ${todayOn ? 'on' : ''}" id="todayBtn" title="Light up what moved today (t)">Today</button>
       ${S.workstreams.some((w) => w.state === 'done') ? `<button class="btn ${showDone ? 'on' : ''}" id="doneBtn" title="Finished workstreams are hidden from the map">Show done · ${S.workstreams.filter((w) => w.state === 'done').length}</button>` : ''}${(S.archived || []).length ? `<button class="btn" id="archBtn" title="Archived workstreams: leave every view, can be restored">Archive · ${S.archived.length}</button>` : ''}
+      <select id="rootFilter" title="Isolate one root: hide every other cluster from the map">
+        <option value="">All roots</option>
+        ${rootsOf().map((r) => `<option value="${esc(r.slug)}" ${rootFilter === r.slug ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}
+      </select>
       <input id="newName" placeholder="New workstream…" size="18"><button class="btn" id="newRoot">+ Root</button>
 </div>`;
 function mindmap() {
   if (todayOn && span !== 'day' && !winReady() && !loadingWin) loadWindow().then(render); // first paint with a stored week/month span, or the day rolled over
-  const L = layoutWs(), leaves = taskLeaves(L), heat = todayOn ? todayHeat() : new Map(), inNeed = S.items.filter((i) => i.needsYou && !i.workstream).length;
+  const L = layoutWs(), leaves = taskLeaves(L), heat = todayOn ? (isFuture() ? dueHeat(viewDay) : todayHeat()) : new Map();
   const nodes = S.workstreams.filter((w) => L.pos.has(w.slug)).map((w) => {
     const p = L.pos.get(w.slug), st = wsStats(w.slug), h = heat.get(w.slug), nt = wsTasks(w).length, idle = todayOn ? null : idleInfo(w);
-    return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''}  ${h ? 'lit' : ''} ${idle ? 'stale' : ''} ${w.slug === freshWs ? 'fresh' : ''} ${esc(w.state)}" draggable="true" data-slug="${esc(w.slug)}" data-pin="ws:${esc(w.slug)}"
-      style="left:${p.x}px;top:${p.y}px;--b:${p.color}${h ? `;--heat:${h.heat.toFixed(2)};--d:${Math.min(h.rank * 0.15, 3)}s` : ''}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${h?.n ? ` · ${h.n} event${h.n > 1 ? 's' : ''} today` : h ? ' · on the path to something that moved today' : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}${idle ? ` · idle ${idle.untracked ? '≥' : ''}${idle.days}d` : ''}">
+    return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''}  ${h ? 'lit' : ''} ${idle ? 'stale' : ''} ${w.slug === freshWs ? 'fresh' : ''} ${esc(w.state)}" data-lvl="${Math.min(p.d, 3)}" draggable="true" data-slug="${esc(w.slug)}" data-pin="ws:${esc(w.slug)}"
+      style="left:${p.x}px;top:${p.y}px;--b:${p.color}${h ? `;--heat:${h.heat.toFixed(2)};--d:${Math.min(h.rank * 0.15, 3)}s` : ''}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${h?.n ? (isFuture() ? ` · ${h.n} item${h.n > 1 ? 's' : ''} due ${esc(viewDay)}` : ` · ${h.n} event${h.n > 1 ? 's' : ''} today`) : h ? (isFuture() ? ' · on the path to something due that day' : ' · on the path to something that moved today') : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}${idle ? ` · idle ${idle.untracked ? '≥' : ''}${idle.days}d` : ''}">
       ${isPinned('ws', w.slug) ? '<span class="pinstar" title="In today\'s top 3">★</span>' : ''}<span class="wn">${esc(w.name)}</span>${st.need ? `<span class="wneed">${st.need}</span>` : st.n ? `<span class="wc">${st.n}</span>` : ''}${idle ? `<span class="wst" title="No activity for ${idle.days} days${idle.untracked ? ' (since the log began)' : ''}">${idle.days}d</span>` : ''}${nt ? `<button class="wtog ${tasksOpen.has(w.slug) ? 'on' : ''}" data-tog="${esc(w.slug)}" title="Show its ${nt} open task${nt > 1 ? 's' : ''}">☑ ${nt}</button>` : ''}</div>`;
   }).join('');
   return `<div class="ws-main ${todayOn ? 'today' : ''}">
     <div class="canvas-scroll"><div class="canvas ${todayOn ? 'today' : ''} ${todayAnim ? 'anim' : ''}" style="width:${L.w}px;height:${L.h}px"><svg width="${L.w}" height="${L.h}">${edgesSvg(L, heat)}${leaves.map((t) => `<path class="edge tk" style="--b:${t.color}" d="M${t.px} ${t.py} L${t.x} ${t.y}"/>`).join('')}</svg>
-      <div class="hub ${inNeed ? 'need' : ''}" id="rootzone" style="left:${L.cx}px;top:${L.cy}px" title="Drop a workstream here to make it top-level${inNeed ? ` · ${inNeed} in the Inbox need you` : ''}">On my plate${inNeed ? `<span class="wneed">${inNeed}</span>` : ''}</div>${nodes || '<div class="empty">No workstreams yet. Create one above.</div>'}${leaves.map((t) => {
+      ${nodes || '<div class="empty">No workstreams yet. Create one above.</div>'}${leaves.map((t) => {
         const st = `left:${t.x}px;top:${t.y}px;--b:${t.color}`, cls = `tnode ${t.need ? 'need' : ''} ${t.more ? 'more' : ''}`;
         return t.url ? `<a class="${cls}" href="${esc(ext(t.url))}"${tgt(t.url)} style="${st}" title="${esc(t.text)}">${esc(t.text)}</a>` : `<div class="${cls}" data-focus="${esc(t.slug)}" style="${st}" title="${esc(t.text)}">${esc(t.text)}</div>`;
       }).join('')}</div>
+      <div class="rootzone" id="rootzone" title="Drop a workstream here to remove its parent and make it a root of its own">Drop to make root</div>
       <div class="zoomctl"><button data-zoom="1.25" title="Zoom in">+</button><button data-zoom="0.8" title="Zoom out">−</button><button data-zoom="fit" title="Fit all (double-click the background)">Fit</button></div></div>
     ${todayOn ? timeline(L) : ''}</div>`;
 }
@@ -1403,9 +1505,10 @@ function wireWs() {
   if (!focus) {
     $('#newRoot').onclick = () => create('');
     $('#todayBtn').onclick = toggleToday;
+  if ($('#rootFilter')) $('#rootFilter').onchange = (e) => setRootFilter(e.target.value);
   if ($('#doneBtn')) $('#doneBtn').onclick = () => { showDone = !showDone; store.set('plate.showDone', showDone); render(); };
   if ($('#archBtn')) $('#archBtn').onclick = openArchiveList;
-    document.querySelectorAll('.daynav [data-day]').forEach((b) => (b.onclick = () => goDay(b.dataset.day)));
+    document.querySelectorAll('.daynav [data-day], .daystrip [data-day]').forEach((b) => (b.onclick = () => goDay(b.dataset.day)));
     document.querySelectorAll('.daynav [data-span]').forEach((b) => (b.onclick = () => setSpan(b.dataset.span)));
     $('#palBtn').onclick = openPal;
     wireNbhd();
@@ -1857,7 +1960,7 @@ function wireCam() {
   cs.addEventListener('pointerdown', (e) => {
     if ((e.pointerType === 'mouse' && e.button !== 0) || e.target.closest('.zoomctl, .empty') || !cam) return;
     const touch = e.pointerType !== 'mouse';
-    if (!touch && e.target.closest('.wnode, .hub, .tnode')) return;
+    if (!touch && e.target.closest('.wnode, .rootzone, .tnode')) return;
     ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     begin(ptrs.size > 1); g.touch = touch;
     if (g.moved) grab(e.pointerId);
@@ -1875,7 +1978,7 @@ function wireCam() {
     applyCam(cv);
   });
   cs.addEventListener('pointerup', end); cs.addEventListener('pointercancel', end);
-  cs.addEventListener('dblclick', (e) => { if (!e.target.closest('.wnode, .hub, .tnode, .zoomctl')) { cam = fitCam(cs, cv); applyCam(cv); } });
+  cs.addEventListener('dblclick', (e) => { if (!e.target.closest('.wnode, .rootzone, .tnode, .zoomctl')) { cam = fitCam(cs, cv); applyCam(cv); } });
   cs.querySelectorAll('[data-zoom]').forEach((b) => (b.onclick = () => {
     if (b.dataset.zoom === 'fit') { cam = fitCam(cs, cv); applyCam(cv); } else zoomAt(cs, parseFloat(b.dataset.zoom));
   }));

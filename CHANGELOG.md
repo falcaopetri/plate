@@ -6,6 +6,14 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 14 — 2026-11-08: Todoist ✓ done, child workstream from the menu, long-press, `tom`
+
+- **✓ done on Todoist tasks** (`POST /api/todoist/done`, `setTodoistDone`): closes/reopens through the REST API. A recurring task moves to its next date on Todoist's side and shows up again on the next Sync.
+- **Right click a workstream → "＋ Child workstream…"**; **hold (0.5 s) on touch** opens the same menu (pin, Focus now) on anything pinnable.
+- Due shorthand `tom` (= tomorrow) in the new-task form.
+- The `plate-changelog` skill no longer starts the server (it died with the agent's session): it asks the user to run `npm start`.
+- **Setup:** `TODOIST_API_TOKEN` must be in the environment of the terminal that starts the Plate server (yours to set, never stored). Without it the ✓ button answers with an error. Restart the server.
+
 ## 13 — 2026-11-06: work-machine fixes redone here, Claude Code sessions, target date, sub-issues, `r`+`t`, `s`
 
 - **Fixes that existed only on the work Mac, now in the repo** (pull before re-applying them there): `test/teamsnotify.test.mjs` polls for the opener's file (up to 5 s) instead of a fixed 300 ms; `collectors/mine.mjs` no longer re-creates as `mine:` a board item that the board collector dropped through a `-status:` term of `github_query` (other terms such as `-label:` are not mirrored).

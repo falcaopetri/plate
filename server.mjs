@@ -10,7 +10,7 @@ import { transcript } from './lib/devintranscript.mjs';
 import { startReview, startReviewMany, startClose, startSetup, runs } from './lib/devinrun.mjs';
 import { log, tail } from './lib/log.mjs';
 import { check as lanCheck, whyDenied, isLocal, lanToken, lanUrls, COOKIE } from './lib/lan.mjs';
-import { readRequests, addRequest, toggleRequest, DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readDoing, setDoing, doingLimit, setTaskDone, archivePreview, archiveWorkstream, restoreWorkstream, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, readSettings, patchSources, createWorkstream, workstreamFromNote, searchNotes, vaultRoot, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
+import { readRequests, addRequest, toggleRequest, DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readDoing, setDoing, doingLimit, setTaskDone, setTodoistDone, archivePreview, archiveWorkstream, restoreWorkstream, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, readSettings, patchSources, createWorkstream, workstreamFromNote, searchNotes, vaultRoot, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
 
 const PORT = Number(process.env.PORT) || 4173;
 const LAN = readSources().lan === 'on'; // read at startup: changing it needs a restart
@@ -110,6 +110,7 @@ async function handle(req, res, url) {
       return json(res, 200, { doing: setDoing(type, ref, !!on, note) });
     }
     if (url.pathname === '/api/tasks/done' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, { item: setTaskDone(b.id, b.done !== false) }); }
+    if (url.pathname === '/api/todoist/done' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, { item: await setTodoistDone(b.id, b.done !== false) }); }
     if (url.pathname === '/api/ws/archive-preview') return json(res, 200, archivePreview(url.searchParams.get('slug')));
     if (url.pathname === '/api/ws/archive' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, archiveWorkstream(b.slug, b)); }
     if (url.pathname === '/api/ws/restore' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, restoreWorkstream(b.slug)); }
