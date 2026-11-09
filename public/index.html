@@ -832,16 +832,38 @@ const rootsOf = () => {
   const vis = S.workstreams.filter((w) => showDone || w.state !== 'done');
   const top = vis.filter((w) => !w.parent || !vis.some((p) => p.slug === w.parent));
   const lvl1 = vis.filter((w) => top.some((t) => t.slug === w.parent));
-  return [...top, ...lvl1].sort((a, b) => a.name.localeCompare(b.name));
+  const cur = rootFilter && ![...top, ...lvl1].some((w) => w.slug === rootFilter) ? vis.filter((w) => w.slug === rootFilter) : []; // an isolated deeper workstream stays selectable
+  return [...top, ...lvl1, ...cur].sort((a, b) => a.name.localeCompare(b.name));
 };
+// Several true roots = several separate clusters: each root's subtree is laid out on its own (like the lone-root case) and the
+// clusters are packed in rows, so detaching a workstream gives it a visible island of its own instead of a slice of one big circle.
 function layoutWs() {
-  const slugs = new Set(VIS().map((w) => w.slug));
-  const kids = (p) => VIS().filter((w) => (w.parent && slugs.has(w.parent) ? w.parent : null) === p);
+  const all = VIS(), slugs = new Set(all.map((w) => w.slug));
+  const kidsOf = (p) => all.filter((w) => (w.parent && slugs.has(w.parent) ? w.parent : null) === p);
+  const roots = kidsOf(null), seenT = new Set(), groups = [];
+  const walk = (w, set) => { if (seenT.has(w.slug)) return; seenT.add(w.slug); set.add(w.slug); kidsOf(w.slug).forEach((c) => walk(c, set)); };
+  roots.forEach((r) => { const set = new Set(); walk(r, set); groups.push(set); });
+  all.filter((w) => !seenT.has(w.slug)).forEach((w) => { const set = new Set(); walk(w, set); groups.push(set); }); // broken/cyclic parents
+  if (groups.length <= 1) return layoutCore(all);
+  const parts = groups.map((g) => layoutCore(all.filter((w) => g.has(w.slug)))).sort((a, b) => b.w * b.h - a.w * a.h);
+  const GAP = 40, rowW = Math.max(parts[0].w, Math.sqrt(parts.reduce((t, c) => t + c.w * c.h, 0)) * 1.7);
+  const pos = new Map(); let x = 0, y = 0, rowH = 0, W = 0;
+  for (const c of parts) {
+    if (x > 0 && x + c.w > rowW) { x = 0; y += rowH + GAP; rowH = 0; }
+    for (const [k, p] of c.pos) pos.set(k, { ...p, x: p.x + x, y: p.y + y });
+    x += c.w + GAP; rowH = Math.max(rowH, c.h); W = Math.max(W, x - GAP);
+  }
+  const H = y + rowH;
+  return { pos, w: W, h: H, cx: W / 2, cy: H / 2, singleRoot: false };
+}
+function layoutCore(vis) {
+  const slugs = new Set(vis.map((w) => w.slug));
+  const kids = (p) => vis.filter((w) => (w.parent && slugs.has(w.parent) ? w.parent : null) === p);
   const leaves = new Map();
   const count = (w, seen) => { seen.add(w.slug); const ch = kids(w.slug).filter((c) => !seen.has(c.slug)); const n = ch.length ? ch.reduce((t, c) => t + count(c, seen), 0) : 1; leaves.set(w.slug, n); return n; };
   const seen0 = new Set(), roots = kids(null);
   roots.forEach((r) => count(r, seen0));
-  VIS().filter((w) => !seen0.has(w.slug)).forEach((w) => { roots.push(w); count(w, seen0); }); // broken/cyclic parents surface as roots
+  vis.filter((w) => !seen0.has(w.slug)).forEach((w) => { roots.push(w); count(w, seen0); }); // broken/cyclic parents surface as roots
   const total = Math.max(1, roots.reduce((t, r) => t + leaves.get(r.slug), 0));
   const r1 = Math.max(R0, (total * 100) / (2 * Math.PI * (1 + AX) / 2)); // ~100px of ring perimeter per leaf
   // a single true root sits right at the center, like any node with children around it (no separate hub box); several true roots
@@ -928,7 +950,8 @@ function edgesSvg(L, heat = new Map()) {
   let out = '';
   for (const w of S.workstreams) {
     const b = L.pos.get(w.slug); if (!b) continue;
-    const a = L.pos.get(w.parent) || { x: L.cx, y: L.cy };
+    const a = L.pos.get(w.parent);
+    if (!a) continue; // a true root has no parent edge: the implicit center is invisible, so lines to it looked like stray joints
     out += `<path class="edge br ${heat.has(w.slug) ? 'lit' : ''}" data-a="${esc(w.parent || '')}" data-b="${esc(w.slug)}" style="--b:${b.color}" d="${curve(a.x, a.y, b.x, b.y)}"/>`;
   }
   const done = new Set();
@@ -1055,10 +1078,13 @@ document.addEventListener('contextmenu', (e) => {
   const name = pinInfo({ type, ref }).t, m = document.createElement('div'); m.className = 'cmenu';
   m.innerHTML = `<div class="h">${esc(name)}</div>` + (pinned ? '<button data-act="off">☆ Unpin from today\'s top 3</button>' : full ? '<button disabled>Top 3 is full · unpin one first</button>' : '<button data-act="on">★ Pin to today\'s top 3</button>')
     + (type === 'ws' ? '<button data-act="child">＋ Child workstream…</button>' : '')
+    + (type === 'ws' ? (rootFilter === ref ? '<button data-act="showall">◌ Show the whole map</button>' : '<button data-act="only">◉ Show only this and its children</button>') : '')
     + (type === 'ws' && wsOf(ref)?.parent ? '<button data-act="unparent">✂ Remove parent (make root)</button>' : '')
     + (isDoing(type, ref) ? '<button data-act="doff">◎ Remove from Focus now</button>' : (S.doing || []).length >= (S.doingLimit || 4) ? `<button disabled>Focus now is full (${S.doingLimit || 4}) · finish one first</button>` : '<button data-act="don">◎ Add to Focus now</button>');
   m.onclick = async (ev) => { const a = ev.target.closest('[data-act]'); if (!a) return; m.remove();
     if (a.dataset.act === 'child') { const nm = (prompt(`New workstream under “${name}”`) || '').trim(); if (!nm) return; const r = await post('/api/ws/create', { name: nm, parent: ref }); if (r) { freshWs = r.slug; freshShown = null; clearTimeout(freshT); freshT = setTimeout(() => { freshWs = null; document.querySelector('.wnode.fresh')?.classList.remove('fresh'); }, 8000); load(); } return; }
+    if (a.dataset.act === 'only') { setRootFilter(ref); return; }
+    if (a.dataset.act === 'showall') { setRootFilter(null); return; }
     if (a.dataset.act === 'unparent') { await post('/api/ws/update', { slug: ref, parent: '' }); load(); return; }
     if (a.dataset.act[0] === 'd') setDoing(type, ref, a.dataset.act === 'don'); else setPin(type, ref, a.dataset.act === 'on'); };
   document.body.append(m);
