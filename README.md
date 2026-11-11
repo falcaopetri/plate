@@ -16,6 +16,9 @@ PLATE_DATA_DIR=/path/to/Plate npm start   # point at another data folder (e.g. o
 
 The Claude preview tooling uses `.claude/launch.json` (config `plate`).
 
+## Mac app (optional)
+Not needed anywhere: `npm start` and a browser tab work as always. On a personal Mac, `scripts/build-app.sh` builds `~/Applications/Plate.app` (drag it to the Dock): it starts the server if needed, opens Safari, and the server quits when the last Plate page closes (`PLATE_AUTOQUIT=1`, only set by the app). Nothing changes for a server started with `npm start`. Log: `~/Library/Logs/plate-app.log`.
+
 ## Devin review of a PR
 
 PR cards and the ticket-context drawer have **Review no Devin**: it runs `devin -p "/code-review <PR url>"` in the background, in the folder set as `devin_review_dir` in `<data>/sources.md` (the workspace with clones of every repo). The card shows the run state, then a link to the session it created (opens in Devin Desktop). Requires `devin auth login` once on that machine. The box next to the button picks the model (`devin --model`; default `devin_review_model`). The session gets the alias `Review: <PR title>`, is linked from the PR and links back to it, and has a **transcript** button (read-only drawer, local sessions only: `app.devin.ai` refuses to be framed). Override the prompt with `devin_review_prompt: "/my-skill {url}"`.

@@ -9,6 +9,7 @@ import { lookupByEmail } from './lib/directory.mjs';
 import { transcript } from './lib/devintranscript.mjs';
 import { startReview, startReviewMany, startClose, startSetup, runs } from './lib/devinrun.mjs';
 import { log, tail } from './lib/log.mjs';
+import { ping as pagePing, bye as pageBye, startAutoquit } from './lib/autoquit.mjs';
 import { check as lanCheck, whyDenied, isLocal, lanToken, lanUrls, COOKIE } from './lib/lan.mjs';
 import { readRequests, addRequest, toggleRequest, DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readDoing, setDoing, doingLimit, setTaskDone, setTodoistDone, archivePreview, archiveWorkstream, restoreWorkstream, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, readSettings, patchSources, createWorkstream, workstreamFromNote, searchNotes, vaultRoot, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
 
@@ -46,10 +47,11 @@ http.createServer(async (req, res) => {
     if (!(e instanceof BadRequest)) log.error(`${req.method} ${url.pathname}: ${e.stack || e}`);
     json(res, e instanceof BadRequest ? 400 : 500, { error: e instanceof BadRequest ? e.message : String(e) });
   }
-}).listen(PORT, LAN ? '0.0.0.0' : '127.0.0.1', () => { log.info(`plate on http://localhost:${PORT}  (data: ${DATA_DIR})`); if (LAN) log.info(`lan: on, other devices open ${lanUrls(PORT).join(' or ') || '(no network interface found)'}`); startSchedule(); });
+}).listen(PORT, LAN ? '0.0.0.0' : '127.0.0.1', () => { log.info(`plate on http://localhost:${PORT}  (data: ${DATA_DIR})`); if (LAN) log.info(`lan: on, other devices open ${lanUrls(PORT).join(' or ') || '(no network interface found)'}`); startSchedule(); startAutoquit(); });
 
 async function handle(req, res, url) {
   {
+    if (url.pathname === '/api/ping' || url.pathname === '/api/bye') { (url.pathname === '/api/ping' ? pagePing : pageBye)(url.searchParams.get('p')); res.writeHead(204); return res.end(); }
     if (url.pathname === '/api/state') {
       const t = today();
       const wsAll = readWorkstreams(), quiet = new Set(wsAll.filter((w) => w.state !== 'active').map((w) => w.slug)), hidden = new Set(wsAll.filter((w) => w.state === 'archived').map((w) => w.slug));

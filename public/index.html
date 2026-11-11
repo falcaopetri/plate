@@ -507,6 +507,12 @@ async function refresh() {
   lastState = txt; render();
 }
 setInterval(refresh, 20000);
+// open-page heartbeat: with PLATE_AUTOQUIT=1 (the Mac app) the server stops when the last page closes (lib/autoquit.mjs)
+const PAGE_ID = Math.random().toString(36).slice(2);
+const ping = () => fetch('/api/ping?p=' + PAGE_ID).catch(() => {});
+ping(); setInterval(ping, 30000);
+window.addEventListener('pagehide', () => { try { navigator.sendBeacon('/api/bye?p=' + PAGE_ID); } catch {} });
+window.addEventListener('pageshow', (e) => { if (e.persisted) ping(); });
 document.addEventListener('visibilitychange', refresh);
 function syncBadge() {
   const c = S.collect || {}, names = Object.keys(c);
