@@ -51,9 +51,9 @@ test('requests: add (multi-line), list, tick, reject bad input', () => {
   assert.throws(() => toggleRequest(9, true), /unknown/);
 });
 
-test('setup: nothing pending is refused; claude (default) returns a claude:// link on this repo', () => {
-  assert.throws(() => startSetup(null), /no setup pending/);
-  const r = startSetup({ latest: 12, seen: 9 });
+test('setup: nothing pending is refused; claude (default) returns a claude:// link on this repo', async () => {
+  await assert.rejects(() => startSetup(null), /no setup pending/);
+  const r = await startSetup({ latest: 12, seen: 9 });
   assert.equal(r.agent, 'claude');
   assert.equal(r.range, '#10-12');
   const u = new URL(r.url);
@@ -65,7 +65,7 @@ test('setup: nothing pending is refused; claude (default) returns a claude:// li
 test('setup: setup_agent devin runs the CLI with /plate-changelog and ties the session', async () => {
   fs.writeFileSync(path.join(dir, 'sources.md'), '---\nsetup_agent: devin\ncollect: off\n---\n');
   assert.equal(readSources().setup_agent, 'devin');
-  assert.equal(startSetup({ latest: 5, seen: 4 }).agent, 'devin');
+  assert.equal((await startSetup({ latest: 5, seen: 4 })).agent, 'devin');
   for (let n = 0; n < 100 && runs.setup.state === 'running'; n++) await new Promise((ok) => setTimeout(ok, 100));
   assert.equal(runs.setup.state, 'done');
   assert.match(fs.readFileSync(runs.setup.log, 'utf8'), /-p \/plate-changelog/);

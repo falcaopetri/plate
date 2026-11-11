@@ -1,6 +1,7 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Plate</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
   :root {
@@ -558,6 +559,7 @@ document.addEventListener('click', (e) => {
 // session we open once it exists)
 async function startSetup() {
   const r = await post('/api/setup/apply', {}); if (!r) return;
+  if (r.herdr && r.agent === 'claude') return void toast(`Claude Code opened in Herdr (space "${r.herdr.space}"): changelog ${r.range}`);
   if (r.agent === 'claude') { toast(`Claude Code: changelog ${r.range}`, () => window.open(r.url), 'Open again'); return void window.open(r.url); }
   toast('Devin session starting…');
   for (let n = 0; n < 40; n++) {

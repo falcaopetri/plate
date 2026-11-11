@@ -6,6 +6,12 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 15 — 2026-11-11: Herdr toggle for agent sessions
+
+- **`herdr: on`** (off by default): Review / Review N PRs / "O que falta?" / Setup pending open as interactive agents in the Herdr app (`herdr-app do space.new|tab.new`), one space per workstream and one tab per session; the Claude setup opens `claude` in a tab instead of the Claude app. Without the toggle nothing changes. If Herdr can't be reached, the old behavior runs.
+- **`herdr_dir`**: folder where those sessions start (default `devin_review_dir`).
+- **Setup (only on a machine with Herdr):** add `herdr: on` to `<data>/sources.md` (or the ⚙ drawer, group Herdr), keep the Herdr app open, and check `herdr-app status` works from the terminal that starts Plate (else set `herdr_bin`). Restart the server.
+
 ## 14 — 2026-11-08: Todoist ✓ done, child workstream from the menu, long-press, `tom`
 
 - **✓ done on Todoist tasks** (`POST /api/todoist/done`, `setTodoistDone`): closes/reopens through the REST API. A recurring task moves to its next date on Todoist's side and shows up again on the next Sync.

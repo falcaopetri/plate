@@ -22,7 +22,7 @@ const setupPending = () => {
   return latest > seen ? { latest, seen } : null;
 };
 const pub = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
-const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css' };
+const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
 
 const json = (res, code, body) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(body)); };
 const readBody = (req) => new Promise((ok) => { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => ok(b)); });
@@ -135,7 +135,7 @@ async function handle(req, res, url) {
     if (url.pathname === '/api/devin/review' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startReview(b.url, b.model)); }
     if (url.pathname === '/api/devin/review-many' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startReviewMany(b.urls, b.model)); }
     if (url.pathname === '/api/devin/close' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startClose(b.url, b.model)); }
-    if (url.pathname === '/api/setup/apply' && req.method === 'POST') return json(res, 200, startSetup(setupPending()));
+    if (url.pathname === '/api/setup/apply' && req.method === 'POST') return json(res, 200, await startSetup(setupPending()));
     if (url.pathname === '/api/requests' && req.method === 'POST') return json(res, 200, { ok: true, request: addRequest(JSON.parse(await readBody(req))) });
     if (url.pathname === '/api/requests/done' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); toggleRequest(b.index, !!b.done); return json(res, 200, { ok: true }); }
     if (url.pathname === '/api/requests') return json(res, 200, { requests: readRequests() });
