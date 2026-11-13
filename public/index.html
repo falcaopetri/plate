@@ -105,6 +105,11 @@
   .card .ttl:hover { text-decoration: underline; text-decoration-color: var(--text-3); text-underline-offset: 3px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s3); align-items: center; }
   .chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 99px; background: var(--surface-2); color: var(--text-2); font-size: var(--fs-xs); line-height: 1.6; white-space: nowrap; }
+  .chip.wrap { white-space: normal; overflow-wrap: anywhere; max-width: 100%; border-radius: 12px; } /* a Devin error message is long: let it wrap instead of overflowing the card */
+  .pal-grp { padding: 8px 12px 3px; color: var(--text-3); font: 500 var(--fs-xs) var(--mono); letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pal-foot { padding: 7px 14px; border-top: 1px solid var(--line); color: var(--text-3); font-size: var(--fs-xs); }
+  .wnode.found { border-color: var(--live); box-shadow: 0 0 0 3px rgb(95 211 162 / .25), 0 0 26px -4px var(--live); z-index: 2; }
+  .wnode.found::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--live); pointer-events: none; animation: needpulse 1.6s ease-out infinite; }
   .chip.dim { color: var(--text-3); background: none; box-shadow: inset 0 0 0 1px var(--line); }
   .chip.late { color: var(--late); background: rgb(240 112 127 / .12); }
   .chip.today { color: var(--today); background: rgb(232 195 90 / .12); }
@@ -700,7 +705,7 @@ const card = (i, drag = true, extra = '') => {
   return `<div class="card k-${esc(k)} ${ghState(i)} ${i.state === 'done' ? 'done' : ''} ${i.needsYou ? 'need' : ''}" data-pin="item:${esc(i.id)}" ${drag ? `draggable="true" data-id="${esc(i.id)}"` : ''}>
   <div class="kind">${GLYPH[k] || ''}${label}${isPinned('item', i.id) ? '<span class="pinstar" title="In today\'s top 3">★</span>' : ''}${i.repo ? (GH_TICKET.test(i.url || '') ? `<button class="ctxbtn" data-ctx="${esc(i.url)}" title="Open in context: parent, sub-issues, PRs">${esc(i.repo)}#${esc(i.number)} ⌖</button>` : `<span class="ref">${esc(i.repo)}#${esc(i.number)}</span>`) : ''}</div>
   <a class="ttl" ${SAFE_URL.test(i.url || '') ? `href="${esc(ext(i.url))}"` : ''} ${tgt(i.url)}>${esc(nameOf(i))}</a>
-  <div class="chips">${i.label ? `<span class="chip" title="Label">${esc(i.label)}</span>` : ''}${meta(i)}${i.kind === 'draft' || isPull(i) || (i.kind === 'issue' && GH_TICKET.test(i.url || '')) ? devinBits(i.url) : ''}${teamsAuthor(i)}${extra}${snoozeBits(i)}<button class="ibtn" data-edit="${esc(i.id)}" title="Rename / label">✎</button></div></div>`;
+  <div class="chips">${i.label ? `<span class="chip" title="Label">${esc(i.label)}</span>` : ''}${meta(i)}${i.kind === 'draft' || isPull(i) || (i.kind === 'issue' && GH_TICKET.test(i.url || '')) ? devinBits(i.url) : ''}${teamsAuthor(i)}${extra}${snoozeBits(i)}${remindBits(i)}<button class="ibtn" data-edit="${esc(i.id)}" title="Rename / label">✎</button></div></div>`;
 };
 const chip = (t, c = '') => t ? `<span class="chip ${c}">${esc(t)}</span>` : '';
 // a PR by its url, so a draft (kind `draft` on a pasted link) gets the Devin review button too
@@ -715,7 +720,7 @@ async function reviewMany(urls) {
 const devinBits = (url) => {
   if (!GH_TICKET.test(url || '')) return '';
   const pr = url.replace(/[#?].*$/, ''), r = S.runs?.[pr], c = S.runs?.[`close:${pr}`], pull = /\/pull\//.test(pr);
-  const runChip = (x, what) => x ? `<span class="chip ${x.state === 'failed' ? 'late' : 'dim'}" title="${esc(`${x.dir}\n${x.model ? `model: ${x.model}\n` : ''}${x.msg || ''}`)}">${{ running: `Devin ${what}…`, done: x.warn ? `Devin ${what} ended early · session kept` : `Devin ${what} done`, failed: `Devin ${what} failed${x.msg ? `: ${x.msg.slice(0, 70)}` : ''}` }[x.state]}</span>` : '';
+  const runChip = (x, what) => x ? `<span class="chip wrap ${x.state === 'failed' ? 'late' : 'dim'}" title="${esc(`${x.dir}\n${x.model ? `model: ${x.model}\n` : ''}${x.msg || ''}`)}">${{ running: `Devin ${what}…`, done: x.warn ? `Devin ${what} ended early · session kept` : `Devin ${what} done`, failed: `Devin ${what} failed${x.msg ? `: ${x.msg.slice(0, 160)}` : ''}` }[x.state]}</span>` : '';
   const sess = S.items.filter((i) => i.tool === 'devin' && i.anchor === pr && i.state !== 'done' && !NESTED.has(i.id)).map((i) => `<a class="chip" href="${esc(i.url)}" title="Open the session in Devin">▸ ${esc(nameOf(i).slice(0, 40))}</a><button class="chip dim" data-tr="${esc(i.id.replace(/^session:/, ''))}" title="Read the conversation here">transcript</button>`).join('');
   const busy = r?.state === 'running' || c?.state === 'running';
   const model = busy ? '' : `<input class="devmodel" list="devmodels" placeholder="${esc(S.devinModel || 'model')}" value="${esc(devModel())}" title="Model (devin --model). Empty = the configured one (${esc(S.devinModel || 'Devin default')})">`;
@@ -802,12 +807,35 @@ const isSnoozed = (i) => !!i.snoozedUntil && Date.parse(i.snoozedUntil) > Date.n
 const snoozeBits = (i) => isSnoozed(i)
   ? `<span class="chip dim" title="Needs you again then">snoozed → ${esc(new Date(i.snoozedUntil).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' }))}</span><button class="ibtn" data-unsnooze="${esc(i.id)}" title="Bring back now">↺</button>`
   : i.needsYou ? `<select class="snz" data-snooze="${esc(i.id)}" title="Hide from Needs you until later"><option value="">⏰ Snooze</option>${SNOOZE.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>` : '';
+// "Remind me on": quiet until the day, then it needs you (`remindOn`, YYYY-MM-DD). Any open item; typed shorthand (parseDue) in a prompt.
+const remindBits = (i) => i.state === 'done' ? '' : i.remindOn
+  ? `<span class="chip ${i.remindOn <= S.today ? 'need' : 'dim'}" title="Reminder: it needs you from this day on">🔔 ${i.remindOn <= S.today ? 'reminder' : esc(dueLabel(i.remindOn))}</span><button class="ibtn" data-unremind="${esc(i.id)}" title="Clear the reminder">✕</button>`
+  : `<button class="ibtn" data-remind="${esc(i.id)}" title="Remind me on a day (it will need you then)">🔔</button>`;
+async function remindItem(id) {
+  const it = S.items.find((x) => x.id === id); if (!it) return;
+  const v = prompt('Remind me on… (+3d, mon, tmrw, 20/11, 2026-11-20)', it.remindOn || ''); if (v === null || v === false) return;
+  const d = parseDue(v, S.today); if (d.bad) return toastErr(`Can't read "${v}". Try +3d, mon, tmrw, 20/11`);
+  if (await postUndo('/api/item/update', { id, remindOn: d.date || '' }, d.date ? 'Reminder set' : 'Cleared reminder', { id, remindOn: it.remindOn || '' })) { toast(d.date ? `Will need you on ${dueLabel(d.date)}` : 'Reminder cleared'); load(); }
+}
 // bottom-right stack (max 3): neutral by default, red only for `err`; an error stays longer
+// ⌘Z: a stack of undo closures for what only Plate owns (moves, dismiss, pins, focus now, annotations, workstream edits, to-do ticks, reminders).
+// A toast with an Undo button pushes its own closure here too; nothing that touches GitHub/Todoist is registered. Per page, gone on reload.
+const UNDO = [];
+function pushUndo(label, fn, el) { const u = { label, fn, el }; UNDO.push(u); if (UNDO.length > 30) UNDO.shift(); return u; }
+async function undoLast() {
+  const u = UNDO.pop(); if (!u) return toast('Nothing to undo');
+  u.el?.remove(); await u.fn(); toast(`Undone: ${u.label}`);
+}
+// `post` + register the inverse (only when the write worked)
+async function postUndo(url, body, label, back) { const r = await post(url, body); if (r) pushUndo(label, async () => { await post(url, back); load(); }); return r; }
 function toast(msg, undo, label = 'Undo', kind = '') {
   let box = $('#toasts'); if (!box) { box = document.createElement('div'); box.id = 'toasts'; document.body.append(box); }
   while (box.children.length >= 3) box.firstChild.remove();
   const t = document.createElement('div'); t.className = 'toast' + (kind ? ` ${kind}` : ''); t.textContent = msg;
-  if (undo) { const b = document.createElement('button'); b.textContent = label; b.onclick = () => { t.remove(); undo(); }; t.append(b); }
+  if (undo) {
+    const u = label === 'Undo' ? pushUndo(msg, undo, t) : null;
+    const b = document.createElement('button'); b.textContent = label; b.onclick = () => { t.remove(); if (u) { const n = UNDO.indexOf(u); if (n >= 0) UNDO.splice(n, 1); } undo(); }; t.append(b);
+  }
   box.append(t); setTimeout(() => t.remove(), undo ? 7000 : kind === 'err' ? 8000 : 4500);
 }
 const toastErr = (msg) => toast(msg, null, 'Undo', 'err');
@@ -1038,7 +1066,7 @@ function openDoing(p) {
   if (i.workstream && wsOf(i.workstream)) { view = 'ws'; return setFocus(i.workstream); }
   view = 'ws'; focus = null; panelOpen = true; tscope = 'inbox'; tq = nameOf(i); render();
 }
-async function setDoing(type, ref, on) { if (await post('/api/doing', { type, ref, on })) load(); }
+async function setDoing(type, ref, on) { if (await postUndo('/api/doing', { type, ref, on }, `${on ? 'Focus now' : 'Left focus now'}`, { type, ref, on: !on })) load(); }
 function openPin(p) {
   if (p.type === 'ws') { view = 'ws'; return setFocus(p.ref); }
   const i = S.items.find((x) => x.id === p.ref); if (!i) return;
@@ -1047,7 +1075,7 @@ function openPin(p) {
   focus = null; panelOpen = true; tscope = 'inbox'; tq = nameOf(i); render();
 }
 async function carry(list) { for (const p of list.filter(Boolean)) if (!(await post('/api/top3', { type: p.type, ref: p.ref, on: true }))) break; load(); }
-async function setPin(type, ref, on) { if (await post('/api/top3', { type, ref, on })) load(); }
+async function setPin(type, ref, on) { if (await postUndo('/api/top3', { type, ref, on }, `${on ? 'Pinned' : 'Unpinned'}`, { type, ref, on: !on })) load(); }
 document.addEventListener('click', async (e) => {
   const arch = e.target.closest('[data-arch]'); if (arch) { e.stopPropagation(); openArchive(arch.dataset.arch); return; }
   const fnow = e.target.closest('[data-fnow]');
@@ -1070,7 +1098,7 @@ document.addEventListener('click', async (e) => {
   if (prgo) { e.stopPropagation(); reviewMany([...prsel]); return; }
   const prclr = e.target.closest('[data-prclear]'); if (prclr) { prsel.clear(); render(); return; }
   const dn = e.target.closest('[data-t3done]');
-  if (dn) { e.stopPropagation(); const p = S.top3[Number(dn.dataset.t3done)]; if (p && await post('/api/top3', { type: p.type, ref: p.ref, done: !p.done })) load(); return; }
+  if (dn) { e.stopPropagation(); const p = S.top3[Number(dn.dataset.t3done)]; if (p && await postUndo('/api/top3', { type: p.type, ref: p.ref, done: !p.done }, 'Top 3 ✓', { type: p.type, ref: p.ref, done: !!p.done })) load(); return; }
   const x = e.target.closest('[data-unpin]');
   if (x) { e.stopPropagation(); const p = S.top3[Number(x.dataset.unpin)]; if (p) setPin(p.type, p.ref, false); return; }
   const t = e.target.closest('.t3[data-open]'); if (t) openPin(S.top3[Number(t.dataset.open)]);
@@ -1093,7 +1121,7 @@ document.addEventListener('contextmenu', (e) => {
     if (a.dataset.act === 'child') { const nm = (prompt(`New workstream under “${name}”`) || '').trim(); if (!nm) return; const r = await post('/api/ws/create', { name: nm, parent: ref }); if (r) { freshWs = r.slug; freshShown = null; clearTimeout(freshT); freshT = setTimeout(() => { freshWs = null; document.querySelector('.wnode.fresh')?.classList.remove('fresh'); }, 8000); load(); } return; }
     if (a.dataset.act === 'only') { setRootFilter(ref); return; }
     if (a.dataset.act === 'showall') { setRootFilter(null); return; }
-    if (a.dataset.act === 'unparent') { await post('/api/ws/update', { slug: ref, parent: '' }); load(); return; }
+    if (a.dataset.act === 'unparent') { await postUndo('/api/ws/update', { slug: ref, parent: '' }, 'Removed parent', { slug: ref, parent: wsOf(ref)?.parent || '' }); load(); return; }
     if (a.dataset.act[0] === 'd') setDoing(type, ref, a.dataset.act === 'don'); else setPin(type, ref, a.dataset.act === 'on'); };
   document.body.append(m);
   m.style.left = `${Math.min(e.clientX, innerWidth - m.offsetWidth - 8)}px`; m.style.top = `${Math.min(e.clientY, innerHeight - m.offsetHeight - 8)}px`;
@@ -1137,34 +1165,73 @@ function wireNbhd() {
   cv.onmouseout = (e) => { if (!e.relatedTarget?.closest?.('.wnode')) clear(); };
 }
 
-// ---------- Cmd/Ctrl+K: jump to a workstream or an item by name (accent-insensitive, every word must match) ----------
+// ---------- Cmd/Ctrl+K: find a workstream or an item by name. Fuzzy (every word must match: as a substring, glued ("ai tool" ~ "aitool"),
+// or as letters in order), accent-insensitive, results grouped under their parent. Enter = show the node in the map, ⇧Enter = open it. ----------
 const wsPath = (w) => { const out = []; for (let x = w, n = 0; x && n < 8; x = wsOf(x.parent), n++) out.unshift(x.name); return out.join(' › '); };
-function palResults(q) {
-  const terms = fold(q).split(/\s+/).filter(Boolean), ok = (hay) => terms.every((t) => hay.includes(t));
-  const ws = S.workstreams.map((w) => ({ k: 'ws', t: w.name, s: wsPath(w) === w.name ? '' : wsPath(w), hay: fold(wsPath(w)), slug: w.slug })).filter((r) => ok(r.hay));
-  const items = S.items.slice().sort((a, b) => (a.state === 'done') - (b.state === 'done')).map((i) => ({ k: i.kind || i.source, t: nameOf(i), s: wsOf(i.workstream)?.name || 'Inbox', hay: fold(`${nameOf(i)} ${i.label || ''} ${i.url || ''}`), item: i })).filter((r) => ok(r.hay));
-  const cmds = MENU.filter(([k]) => k !== 'search').map(([k, t]) => ({ k: 'cmd', t, s: '', hay: fold(t + ' ' + k), cmd: k })).filter((r) => terms.length && ok(r.hay));
-  return [...cmds, ...ws, ...items].slice(0, terms.length ? 14 : 10);
+const compact = (s) => fold(s).replace(/[^a-z0-9]+/g, '');
+// the letters of `needle` in order, with at most 2 stray letters in between (so "wrkstrm" finds "workstream", but "aitool" doesn't find half the vault)
+function inOrder(needle, hay) {
+  for (let i = hay.indexOf(needle[0]); i >= 0; i = hay.indexOf(needle[0], i + 1)) {
+    let n = 1, j = i + 1; for (; j < hay.length && n < needle.length; j++) if (hay[j] === needle[n]) n++;
+    if (n === needle.length && j - i <= needle.length + 2) return true;
+  }
+  return false;
 }
-function pickPal(r) {
+// cost of a word against a row: 0 substring, 1 glued, 3 letters in order (only words of 4+ letters, only in title/path), null = no match
+function palCost(t, r) {
+  if (r.hay.includes(t)) return 0;
+  const tc = compact(t); if (!tc) return 0;
+  if (r.hayC.includes(tc)) return 1;
+  return tc.length >= 4 && inOrder(tc, r.tc) ? 3 : null;
+}
+function palResults(q) {
+  const terms = fold(q).split(/\s+/).filter(Boolean);
+  const row = (o, title, path) => ({ ...o, hay: fold(o.extra ? `${path} ${title} ${o.extra}` : `${path} ${title}`), hayC: compact(`${path} ${title} ${o.extra || ''}`), tc: compact(`${title} ${path}`), tf: fold(title) });
+  const rows = [
+    ...MENU.filter(([k]) => k !== 'search' && terms.length).map(([k, t]) => row({ k: 'cmd', t, g: 'Commands', cmd: k, bias: -2 }, t, k)),
+    ...S.workstreams.map((w) => { const par = wsOf(w.parent); return row({ k: 'ws', t: w.name, g: par ? wsPath(par) : 'Top level', slug: w.slug, bias: -1 }, w.name, wsPath(w)); }),
+    ...S.items.map((i) => row({ k: i.kind || i.source, t: nameOf(i), g: i.workstream ? wsPath(wsOf(i.workstream) || {}) || 'Inbox' : 'Inbox', item: i, extra: `${i.label || ''} ${i.url || ''}`, bias: i.state === 'done' ? 0.5 : 0 }, nameOf(i), '')),
+  ];
+  const hits = [];
+  for (const r of rows) {
+    let c = r.bias; // lower is better
+    for (const t of terms) { const x = palCost(t, r); if (x == null) { c = null; break; } c += x - (r.tf.startsWith(t) ? 0.5 : 0); }
+    if (c != null) hits.push({ r, c });
+  }
+  hits.sort((a, b) => a.c - b.c); // stable: ties keep commands, workstreams, items order
+  const top = hits.slice(0, terms.length ? 24 : 12).map((h) => h.r);
+  const order = [...new Set(top.map((r) => r.g))]; // groups by their best hit
+  return order.flatMap((g) => top.filter((r) => r.g === g));
+}
+// show a workstream's node on the map (selected, centred, pulsing) without opening it
+let foundWs = null, foundShown = null, foundT = null;
+function locateWs(slug) {
+  const w = wsOf(slug); if (!w) return;
+  view = 'ws'; focus = null; selWs = slug;
+  if (w.state === 'done' && !showDone) { showDone = true; store.set('plate.showDone', true); }
+  if (rootFilter && !VIS().some((x) => x.slug === slug)) { rootFilter = null; store.set('plate.rootFilter', null); }
+  foundWs = slug; foundShown = null; clearTimeout(foundT); foundT = setTimeout(() => { foundWs = null; document.querySelector('.wnode.found')?.classList.remove('found'); }, 6000);
+  window.scrollTo(0, 0); render();
+}
+function pickPal(r, open = false) {
   closePal();
   if (r.cmd) return runMenu(r.cmd);
   view = 'ws';
-  if (r.k === 'ws') return setFocus(r.slug);
-  if (r.item.workstream) return setFocus(r.item.workstream);
+  const slug = r.k === 'ws' ? r.slug : r.item?.workstream;
+  if (slug) return open ? setFocus(slug) : locateWs(slug);
   focus = null; panelOpen = true; tscope = 'inbox'; tq = r.t; render();
 }
 const closePal = () => document.querySelector('.pal')?.remove();
 function openPal() {
   if (document.querySelector('.pal')) return;
   const el = document.createElement('div'); el.className = 'pal';
-  el.innerHTML = '<div class="pal-box"><input placeholder="Jump to a workstream or item, or type settings, sync, submit…" autocomplete="off"><div class="pal-list"></div></div>';
+  el.innerHTML = '<div class="pal-box"><input placeholder="Find a workstream or item, or type settings, sync, submit…" autocomplete="off"><div class="pal-list"></div><div class="pal-foot">↵ show in the map · ⇧↵ open · ↑↓ move · esc close</div></div>';
   document.body.append(el);
   const inp = el.querySelector('input'), list = el.querySelector('.pal-list');
   let res = [], at = 0;
   const draw = () => {
     res = palResults(inp.value); at = Math.min(at, Math.max(0, res.length - 1));
-    list.innerHTML = res.map((r, n) => `<div class="pal-row ${n === at ? 'on' : ''}" data-n="${n}"><span class="k">${esc(r.k)}</span><span class="t">${esc(r.t)}</span><span class="s">${esc(r.s)}</span></div>`).join('') || '<div class="pal-empty">Nothing matches.</div>';
+    list.innerHTML = res.map((r, n) => `${n === 0 || res[n - 1].g !== r.g ? `<div class="pal-grp">${esc(r.g)}</div>` : ''}<div class="pal-row ${n === at ? 'on' : ''}" data-n="${n}"><span class="k">${esc(r.k)}</span><span class="t">${esc(r.t)}</span></div>`).join('') || '<div class="pal-empty">Nothing matches.</div>';
     list.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
   };
   inp.oninput = () => { at = 0; draw(); };
@@ -1173,9 +1240,9 @@ function openPal() {
     if (e.key === 'Escape') closePal();
     else if (e.key === 'ArrowDown') { e.preventDefault(); at = Math.min(at + 1, res.length - 1); draw(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); at = Math.max(at - 1, 0); draw(); }
-    else if (e.key === 'Enter' && res[at]) pickPal(res[at]);
+    else if (e.key === 'Enter' && res[at]) pickPal(res[at], e.shiftKey);
   };
-  list.onclick = (e) => { const r = res[e.target.closest('.pal-row')?.dataset.n]; if (r) pickPal(r); };
+  list.onclick = (e) => { const r = res[e.target.closest('.pal-row')?.dataset.n]; if (r) pickPal(r, e.shiftKey); };
   el.onmousedown = (e) => { if (e.target === el) closePal(); };
   draw(); inp.focus();
 }
@@ -1216,6 +1283,12 @@ function openNotePal() {
   draw(); inp.focus();
 }
 document.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && !e.altKey) { e.preventDefault(); openPal(); } });
+// ⌘Z / Ctrl+Z: undo the last Plate-only action (not inside a text field, where it belongs to the browser)
+document.addEventListener('keydown', (e) => {
+  if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey || e.key.toLowerCase() !== 'z') return;
+  if (e.target.closest?.('input, textarea, select, [contenteditable]') || document.querySelector('.pal')) return;
+  e.preventDefault(); undoLast();
+});
 
 // ---------- workstream focus: click a node → full-area view of that one workstream ----------
 // Todoist task links open the desktop app (todoist://task?id=…) unless sources.md says `todoist_link: web`
@@ -1389,7 +1462,7 @@ function mindmap() {
   const L = layoutWs(), leaves = taskLeaves(L), heat = todayOn ? (isFuture() ? dueHeat(viewDay) : todayHeat()) : new Map();
   const nodes = S.workstreams.filter((w) => L.pos.has(w.slug)).map((w) => {
     const p = L.pos.get(w.slug), st = wsStats(w.slug), h = heat.get(w.slug), nt = wsTasks(w).length, idle = todayOn ? null : idleInfo(w);
-    return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''}  ${h ? 'lit' : ''} ${idle ? 'stale' : ''} ${w.slug === freshWs ? 'fresh' : ''} ${esc(w.state)}" data-lvl="${Math.min(p.d, 3)}" draggable="true" data-slug="${esc(w.slug)}" data-pin="ws:${esc(w.slug)}"
+    return `<div class="wnode ${p.d === 0 ? 'root' : ''} ${st.need ? 'need' : ''}  ${h ? 'lit' : ''} ${idle ? 'stale' : ''} ${w.slug === freshWs ? 'fresh' : ''} ${w.slug === foundWs ? 'found' : ''} ${esc(w.state)}" data-lvl="${Math.min(p.d, 3)}" draggable="true" data-slug="${esc(w.slug)}" data-pin="ws:${esc(w.slug)}"
       style="left:${p.x}px;top:${p.y}px;--b:${p.color}${h ? `;--heat:${h.heat.toFixed(2)};--d:${Math.min(h.rank * 0.15, 3)}s` : ''}" title="${esc(w.name)} · ${st.n} items${st.need ? ` · ${st.need} needs you` : ''}${h?.n ? (isFuture() ? ` · ${h.n} item${h.n > 1 ? 's' : ''} due ${esc(viewDay)}` : ` · ${h.n} event${h.n > 1 ? 's' : ''} today`) : h ? (isFuture() ? ' · on the path to something due that day' : ' · on the path to something that moved today') : ''}${w.state !== 'active' ? ` · ${esc(w.state)}` : ''}${idle ? ` · idle ${idle.untracked ? '≥' : ''}${idle.days}d` : ''}">
       ${isPinned('ws', w.slug) ? '<span class="pinstar" title="In today\'s top 3">★</span>' : ''}<span class="wn">${esc(w.name)}</span>${st.need ? `<span class="wneed">${st.need}</span>` : st.n ? `<span class="wc">${st.n}</span>` : ''}${idle ? `<span class="wst" title="No activity for ${idle.days} days${idle.untracked ? ' (since the log began)' : ''}">${idle.days}d</span>` : ''}${nt ? `<button class="wtog ${tasksOpen.has(w.slug) ? 'on' : ''}" data-tog="${esc(w.slug)}" title="Show its ${nt} open task${nt > 1 ? 's' : ''}">☑ ${nt}</button>` : ''}</div>`;
   }).join('');
@@ -1528,7 +1601,7 @@ function focusView(w) {
 }
 
 function wireWs() {
-  const save = async (slug, patch) => { await post('/api/ws/update', { slug, ...patch }); load(); };
+  const save = async (slug, patch) => { const w0 = wsOf(slug) || {}, back = { slug }; for (const k of Object.keys(patch)) back[k] = Array.isArray(w0[k]) ? [...w0[k]] : (w0[k] ?? ''); await postUndo('/api/ws/update', { slug, ...patch }, 'Edited workstream', back); load(); };
   const create = async (parent) => {
     const name = $('#newName').value.trim(); if (!name) return $('#newName').focus();
     const r = await post('/api/ws/create', { name, parent });
@@ -1566,7 +1639,7 @@ function wireWs() {
       n.ondrop = async (e) => {
         e.preventDefault(); e.stopPropagation(); n.classList.remove('over');
         const dragged = e.dataTransfer.getData('application/x-plate-ws');
-        if (dragged) { if (dragged !== n.dataset.slug) { await post('/api/ws/update', { slug: dragged, parent: n.dataset.slug }); load(); } return; }
+        if (dragged) { if (dragged !== n.dataset.slug) { await postUndo('/api/ws/update', { slug: dragged, parent: n.dataset.slug }, 'Moved workstream', { slug: dragged, parent: wsOf(dragged)?.parent || '' }); load(); } return; }
         const ids = draggedIds(e);
         if (ids.length) moveSel(n.dataset.slug, null, ids);
       };
@@ -1574,7 +1647,7 @@ function wireWs() {
     const rz = $('#rootzone');
     rz.ondragover = (e) => { e.preventDefault(); rz.classList.add('over'); };
     rz.ondragleave = () => rz.classList.remove('over');
-    rz.ondrop = async (e) => { e.preventDefault(); const s = e.dataTransfer.getData('application/x-plate-ws'); if (s) { await post('/api/ws/update', { slug: s, parent: '' }); load(); } };
+    rz.ondrop = async (e) => { e.preventDefault(); const s = e.dataTransfer.getData('application/x-plate-ws'); if (s) { await postUndo('/api/ws/update', { slug: s, parent: '' }, 'Made root', { slug: s, parent: wsOf(s)?.parent || '' }); load(); } };
     return;
   }
   const slug = focus, w = wsOf(slug);
@@ -1589,12 +1662,13 @@ function wireWs() {
   $('#meetBtn').onclick = () => meetingNote(w);
   document.querySelectorAll('.sub-ws[data-focus]').forEach((b) => drop(b, b.dataset.focus));
   document.querySelectorAll('.focus .card[draggable]').forEach((c) => (c.ondragstart = (e) => e.dataTransfer.setData('text/plain', c.dataset.id)));
-  document.querySelectorAll('[data-mv]').forEach((s) => (s.onchange = async () => { if (s.value) { await post('/api/move', { id: s.dataset.mv, workstream: s.value === '__inbox' ? null : s.value }); load(); } }));
+  document.querySelectorAll('[data-mv]').forEach((s) => (s.onchange = async () => { if (s.value) { const was = S.items.find((x) => x.id === s.dataset.mv)?.workstream || null; await postUndo('/api/move', { id: s.dataset.mv, workstream: s.value === '__inbox' ? null : s.value }, 'Moved item', { id: s.dataset.mv, workstream: was }); load(); } }));
   document.querySelectorAll('[data-rm]').forEach((b) => (b.onclick = async () => { await post('/api/items/remove', { id: b.dataset.rm }); load(); }));
   document.querySelector('details.props').ontoggle = (e) => { propsOpen = e.target.open; };
   const todoText = (n) => (w.body || '').split('\n').filter((l) => TODO_RE.test(l))[n].match(TODO_RE)[2].trim();
   document.querySelectorAll('[data-todo]').forEach((c) => (c.onchange = async () => {
-    if (!await post('/api/ws/todo', { slug, n: Number(c.dataset.todo), text: todoText(Number(c.dataset.todo)), done: c.checked })) c.checked = !c.checked;
+    const tb = { slug, n: Number(c.dataset.todo), text: todoText(Number(c.dataset.todo)) };
+    if (!await postUndo('/api/ws/todo', { ...tb, done: c.checked }, 'To-do ✓', { ...tb, done: !c.checked })) c.checked = !c.checked;
     load();
   }));
   $('#todoNew').onkeydown = async (e) => {
@@ -1788,7 +1862,7 @@ function editItem(id) {
   document.body.append(scrim);
   const close = () => scrim.remove();
   scrim.onclick = (e) => { if (e.target === scrim || e.target.closest('[data-cancel]')) close(); };
-  scrim.querySelector('form').onsubmit = async (e) => { e.preventDefault(); const f = e.target; if (await post('/api/item/update', { id, alias: f.alias.value, label: f.label.value })) { close(); load(); } };
+  scrim.querySelector('form').onsubmit = async (e) => { e.preventDefault(); const f = e.target; const it0 = S.items.find((x) => x.id === id) || {}; if (await postUndo('/api/item/update', { id, alias: f.alias.value, label: f.label.value }, 'Renamed / labelled', { id, alias: it0.alias || '', label: it0.label || '' })) { close(); load(); } };
   scrim.querySelector('input').focus();
 }
 // tiny markdown -> html for transcripts: escapes first, so nothing from the conversation becomes markup; links only http(s)
@@ -1943,15 +2017,17 @@ document.addEventListener('click', async (e) => {
   const link = e.target.closest('.card a.ttl'), sn = e.target.closest('[data-seen]');
   const seenId = sn ? sn.dataset.seen : link ? link.closest('.card')?.dataset.pin?.replace(/^item:/, '') : null;
   if (seenId && newAct(S.items.find((x) => x.id === seenId) || {})) { if (sn) { e.stopPropagation(); } post('/api/item/update', { id: seenId, activitySeen: new Date().toISOString() }).then(() => sn && load()); }
-  const ed = e.target.closest('[data-edit]'), tr = e.target.closest('[data-tr]'), un = e.target.closest('[data-unsnooze]'), ru = e.target.closest('[data-rules]');
+  const ed = e.target.closest('[data-edit]'), tr = e.target.closest('[data-tr]'), un = e.target.closest('[data-unsnooze]'), ru = e.target.closest('[data-rules]'), rm = e.target.closest('[data-remind]'), urm = e.target.closest('[data-unremind]');
   if (ed) { e.preventDefault(); e.stopPropagation(); editItem(ed.dataset.edit); }
   else if (tr) { e.preventDefault(); e.stopPropagation(); openTranscript(tr.dataset.tr); }
-  else if (un) { e.stopPropagation(); if (await post('/api/item/update', { id: un.dataset.unsnooze, snoozedUntil: '' })) load(); }
+  else if (un) { e.stopPropagation(); const it0 = S.items.find((x) => x.id === un.dataset.unsnooze) || {}; if (await postUndo('/api/item/update', { id: un.dataset.unsnooze, snoozedUntil: '' }, 'Brought back', { id: un.dataset.unsnooze, snoozedUntil: it0.snoozedUntil || '' })) load(); }
+  else if (rm) { e.preventDefault(); e.stopPropagation(); remindItem(rm.dataset.remind); }
+  else if (urm) { e.stopPropagation(); const it0 = S.items.find((x) => x.id === urm.dataset.unremind) || {}; if (await postUndo('/api/item/update', { id: urm.dataset.unremind, remindOn: '' }, 'Cleared reminder', { id: urm.dataset.unremind, remindOn: it0.remindOn || '' })) load(); }
   else if (ru) { e.stopPropagation(); const r = await post('/api/rules/apply', {}); if (r) { toast(r.routed ? `Routed ${r.routed} item${r.routed > 1 ? 's' : ''} by rule` : 'No Inbox item matches a rule (a workstream needs a repo: anchor)'); load(); } }
 }, true);
 document.addEventListener('change', async (e) => {
   const s = e.target.closest('select[data-snooze]'); if (!s || !s.value) return;
-  if (await post('/api/item/update', { id: s.dataset.snooze, snoozedUntil: snoozeAt(s.value) })) load();
+  const it0 = S.items.find((x) => x.id === s.dataset.snooze) || {}; if (await postUndo('/api/item/update', { id: s.dataset.snooze, snoozedUntil: snoozeAt(s.value) }, 'Snoozed', { id: s.dataset.snooze, snoozedUntil: it0.snoozedUntil || '' })) load();
 });
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-ctx]'); if (b) { e.preventDefault(); e.stopPropagation(); openCtx(b.dataset.ctx); } }, true);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (document.querySelector('.ctx') || document.querySelector('.sets'))) { e.stopImmediatePropagation(); closeCtx(); } }, true);
@@ -2030,6 +2106,12 @@ function fitView() {
       const k = Math.max(cam.k, 0.8), x = fresh.offsetLeft, y = fresh.offsetTop;
       cam = { k, x: cs.clientWidth / 2 - x * k, y: cs.clientHeight / 2 - y * k };
       freshShown = freshWs;
+    }
+    const found = foundWs && foundShown !== foundWs && cv.querySelector('.wnode.found');
+    if (found) { // ⌘K "show in the map": centre the node once, at a readable zoom
+      const k = Math.max(cam.k, 0.8);
+      cam = { k, x: cs.clientWidth / 2 - found.offsetLeft * k, y: cs.clientHeight / 2 - found.offsetTop * k };
+      foundShown = foundWs;
     }
     applyCam(cv);
   }
