@@ -6,6 +6,14 @@ Newest first. Each entry has a number; **Setup** lists what a machine that alrea
 Applying entries after a pull: see "After every pull" in `AGENTS.md`. The last number applied on a machine is kept in the
 gitignored file `.plate-changelog-seen` at the repo root.
 
+## 16 — 2026-11-14: session routes, Todoist Inbox, auto review, Submit drafts and images
+
+- **`session_routes`** (list in `sources.md`, ⚙ group Claude Code): `<folder> > <workstream slug>` routes Claude/Devin sessions still in the Inbox by their folder (longest prefix wins; a worktree under `…/worktrees/<repo>/…` matches the route whose folder is named `<repo>`). Runs inside `applyRules`.
+- **Todoist Inbox**: the live pull (needs `TODOIST_API_TOKEN`) now also takes everything in the Inbox project, dated or not (`todoist_inbox: off` restores the old behavior), and skips tasks in the sections of `todoist_ignore_sections` (default `dump`); they go away from the plate on the next sync.
+- **`devin_auto_review: on`** (off by default): a PR that asks for my review starts the Devin review by itself, once (max 3 per pass).
+- Submit: draft kept in the browser, images (paste, drop or ＋ Image, saved in `<data>/requests-img/`), "Open note" button. Backend-down red bar. Backspace leaves a focused workstream (Safari eats Esc in fullscreen). Long workstream names wrap on the map.
+- **Setup:** optional. Add `session_routes` (e.g. `/path/to/repo > workstream-slug`) and, where wanted, `devin_auto_review: on`; restart the server with `TODOIST_API_TOKEN` set.
+
 ## 15 — 2026-11-11: Herdr toggle for agent sessions
 
 - **`herdr: on`** (off by default): Review / Review N PRs / "O que falta?" / Setup pending open as interactive agents in the Herdr app (`herdr-app do space.new|tab.new`), one space per workstream and one tab per session; the Claude setup opens `claude` in a tab instead of the Claude app. Without the toggle nothing changes. If Herdr can't be reached, the old behavior runs.

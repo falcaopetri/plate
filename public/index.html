@@ -278,7 +278,7 @@
   .f { display: grid; grid-template-columns: 86px 1fr; gap: var(--s2) var(--s3); align-items: center; font-size: var(--fs-sm); color: var(--text-3); }
   .f input, .f select { width: 100%; min-width: 0; }
   .rels { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  a.btn { text-decoration: none; display: inline-block; font: var(--fs-sm) var(--font); color: var(--text); background: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 6px 12px; }
+  a.btn, label.btn { text-decoration: none; display: inline-block; font: var(--fs-sm) var(--font); color: var(--text); background: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 6px 12px; }
   button.btn.danger { color: var(--late); }
   .toast button { font: inherit; font-weight: 600; background: none; border: 0; color: var(--accent); cursor: pointer; }
 
@@ -324,9 +324,9 @@
   /* radial mindmap: a center node, one color per top-level branch (--b), boxes centered on their point */
   .canvas { margin: auto; flex: none; }
   .wnode { --b: var(--text-2); transform: translate(-50%, -50%); flex-direction: row; align-items: center; justify-content: center; gap: 7px; max-width: 176px;
-    padding: 7px 12px; border: 1.5px solid color-mix(in srgb, var(--b) 75%, transparent); border-radius: 12px; text-align: center; }
-  .wnode .wn { min-width: 0; font-size: var(--fs-sm); font-weight: 600; color: color-mix(in srgb, var(--b) 55%, var(--text)); white-space: normal; line-height: 1.3;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    padding: 7px 12px; border: 1.5px solid color-mix(in srgb, var(--b) 75%, transparent); border-radius: 12px; text-align: center; flex-wrap: wrap; }
+  .wnode .wn { min-width: 0; font-size: var(--fs-sm); font-weight: 600; color: color-mix(in srgb, var(--b) 55%, var(--text)); white-space: normal; line-height: 1.3; overflow-wrap: break-word; flex: 1 1 auto; min-width: 9ch;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .wnode.root { padding: 9px 14px; } .wnode.root .wn { font-size: var(--fs-md); }
   /* depth gives visual weight: the center is biggest, leaves smallest, so the radial space reads as a hierarchy instead of uniform boxes.
      Widths stay within NW (the box size the layout's overlap math assumes) or shrink it, never grow past it, so bigger boxes can't
@@ -502,9 +502,22 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 let lastState = '';
 async function load() { const txt = await (await fetch('/api/state')).text(); lastState = txt; S = JSON.parse(txt); render(); }
 // background refresh: collectors run inside the server; re-render only when data changed and you're not mid-edit or mid-drag
+// Backend down: a fixed red bar until the next answer (state poll every 20 s, ping every 30 s)
+function netState(ok) {
+  let b = $('#offline');
+  if (ok) { if (b) b.remove(); return; }
+  if (b) return;
+  b = document.createElement('div'); b.id = 'offline'; b.setAttribute('role', 'alert');
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;padding:8px 14px;background:#b3261e;color:#fff;font:600 13px/1.3 var(--font);text-align:center';
+  b.textContent = 'Plate server is not answering — changes will not be saved. Start it with npm start; retrying every few seconds.';
+  document.body.append(b);
+}
 async function refresh() {
   if (document.hidden) return;
-  const txt = await (await fetch('/api/state')).text().catch(() => lastState);
+  const r = await fetch('/api/state').catch(() => null);
+  netState(!!r && r.ok);
+  if (!r || !r.ok) return;
+  const txt = await r.text();
   if (txt === lastState) return;
   const busy = document.activeElement?.closest?.('input, textarea, select') || document.querySelector('.dragging');
   S = JSON.parse(txt);
@@ -514,8 +527,9 @@ async function refresh() {
 setInterval(refresh, 20000);
 // open-page heartbeat: with PLATE_AUTOQUIT=1 (the Mac app) the server stops when the last page closes (lib/autoquit.mjs)
 const PAGE_ID = Math.random().toString(36).slice(2);
-const ping = () => fetch('/api/ping?p=' + PAGE_ID).catch(() => {});
+const ping = () => fetch('/api/ping?p=' + PAGE_ID).then((r) => netState(r.ok)).catch(() => netState(false));
 ping(); setInterval(ping, 30000);
+setInterval(() => { if ($('#offline')) refresh(); }, 5000); // retry faster while it is down
 window.addEventListener('pagehide', () => { try { navigator.sendBeacon('/api/bye?p=' + PAGE_ID); } catch {} });
 window.addEventListener('pageshow', (e) => { if (e.persisted) ping(); });
 document.addEventListener('visibilitychange', refresh);
@@ -1299,7 +1313,8 @@ const SAFE_URL = /^(https?|msteams|devin|obsidian|todoist):\/\//i; // only link-
 const MANUAL = ['teams', 'link', 'note', 'ghref'];
 let focus = null, propsOpen = false, enter = false; // focus = slug of the workstream in full view
 const setFocus = (slug) => { focus = slug; selWs = slug; enter = true; window.scrollTo(0, 0); render(); };
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && view === 'ws' && focus && !tsel.size && !e.target.closest?.('input, select, textarea')) setFocus(null); });
+// Esc leaves the focused workstream; Backspace too, because Safari eats Esc to leave fullscreen before the page sees it
+document.addEventListener('keydown', (e) => { if ((e.key === 'Escape' || e.key === 'Backspace') && !e.metaKey && !e.ctrlKey && !e.altKey && view === 'ws' && focus && !tsel.size && !document.querySelector('.ctx, .sets, .pal') && !e.target.closest?.('input, select, textarea, [contenteditable]')) setFocus(null); });
 
 function ws() {
   if (focus && !wsOf(focus)) focus = null;
@@ -1908,6 +1923,7 @@ async function openSettings(tab = 'settings', grp) {
       : `<input id="${id}" data-key="${f.key}" ${f.type === 'number' ? 'type="number" min="1"' : ''} value="${esc(Array.isArray(v) ? v.join(', ') : v)}" placeholder="${esc(f.def)}">`;
     return `<div class="setrow ${custom ? 'custom' : ''}"><label for="${id}"><code>${f.key}</code> <span class="chip ${custom ? 'need' : 'dim'}">${custom ? 'custom' : 'default'}</span>${custom ? `<button class="ibtn" data-reset="${f.key}" title="Back to the default (${esc(f.def)})">↺ default</button>` : ''}</label>${input}<p class="hint">${esc(f.help)} · default: <b>${esc(f.def)}</b></p></div>`;
   };
+  const valOf = (f) => { const v = j.values[f.key]; return Array.isArray(v) ? (v.length ? v.join(' ') : f.def ?? '') : (v !== '' && v != null ? v : f.def ?? ''); }; // what the key is now (its default when not overridden), so the search finds by value
   const map = (o) => Object.entries(o || {}).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(' · ') || 'none';
   const groups = [...new Set(j.schema.map((f) => f.group))];
   const nChanged = (g) => j.schema.filter((f) => f.group === g && set(f)).length;
@@ -1920,7 +1936,7 @@ async function openSettings(tab = 'settings', grp) {
     const qr = (u) => { try { const c = qrcode(0, 'M'); c.addData(u); c.make(); return `<span class="qr" title="Scan with the phone camera">${c.createSvgTag({ cellSize: 4, margin: 4, scalable: true })}</span>`; } catch { return ''; } };
     return `<div class="hint">📱 Scan with the phone (the link carries the access token, keep it private).${lan.urls.map((u) => `<div style="display:flex;gap:var(--s3);align-items:center;margin-top:var(--s2)">${qr(u)}<code style="word-break:break-all">${esc(u)}</code></div>`).join('')}</div>`;
   };
-  const nav = () => `<nav><h2>Settings</h2><input id="setq" placeholder="Search keys…" value="${esc(q)}" autocomplete="off">`
+  const nav = () => `<nav><h2>Settings</h2><input id="setq" placeholder="Search keys or values…" value="${esc(q)}" autocomplete="off">`
     + groups.map((g) => `<button class="nv ${!q && tab !== 'log' && g === setGroup ? 'on' : ''}" data-g="${esc(g)}">${esc(g)}${nChanged(g) ? `<small>${nChanged(g)}</small>` : ''}</button>`).join('')
     + `<button class="nv ${tab === 'log' ? 'on' : ''}" data-log>Server log</button><span class="sp"></span>`
     + `<label class="setonly"><input type="checkbox" id="onlyCustom" ${only ? 'checked' : ''}> Only what I changed</label></nav>`;
@@ -1935,7 +1951,7 @@ async function openSettings(tab = 'settings', grp) {
     }
     const head = (t) => `<header><h2>${esc(t)}</h2><button class="btn" data-x>Close</button></header>`;
     if (q) {
-      const terms = q.toLowerCase().split(/\s+/).filter(Boolean), hit = j.schema.filter((f) => terms.every((t) => `${f.key} ${f.help} ${f.group}`.toLowerCase().includes(t)));
+      const terms = q.toLowerCase().split(/\s+/).filter(Boolean), hit = j.schema.filter((f) => terms.every((t) => `${f.key} ${f.help} ${f.group} ${valOf(f)}`.toLowerCase().includes(t)));
       return head(`${hit.length} key${hit.length === 1 ? '' : 's'} match`) + (hit.map(field).join('') || '<p class="hint">Nothing matches.</p>');
     }
     return head(setGroup) + `<p class="hint">Saved as you leave a field; empty or ↺ = back to the default. <code>sources.md</code> keeps only what you changed (<b>${j.schema.filter(set).length}</b> of ${j.schema.length} keys): <code>${esc(j.file)}</code>. Intervals and <code>collect</code> are read at every tick; <code>lan</code> and the other server keys need a restart.</p>`
@@ -1977,17 +1993,36 @@ async function openRequests() {
   const d = document.createElement('aside'); d.className = 'ctx';
   document.body.append(scrim, d);
   const j = await (await fetch('/api/requests')).json(), all = j.requests, open = all.filter((r) => !r.done);
-  const row = (r) => `<div class="setrow"><label><input type="checkbox" data-req="${r.index}" ${r.done ? 'checked' : ''}> <span class="chip ${r.kind === 'bug' ? 'late' : 'dim'}">${r.kind}</span> <span class="chip dim">${esc(r.at)}</span></label><p class="hint" style="white-space:pre-wrap">${esc(r.text)}</p></div>`;
+  const reqImgs = (t) => [...t.matchAll(/!\[\[(req-\d{12}-\d+\.\w+)\]\]/g)].map((m) => `<a href="/api/requests/img?f=${m[1]}" target="_blank"><img src="/api/requests/img?f=${m[1]}" style="max-width:100%;max-height:140px;border-radius:6px;margin:4px 4px 0 0"></a>`).join('');
+  const row = (r) => `<div class="setrow"><label><input type="checkbox" data-req="${r.index}" ${r.done ? 'checked' : ''}> <span class="chip ${r.kind === 'bug' ? 'late' : 'dim'}">${r.kind}</span> <span class="chip dim">${esc(r.at)}</span></label><p class="hint" style="white-space:pre-wrap">${esc(r.text)}</p>${reqImgs(r.text)}</div>`;
   d.innerHTML = `<div class="ctx-top"><span></span><button class="btn" data-x>Close</button></div><h2>Submit a request</h2>
     <p class="hint">Goes into <code>requests.md</code> in the data folder (${open.length} open). Your agent reads the open ones and implements them; no e-mail needed.</p>
-    <div class="setrow"><select id="reqKind"><option value="feature">Feature request</option><option value="bug">Bug</option></select></div>
-    <div class="setrow"><textarea id="reqText" rows="5" placeholder="What should Plate do (or what broke)?" style="width:100%;font:var(--fs-sm) var(--font);color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:6px 10px"></textarea></div>
+    <div class="setrow" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="reqKind"><option value="feature">Feature request</option><option value="bug">Bug</option></select> <a class="btn" href="obsidian://open?vault=${encodeURIComponent(S.vault || '')}&file=${encodeURIComponent(`${S.dataDir.split('/').slice(-2).join('/')}/requests`)}" title="Open requests.md in Obsidian">Open note</a> <label class="btn" style="cursor:pointer" title="Attach an image as evidence (or paste / drop one into the box)">＋ Image<input type="file" id="reqImg" accept="image/*" hidden></label></div>
+    <div class="setrow"><textarea id="reqText" rows="5" placeholder="What should Plate do (or what broke)? Paste or drop a screenshot to attach it." style="width:100%;font:var(--fs-sm) var(--font);color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:6px 10px"></textarea></div>
     <button class="btn on" id="reqGo">Submit</button>
     <h3 class="setgrp">Open</h3>${open.map(row).join('') || '<p class="hint">Nothing open.</p>'}
     <h3 class="setgrp">Done</h3>${all.filter((r) => r.done).reverse().slice(0, 10).map(row).join('') || '<p class="hint">Nothing done yet.</p>'}`;
   d.querySelector('[data-x]').onclick = () => closeCtx();
-  const go = async () => { const text = $('#reqText').value.trim(); if (!text) return; if (await post('/api/requests', { kind: $('#reqKind').value, text })) { toast('Request saved'); openRequests(); } };
-  $('#reqGo').onclick = go; $('#reqText').onkeydown = (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') go(); };
+  // draft survives the drawer closing (scrim click, Esc, a re-render): kept per browser until the request is saved
+  const DRAFT = 'plate.reqDraft', ta = $('#reqText');
+  try { const dr = JSON.parse(localStorage.getItem(DRAFT) || 'null'); if (dr) { ta.value = dr.text || ''; if (dr.kind) $('#reqKind').value = dr.kind; } } catch {}
+  const saveDraft = () => { try { if (ta.value.trim()) localStorage.setItem(DRAFT, JSON.stringify({ kind: $('#reqKind').value, text: ta.value })); else localStorage.removeItem(DRAFT); } catch {} };
+  ta.oninput = saveDraft; $('#reqKind').onchange = saveDraft;
+  const attach = async (file) => {
+    if (!file || !file.type.startsWith('image/')) return false;
+    const data = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(file); });
+    const r = await post('/api/requests/image', { data });
+    if (!r) return true;
+    const at = ta.selectionStart ?? ta.value.length, tag = `![[${r.name}]]`;
+    ta.value = ta.value.slice(0, at) + (at && ta.value[at - 1] !== '\n' ? '\n' : '') + tag + '\n' + ta.value.slice(at); saveDraft(); toast('Image attached');
+    return true;
+  };
+  $('#reqImg').onchange = async (e) => { await attach(e.target.files[0]); e.target.value = ''; };
+  ta.onpaste = (e) => { const f = [...(e.clipboardData?.files || [])].find((x) => x.type.startsWith('image/')); if (f) { e.preventDefault(); attach(f); } };
+  ta.ondragover = (e) => e.preventDefault();
+  ta.ondrop = (e) => { const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith('image/')); if (f) { e.preventDefault(); attach(f); } };
+  const go = async () => { const text = ta.value.trim(); if (!text) return; if (await post('/api/requests', { kind: $('#reqKind').value, text })) { try { localStorage.removeItem(DRAFT); } catch {} toast('Request saved'); openRequests(); } };
+  $('#reqGo').onclick = go; ta.onkeydown = (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') go(); };
   d.querySelectorAll('[data-req]').forEach((c) => { c.onchange = async () => { if (await post('/api/requests/done', { index: Number(c.dataset.req), done: c.checked })) openRequests(); }; });
   $('#reqText').focus();
 }

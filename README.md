@@ -96,6 +96,9 @@ A session may carry `"github": "<item url>"`: a new session inherits that item's
 | `devin_review_prompt` | override, `{url}` placeholder (default `/code-review {url}`) |
 | `devin_waiting_minutes` | a Devin session idle this long (and not archived) becomes `waiting` = Needs you (default 2; `0` = immediately) |
 | `github_query` | Projects filter sent with every board query (same syntax as the board's filter box), e.g. `-label:Stale`; items it filters out go away from the plate. Empty = the whole board |
+| `session_routes` | List `<folder> > <workstream slug>`: sessions (Claude, Devin) still in the Inbox go to the workstream of the longest matching folder prefix; a worktree `…/worktrees/<repo>/…` matches the route whose folder is named `<repo>` |
+| `todoist_inbox: off` / `todoist_ignore_sections` | The live Todoist pull also takes the whole Inbox project (undated too) unless `off`; tasks in the listed sections (comma-separated, default `dump`) never show up |
+| `devin_auto_review: on` | Feature toggle (default off): a PR that requests my review directly starts the Devin review by itself, once, after the reviews collector (max 3 per pass) |
 | `todoist_link` | `web` opens Todoist tasks in the browser; default opens the desktop app (`todoist://task?id=…`) |
 | `archive_after_days` | an active workstream with nothing open and no event for this many days gets an "archive?" suggestion in its header (default 14; never archived by itself) |
 | `doing_limit` | slots in "Focus now" (default 4, 1-9); adding past it asks you to finish or drop one |

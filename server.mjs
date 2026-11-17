@@ -11,7 +11,7 @@ import { startReview, startReviewMany, startClose, startSetup, runs } from './li
 import { log, tail } from './lib/log.mjs';
 import { ping as pagePing, bye as pageBye, startAutoquit } from './lib/autoquit.mjs';
 import { check as lanCheck, whyDenied, isLocal, lanToken, lanUrls, COOKIE } from './lib/lan.mjs';
-import { readRequests, addRequest, toggleRequest, DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readDoing, setDoing, doingLimit, setTaskDone, setTodoistDone, archivePreview, archiveWorkstream, restoreWorkstream, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, readSettings, patchSources, createWorkstream, workstreamFromNote, searchNotes, vaultRoot, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
+import { readRequests, addRequest, toggleRequest, saveRequestImage, readRequestImage, DATA_DIR, readItems, writeItems, readWorkstreams, readTop3, readTop3Prev, setTop3, readDoing, setDoing, doingLimit, setTaskDone, setTodoistDone, archivePreview, archiveWorkstream, restoreWorkstream, readEvents, eventDay, eventsBetween, activitySummary, readSources, appendEvent, needsYou, today, readSettings, patchSources, createWorkstream, workstreamFromNote, searchNotes, vaultRoot, updateWorkstream, addManualItem, removeManualItem, addGithubItem, findByUrl, teamsDeepLink, setTodo, addTodo, patchItem, applyRules, readContacts, createPerson, patchPerson, saveAttachment, createTask, tasknotesDir, BadRequest } from './lib/store.mjs';
 
 const PORT = Number(process.env.PORT) || 4173;
 const LAN = readSources().lan === 'on'; // read at startup: changing it needs a restart
@@ -138,6 +138,8 @@ async function handle(req, res, url) {
     if (url.pathname === '/api/devin/review-many' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startReviewMany(b.urls, b.model)); }
     if (url.pathname === '/api/devin/close' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, startClose(b.url, b.model)); }
     if (url.pathname === '/api/setup/apply' && req.method === 'POST') return json(res, 200, await startSetup(setupPending()));
+    if (url.pathname === '/api/requests/image' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); return json(res, 200, { ok: true, name: saveRequestImage(b.data) }); }
+    if (url.pathname === '/api/requests/img') { const { buf, type } = readRequestImage(url.searchParams.get('f')); res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'max-age=3600' }); return res.end(buf); }
     if (url.pathname === '/api/requests' && req.method === 'POST') return json(res, 200, { ok: true, request: addRequest(JSON.parse(await readBody(req))) });
     if (url.pathname === '/api/requests/done' && req.method === 'POST') { const b = JSON.parse(await readBody(req)); toggleRequest(b.index, !!b.done); return json(res, 200, { ok: true }); }
     if (url.pathname === '/api/requests') return json(res, 200, { requests: readRequests() });
